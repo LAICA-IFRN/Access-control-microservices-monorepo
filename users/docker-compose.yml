@@ -9,6 +9,6 @@ services:
       POSTGRES_USER: ${PG_USERS_USER}
       POSTGRES_DB: ${PG_USERS_DATABASE}
     ports:
-      - 5432:5432
+      - ${PG_USERS_PORT}:5432
     volumes:
       - ./data/users:/var/lib/postgresql/data

@@ -9,6 +9,6 @@ services:
       POSTGRES_USER: ${PG_ENV_USER}
       POSTGRES_DB: ${PG_ENV_DATABASE}
     ports:
-      - 5433:5432
+      - ${PG_ENV_PORT}:5432
     volumes:
       - ./data/environments:/var/lib/postgresql/data

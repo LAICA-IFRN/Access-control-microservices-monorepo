@@ -9,6 +9,6 @@ services:
       POSTGRES_USER: ${PG_MC_USER}
       POSTGRES_DB: ${PG_MC_DATABASE}
     ports:
-      - 5434:5432
+      - ${PG_MC_PORT}:5432
     volumes:
       - ./data/microcontrollers:/var/lib/postgresql/data

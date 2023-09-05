@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  postgres-audit:
+    image: postgres:14.2
+    container_name: audit-service-db
+    environment:
+      POSTGRES_PASSWORD: ${PG_AUDIT_PASSWORD}
+      POSTGRES_USER: ${PG_AUDIT_USER}
+      POSTGRES_DB: ${PG_AUDIT_DB}
+    ports:
+      - ${PG_AUDIT_PORT}:5432
+    volumes:
+      - ./data/audit:/var/lib/postgresql/data

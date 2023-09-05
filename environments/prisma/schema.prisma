@@ -1,0 +1,49 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Environment {
+  id          String       @id @default(uuid())
+  name        String       @unique
+  description String?
+  active      Boolean      @default(true)
+  adminId     String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  EnvAccess   EnvAccess[]
+  EnvManager  EnvManager[]
+}
+
+model EnvAccess {
+  id            String      @id @default(uuid())
+  day           Int
+  startTime     DateTime
+  endTime       DateTime
+  startPeriod   DateTime    @default(now())
+  endPeriod     DateTime
+  active        Boolean     @default(true)
+  userId        String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  environmentId String
+  Environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([day, startTime, endTime, userId, environmentId, startPeriod, endPeriod])
+}
+
+model EnvManager {
+  id            String      @id @default(uuid())
+  active        Boolean     @default(true)
+  userId        String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  environmentId String
+  Environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, environmentId])
+}

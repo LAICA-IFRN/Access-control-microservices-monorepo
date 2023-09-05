@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  postgres-users:
+    image: postgres:14.2
+    container_name: users-service-db
+    environment:
+      POSTGRES_PASSWORD: ${PG_USERS_PASSWORD}
+      POSTGRES_USER: ${PG_USERS_USER}
+      POSTGRES_DB: ${PG_USERS_DATABASE}
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/users:/var/lib/postgresql/data

@@ -10,18 +10,18 @@ datasource db {
 model TagRFID {
   id        Int      @id @default(autoincrement())
   tag       String   @unique
-  userId    String
+  userId    String   @unique
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   // @@map("tags_rfid")
 
-  @@unique([tag, userId])
+  //@@unique([tag, userId])
 }
 
 model Mobile {
   id        Int      @id @default(autoincrement())
-  userId    String
+  userId    String   @unique
   number    String   @unique
   mac       String   @unique
   active    Boolean  @default(true)
@@ -29,5 +29,5 @@ model Mobile {
   updatedAt DateTime @updatedAt
   // @@map("mobiles")
 
-  @@unique([mac, userId])
+  //@@unique([mac, userId])
 }

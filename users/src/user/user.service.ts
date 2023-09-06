@@ -187,7 +187,7 @@ export class UserService {
             type: "Error",
             message: 'Falha ao buscar usuário: usuário não encontrado',
             meta: {
-              target: error.meta.target,
+              target: id,
               statusCode: 404
             }
           })
@@ -333,7 +333,7 @@ export class UserService {
             type: "Error",
             message: 'Falha ao atualizar status de usuário: usuário não encontrado',
             meta: {
-              target: error.meta.target,
+              target: id,
               statusCode: 404
             }
           })
@@ -438,7 +438,7 @@ export class UserService {
             type: "Error",
             message: 'Falha ao atualizar usuário: usuário não encontrado',
             meta: {
-              target: error.meta.target,
+              target: id,
               statusCode: 404
             }
           })

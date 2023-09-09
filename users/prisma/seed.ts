@@ -148,27 +148,27 @@ async function createUsers() {
   });
 }
 
-// createDocumentTypes()
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   }
-// );
+createDocumentTypes()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  }
+);
 
-// setTimeout(() => {
-//   console.log('Creating document types...');
-// }, 2000);
+setTimeout(() => {
+  console.log('Creating document types...');
+}, 2000);
 
-// createRoles()
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   }
-// );
+createRoles()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  }
+);
 
-// setTimeout(() => {
-//   console.log('Creating roles...');
-// }, 2000);
+setTimeout(() => {
+  console.log('Creating roles...');
+}, 2000);
 
 createUsers()
   .catch((error) => {

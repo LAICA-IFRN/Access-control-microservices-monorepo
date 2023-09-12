@@ -6,6 +6,7 @@ import { UpdateStatusEspDto } from './dto/update-status-esp.dto';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Esp32Entity } from './entities/esp32.entity';
 import * as swagger from './entities/swagger-responses.entity';
+import { FindOneByMacDto } from './dto/find-by-mac.dto';
 
 @ApiTags('Esp32')
 @Controller('esp32')
@@ -33,6 +34,15 @@ export class Esp32Controller {
     @Query('take') take: number
   ) {
     return this.esp32Service.findAll(+skip, +take);
+  }
+
+  @ApiOperation({ description: 'Endpoint para buscar esp32 pelo mac' })
+  @ApiOkResponse({ type: Esp32Entity })
+  @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
+  @ApiBadRequestResponse({ type: swagger.FindOneByMacBadRequestResponseEntity })
+  @Get('mac')
+  findOneByMac(@Body() findOneByMacDto: FindOneByMacDto) {
+    return this.esp32Service.findOneByMac(findOneByMacDto);
   }
 
   @ApiOperation({ description: 'Endpoint para listar os esp32 de um ambiente' })

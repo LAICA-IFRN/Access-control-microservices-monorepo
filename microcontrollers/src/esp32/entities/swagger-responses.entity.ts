@@ -109,3 +109,12 @@ export class RemoveForbiddenResponseEntity {
   ]})
   message: string
 }
+
+export class FindOneByMacBadRequestResponseEntity {
+  @ApiProperty()
+  @ApiResponseProperty({example: [
+    "mac must be a MAC Address",
+    "property ${target} should not exist"
+  ]})
+  message: string
+}

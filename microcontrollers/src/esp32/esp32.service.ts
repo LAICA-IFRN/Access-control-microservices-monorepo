@@ -6,6 +6,7 @@ import { isUUID } from 'class-validator';
 import { catchError, lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { Esp32 } from '@prisma/client';
+import { FindOneByMacDto } from './dto/find-by-mac.dto';
 
 @Injectable()
 export class Esp32Service {
@@ -170,6 +171,68 @@ export class Esp32Service {
     }
     
     return await this.prisma.esp32.findMany({ skip, take });
+  }
+
+  async findOneByMac(findOneByMac: FindOneByMacDto) {
+    try {
+      const esp32 = await this.prisma.esp32.findFirstOrThrow({
+        where: { 
+          mac: findOneByMac.mac,
+          active: true
+        }
+      })
+
+      return {
+        ip: esp32.ip,
+        mac: esp32.mac,
+        environmentId: esp32.environmentId
+      }
+    } catch (error) {
+      if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Microcontroladores",
+            type: "Error",
+            message: 'Falha ao buscar esp32: registro não encontrado',
+            meta: {
+              mac: findOneByMac.mac
+            }
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
+
+        throw new HttpException(
+          `Esp32 not found`,
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Microcontroladores",
+            type: "Error",
+            message: 'Falha ao buscar os esp32: erro interno, verificar logs de erro do serviço',
+            meta: {
+              microcontroller: 'Esp32',
+              mac: findOneByMac.mac,
+              statusCode: 500
+            }
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
+
+        this.errorLogger.error('Falha do sistema (500)', error);
+
+        throw new HttpException(
+          "Can't find esp32 record",
+          HttpStatus.FORBIDDEN
+        );
+      }
+    }
   }
 
   async findAllByEnvironmentId(environmentId: string) {

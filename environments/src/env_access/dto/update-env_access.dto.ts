@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsIn, IsOptional } from 'class-validator';
+import { IsIn, IsOptional } from 'class-validator';
 import { IsTimeFormat } from '../decorators/is-time-format.decorator';
 import { IsDateFormat } from '../decorators/is-date-format.decorator';
 import { ApiProperty } from '@nestjs/swagger';

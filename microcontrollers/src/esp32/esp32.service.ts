@@ -22,6 +22,8 @@ export class Esp32Service {
     await lastValueFrom(
       this.httpService.get(getEnvironmentUrl).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.status === 404) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {

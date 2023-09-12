@@ -51,6 +51,8 @@ export class RolesController {
     @Param('roleId') roleId: string,
     @Body() roleStatusDto: RoleStatusDto
   ) {
+    console.log('changeStatus service');
+    
     return this.rolesService.changeStatus(id, roleId, roleStatusDto);
   }
 

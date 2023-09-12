@@ -125,7 +125,7 @@ export class UserService {
   async updateStatus(id: string, status: boolean) {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.userRoutes.updateStatus(id), { status }).pipe(
-        catchError((error) => {
+        catchError((error) => {          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 404) {
@@ -194,6 +194,8 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.userRoutes.changeRoleStatus(id, roleId), body).pipe(
         catchError((error) => {
+          console.log(error);
+
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {

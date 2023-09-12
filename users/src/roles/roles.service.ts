@@ -290,6 +290,8 @@ export class RolesService {
         }
       })
     } catch (error) {
+      console.log(error);
+      
       if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -321,6 +323,7 @@ export class RolesService {
   }
 
   async changeStatus(userId: string, roleId: string, roleStatusDto: RoleStatusDto) {
+    console.log(roleStatusDto);
     if (!isUUID(userId) || !isUUID(roleId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -428,7 +431,23 @@ export class RolesService {
     }
     
     try {
-      const user = await this.prisma.user.findFirstOrThrow({ where: { id: userId } })
+      const user = await this.prisma.user.findFirstOrThrow({ 
+        where: { id: userId },
+        include: {
+          _count: {
+            select: {
+              UserRoles: true
+            }
+          }
+        }
+      })
+
+      if (user._count.UserRoles === 1) {
+        throw new HttpException(
+          'User cannot be without roles',
+          HttpStatus.BAD_REQUEST
+        );
+      }
 
       if (rolesToDelete && rolesToDelete.length > 0) {
         for (const role of rolesToDelete) {
@@ -447,7 +466,27 @@ export class RolesService {
         }
       }
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (error.status === 400) {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Usuários",
+            type: "Error",
+            message: 'Falha ao remover papel de usuário: usuário não pode ficar sem papéis',
+            meta: {
+              target: userId,
+              statusCode: 400
+            }
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        })
+
+        throw new HttpException(
+          'User cannot be without roles',
+          HttpStatus.BAD_REQUEST
+        );
+      } else if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Usuários",

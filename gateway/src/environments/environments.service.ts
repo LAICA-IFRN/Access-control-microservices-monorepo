@@ -107,7 +107,7 @@ export class EnvironmentsService {
 
     return data;
   }
-   
+
   async remove(id: string) {
     const { data } = await lastValueFrom(
       this.httpService.delete(this.envRoutes.remove(id)).pipe(
@@ -132,6 +132,8 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.createManager(), body).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 409) {
@@ -216,9 +218,9 @@ export class EnvironmentsService {
     return data;
   }
 
-  async searchManagerByUserAndEnv(userId: string, envId: string) {
+  async searchAccessByUserAndEnv(userId: string, envId: string) {
     const { data } = await lastValueFrom(
-      this.httpService.get(this.envRoutes.searchManagerByUserAndEnv(userId, envId)).pipe(
+      this.httpService.get(this.envRoutes.searchAccessByUserAndEnv(userId, envId)).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message,HttpStatus.BAD_REQUEST);
@@ -256,6 +258,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.createAccess(), body).pipe(
         catchError((error) => {
+          console.log(error);
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
           } else if (error.response.data.statusCode === 409) {
@@ -378,9 +381,9 @@ export class EnvironmentsService {
     return data;
   }
 
-  async searchAccessByUserAndEnv(userId: string, envId: string) {
+  async searchManagerByUserAndEnv(userId: string, envId: string) {
     const { data } = await lastValueFrom(
-      this.httpService.get(this.envRoutes.searchAccessByUserAndEnv(userId, envId)).pipe(
+      this.httpService.get(this.envRoutes.searchManagerByUserAndEnv(userId, envId)).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message,HttpStatus.BAD_REQUEST);

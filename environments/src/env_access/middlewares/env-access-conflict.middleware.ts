@@ -16,8 +16,8 @@ export class EnvAccessConflictMiddleware implements NestMiddleware {
       new Date().toDateString() + ' ' + createEnvAccessDto.endTime
     );
 
-    const startPeriod = new Date(createEnvAccessDto.startPeriod);
-    const endPeriod = new Date(createEnvAccessDto.endPeriod);
+    const startPeriod = new Date(createEnvAccessDto.startPeriod).toISOString();
+    const endPeriod = new Date(createEnvAccessDto.endPeriod).toISOString();
     
     const conflictingEnvAccesses = await this.prisma.envAccess.findMany({
       where: {
@@ -63,7 +63,7 @@ export class EnvAccessConflictMiddleware implements NestMiddleware {
       })
 
       throw new HttpException(
-        `days: ${days.join(', ')} - time: ${startTime.toISOString()} at ${endTime.toISOString()} - period: ${startPeriod.toISOString()} at ${endPeriod.toISOString()}`,
+        `days: ${days.join(', ')} - time: ${startTime.toISOString()} at ${endTime.toISOString()} - period: ${startPeriod.toString()} at ${endPeriod.toString()}`,
         HttpStatus.CONFLICT
       );
     }

@@ -62,6 +62,6 @@ export class UserController {
 
   @Patch(':id/roles/:roleId/status')
   changeRoleStatus(@Param('id') id: string, @Param('roleId') roleId: string, @Body() body: any) {
-    return this.userService.changeRoleStatus(id, roleId, body.status);
+    return this.userService.changeRoleStatus(id, roleId, body);
   }
 }

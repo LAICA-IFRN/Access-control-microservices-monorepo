@@ -59,7 +59,7 @@ export class EnvRoutes {
     return `${this.envManagerBaseUrl}/environment/${id}`;
   }
 
-  searchManagerByUserAndEnv(userId: string, envId: string): string {
+  searchAccessByUserAndEnv(userId: string, envId: string): string {
     return `${this.envManagerBaseUrl}/user/${userId}/env/${envId}/verify`;
   }
 
@@ -97,7 +97,7 @@ export class EnvRoutes {
     return `${this.envAccessBaseUrl}/environment/${id}`;
   }
 
-  searchAccessByUserAndEnv(userId: string, envId: string): string {
+  searchManagerByUserAndEnv(userId: string, envId: string): string {
     return `${this.envAccessBaseUrl}/user/${userId}/env/${envId}/verify`;
   }
 

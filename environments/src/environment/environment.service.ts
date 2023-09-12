@@ -117,6 +117,7 @@ export class EnvironmentService {
       )
       .then((response) => response.data)
       .catch((error) => {
+        console.log(error);
         this.errorLogger.error('Falha ao criar log', error);
       });
 
@@ -132,6 +133,7 @@ export class EnvironmentService {
 
       return environment
     } catch (error) {
+      console.log(error);
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {

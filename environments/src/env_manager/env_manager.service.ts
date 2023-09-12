@@ -3,7 +3,7 @@ import { CreateEnvManagerDto } from './dto/create-env_manager.dto';
 import { EnvManagerStatusDto } from './dto/status-env_manager.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
-import { catchError, lastValueFrom } from 'rxjs';
+import { catchError, last, lastValueFrom } from 'rxjs';
 import { isUUID } from 'class-validator';
 
 @Injectable()
@@ -107,9 +107,32 @@ export class EnvManagerService {
 
     // TODO: testar
     const { userId, environmentId } = createEnvManagerDto;
-    const hasEnvAccess = this.hasEnvAccessOnEnv(userId, environmentId)
-
-    if (hasEnvAccess) {
+    const hasEnvAccess = await this.hasEnvAccessOnEnv(userId, environmentId)
+      .then((response) => response)
+      .catch((error) => {
+        console.log(error);
+        
+        if (error[0] === 400) {
+          throw new HttpException(
+            "Invalid id entry",
+            HttpStatus.BAD_REQUEST
+          );
+        } else if (error[0] === 404) {
+          throw new HttpException(
+            'Record not found: ' + error[1],
+            HttpStatus.NOT_FOUND
+          );
+        } else {
+          throw new HttpException(
+            "Can't create environment manager",
+            HttpStatus.FORBIDDEN
+          );
+        }
+      });
+    console.log(hasEnvAccess);
+    if (hasEnvAccess && typeof hasEnvAccess === 'boolean') {
+      console.log('if hasEnvAccess');
+      
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Ambiente',
@@ -158,6 +181,8 @@ export class EnvManagerService {
 
       return envManager;
     } catch (error) {
+      console.log('catch\n', error);
+      
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -258,6 +283,8 @@ export class EnvManagerService {
 
   async hasEnvAccessOnEnv(userId: string, environmentId: string) {
     if (!isUUID(userId) || !isUUID(environmentId)) {
+      console.log('if !isUUID');
+      
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Ambiente',
@@ -274,23 +301,50 @@ export class EnvManagerService {
         this.errorLogger.error('Falha ao criar log', error);
       });
 
-      throw new HttpException(
-        "Invalid id entry",
-        HttpStatus.BAD_REQUEST
-      );
+      return [400]
     }
 
-    const envAccess = await this.prisma.envAccess.findFirst({
-      where: { 
-        userId,
-        environmentId,
-        active: true,
-      }
-    });
+    try {
+      const envAccess = await this.prisma.envAccess.findFirstOrThrow({
+        where: { 
+          userId,
+          environmentId,
+          active: true,
+        }
+      })
+  
+      console.log(envAccess);
+  
+      const hasEnvAccess = envAccess ? true : false;
+      console.log(hasEnvAccess);
+      return hasEnvAccess
+    } catch (error) {
+      console.log(error);
+      
+      if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Gestor de Ambiente',
+            type: 'Error',
+            message: 'Falha ao verificar se usuário possui acesso no ambiente durante criação de gestor: registro não encontrado',
+            meta: {
+              userId,
+              environmentId,
+              statusCode: 404
+            }
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-    const hasEnvAccess = envAccess ? true : false;
-    
-    return hasEnvAccess
+        return [404, [userId, environmentId]]
+
+      } else {
+        return [500]
+      }
+    }
+
   }
 
   async verifyManagerByUser(userId: string, environmentId: string) {
@@ -308,6 +362,8 @@ export class EnvManagerService {
       )
       .then((response) => response.data)
       .catch((error) => {
+        console.log(error);
+        
         this.errorLogger.error('Falha ao criar log', error);
       });
 

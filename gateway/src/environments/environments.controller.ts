@@ -61,8 +61,8 @@ export class EnvironmentsController {
   }
 
   @Get('env-manager/user/:userId/env/:envId/verify')
-  searchManagerByUserAndEnv(@Param('userId') userId: string, @Param('envId') envId: string) {
-    return this.environmentsService.searchManagerByUserAndEnv(userId, envId);
+  searchAccessByUserAndEnv(@Param('userId') userId: string, @Param('envId') envId: string) {
+    return this.environmentsService.searchAccessByUserAndEnv(userId, envId);
   }
 
   @Patch('env-manager/:id/status')
@@ -106,8 +106,8 @@ export class EnvironmentsController {
   }
 
   @Get('env-access/user/:userId/env/:envId/verify')
-  searchAccessByUserAndEnv(@Param('userId') userId: string, @Param('envId') envId: string) {
-    return this.environmentsService.searchAccessByUserAndEnv(userId, envId);
+  searchManagerByUserAndEnv(@Param('userId') userId: string, @Param('envId') envId: string) {
+    return this.environmentsService.searchManagerByUserAndEnv(userId, envId);
   }
 
   @Patch('env-access/:id/status')

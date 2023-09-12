@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsIP, IsMACAddress, IsUUID } from "class-validator";
+import { IsIP, IsMACAddress, IsOptional, IsUUID } from "class-validator";
 
 export class CreateEsp32Dto {
   
@@ -14,4 +14,14 @@ export class CreateEsp32Dto {
   @ApiProperty()
   @IsUUID()
   environmentId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsMACAddress()
+  mac8266?: string
+
+  @ApiProperty()
+  @IsOptional()
+  @IsIP()
+  ip8266?: string
 }

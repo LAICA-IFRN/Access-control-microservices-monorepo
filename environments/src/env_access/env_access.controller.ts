@@ -6,6 +6,7 @@ import { EnvAccessStatusDto } from './dto/status-env_access.dto';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { EnvAccessEntity } from './entities/env_access.entity';
 import * as swagger from './entities/swagger-env-access-responses.entity'
+import { FindAccessDto } from './dto/find-access.dto';
 
 @ApiTags('EnvAccess')
 @Controller('env-access')
@@ -20,6 +21,8 @@ export class EnvAccessController {
   @ApiForbiddenResponse({ type: swagger.CreateForbiddenResponseEntity })
   @Post()
   create(@Body() createEnvAccessDto: CreateEnvAccessDto) {
+    console.log('acc create');
+    
     return this.envAccessService.create(createEnvAccessDto);
   }
 
@@ -27,6 +30,7 @@ export class EnvAccessController {
   @ApiOkResponse({ type: swagger.FindParityResponseEntity, isArray: true })
   @Get('parity')
   findParity(@Body() createEnvAccessDto: CreateEnvAccessDto) {
+    console.log('acc findParity');
     return this.envAccessService.findParity(createEnvAccessDto);
   }
 
@@ -34,6 +38,8 @@ export class EnvAccessController {
   @ApiOkResponse({ type: EnvAccessEntity, isArray: true })
   @Get()
   findAll() {
+    console.log('acc findAll');
+    
     return this.envAccessService.findAll();
   }
 
@@ -42,7 +48,16 @@ export class EnvAccessController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('user/:userId/env/:envId/verify')
   verifyAccessByUser(@Param('userId') userId: string, @Param('envId') envId: string) {
+    console.log('acc verifyAccessByUser');
     return this.envAccessService.verifyAccessByUser(userId, envId);
+  }
+
+  @Get('access')
+  findAccessByUser(@Body() findAccessDto: FindAccessDto) {
+    console.log('acc findAccessByUser');
+    
+    const { userId, environmentId } = findAccessDto;
+    return this.envAccessService.findAccessByUser(userId, environmentId);
   }
 
   @ApiOperation({ description: 'Endpoint para listar todos os acessos ao ambiente de um usuário'})
@@ -50,6 +65,7 @@ export class EnvAccessController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('inactives')
   findAllInactives() {
+    console.log('acc findAllInactives');
     return this.envAccessService.findAllInactives();
   }
   
@@ -58,6 +74,7 @@ export class EnvAccessController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('frequenter/:id')
   findAllByFrequenter(@Param('id') id: string) {
+    console.log('acc findAllByFrequenter');
     return this.envAccessService.findAllByFrequenter(id);
   }
   
@@ -66,6 +83,7 @@ export class EnvAccessController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('environment/:id')
   findAllByEnvironmentId(@Param('id') id: string) {
+    console.log('acc findAllByEnvironmentId');
     return this.envAccessService.findAllByEnvironmentId(id);
   }
 
@@ -76,6 +94,7 @@ export class EnvAccessController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log('acc findOne');
     return this.envAccessService.findOne(id);
   }
 
@@ -89,6 +108,7 @@ export class EnvAccessController {
     @Param('id') id: string,
     @Body() envAccessStatusDto: EnvAccessStatusDto
   ) {
+    console.log('acc updateStatus');
     return this.envAccessService.updateStatus(id, envAccessStatusDto);
   }
 
@@ -102,6 +122,7 @@ export class EnvAccessController {
     @Param('id') id: string,
     @Body() updateEnvAccessDto: UpdateEnvAccessDto
   ) {
+    console.log('acc update');
     return this.envAccessService.update(id, updateEnvAccessDto);
   }
 }

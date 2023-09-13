@@ -35,7 +35,7 @@ async function bootstrap() {
     forbidNonWhitelisted: true
   }));
 
-  app.setGlobalPrefix('ambientes')
+  app.setGlobalPrefix('environments')
 
   const config = new DocumentBuilder()
     .setTitle('Serviço de Acesso')
@@ -44,7 +44,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('ambientes/access/api', app, document);
+  SwaggerModule.setup('environments/access/api', app, document);
   
   await app.listen(6006);
 }

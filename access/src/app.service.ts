@@ -75,28 +75,72 @@ export class AppService {
         })
       )
     )
-
-    const { ip, mac, environmentId } = esp32
+    
+    const { environmentId } = esp32.data
     const { user, password, rfid, mobile } = accessDto
 
     if (rfid) {
-      return this.proccessAccessWhenRFID(ip, mac, environmentId, rfid)
+      return this.proccessAccessWhenRFID(environmentId, rfid)
     } else if (mobile) {
-      return this.proccessAccessWhenMobile(ip, mac, environmentId, mobile)
+      return this.proccessAccessWhenMobile(environmentId, mobile)
     } else {
-      return this.proccessAccessWhenUserAndPassword(ip, mac, environmentId, user, password)
+      return await this.proccessAccessWhenUserAndPassword(environmentId, user, password)
     }
   }
 
-  async proccessAccessWhenRFID(
-    ip: string, mac: string, environmentId: string, rfid: string
-  ) {}
+  async proccessAccessWhenRFID(environmentId: string, rfid: string) {
+    const getRfidUrl = 'http:localhost:6005'
+  }
 
-  async proccessAccessWhenMobile(
-    ip: string, mac: string, environmentId: string, mobile: string
-  ) {}
+  async proccessAccessWhenMobile(environmentId: string, mobile: string) {
+    console.log('MOBILE')
+  }
 
   async proccessAccessWhenUserAndPassword(
-    ip: string, mac: string, environmentId: string, user: string, password: string
-  ) {}
+    environmentId: string, user: string, password: string
+  ) {
+    const getUserUrl = 'http://localhost:6001/users/access'
+    const response = await lastValueFrom(
+      this.httpService.get(getUserUrl, {
+        data: {
+          user,
+          password
+        }
+      })
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao enviar log', error);
+    });
+
+    if (response.result === 404) {
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    } else if (response.result === 401) {
+      throw new HttpException('Invalid user password', HttpStatus.UNAUTHORIZED);
+    }
+
+    return await this.findUserAccess(environmentId, response.result)
+  }
+
+  async findUserAccess(environmentId: string, userId: string) {
+    const getUserAccessUrl = 'http://localhost:6002/environments/env-access/access'
+    const response = await lastValueFrom(
+      this.httpService.get(getUserAccessUrl, {
+        data: {
+          userId: userId,
+          environmentId: environmentId
+        }
+      }).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+        })
+      )
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar acesso de usuário', error);
+    })
+
+    return response
+  }
 }

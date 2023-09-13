@@ -64,38 +64,38 @@ async function createAdmins() {
 }
 
 async function createUsers() {
-  const admin2 = await prisma.user.create({
-    data: {
-      email: 'admin2@email.cpm',
-      password: await bcrypt.hash('admin2', roundsOfHashing),
-      name: 'Admin 2',
-      Document: {
-        create: {
-          DocumentType: {
-            connect: {
-              id: 1,
-            },
-          },
-          content: '898.085.440-45',
-        },
-      },
-      // UserRoles: {
-      //   create: {
-      //     Role: {
-      //       connect: {
-      //         id: 1,
-      //       },
-      //     },
-      //   },
-      // }
-    },
-  });
+  // const admin2 = await prisma.user.create({
+  //   data: {
+  //     email: 'admin2@email.cpm',
+  //     password: await bcrypt.hash('admin2', roundsOfHashing),
+  //     name: 'Admin 2',
+  //     Document: {
+  //       create: {
+  //         DocumentType: {
+  //           connect: {
+  //             id: 1,
+  //           },
+  //         },
+  //         content: '898.085.440-45',
+  //       },
+  //     },
+  //     // UserRoles: {
+  //     //   create: {
+  //     //     Role: {
+  //     //       connect: {
+  //     //         id: 1,
+  //     //       },
+  //     //     },
+  //     //   },
+  //     // }
+  //   },
+  // });
 
   const user1 = await prisma.user.create({
     data: {
-      email: 'user1@email.com',
-      password: await bcrypt.hash('user1', roundsOfHashing),
-      name: 'User 1',
+      email: 'teste2@email.com',
+      password: await bcrypt.hash('teste2', roundsOfHashing),
+      name: 'Teste2',
       Document: {
         create: {
           DocumentType: {
@@ -103,7 +103,7 @@ async function createUsers() {
               id: 1,
             }
           },
-          content: '882.007.380-35'
+          content: '973.493.560-72'
         } 
       },
       // UserRoles: {
@@ -119,56 +119,56 @@ async function createUsers() {
     },
   });
 
-  const user2 = await prisma.user.create({
-    data: {
-      email: 'user2@email.com',
-      password: await bcrypt.hash('user2', roundsOfHashing),
-      name: 'User 2',
-      Document: {
-        create: {
-          DocumentType: {
-            connect: {
-              id: 1,
-            }
-          },
-          content: '660.433.060-50'
-        }
-      },
-      // UserRoles: {
-      //   create: [
-      //     {
-      //       roleId: 2,
-      //     },
-      //     {
-      //       roleId: 3,
-      //     },
-      //   ],
-      // },
-    },
-  });
+  // const user2 = await prisma.user.create({
+  //   data: {
+  //     email: 'user2@email.com',
+  //     password: await bcrypt.hash('user2', roundsOfHashing),
+  //     name: 'User 2',
+  //     Document: {
+  //       create: {
+  //         DocumentType: {
+  //           connect: {
+  //             id: 1,
+  //           }
+  //         },
+  //         content: '660.433.060-50'
+  //       }
+  //     },
+  //     // UserRoles: {
+  //     //   create: [
+  //     //     {
+  //     //       roleId: 2,
+  //     //     },
+  //     //     {
+  //     //       roleId: 3,
+  //     //     },
+  //     //   ],
+  //     // },
+  //   },
+  // });
 }
 
-createDocumentTypes()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  }
-);
+// createDocumentTypes()
+//   .catch((error) => {
+//     console.error(error);
+//     process.exit(1);
+//   }
+// );
 
-setTimeout(() => {
-  console.log('Creating document types...');
-}, 2000);
+// setTimeout(() => {
+//   console.log('Creating document types...');
+// }, 2000);
 
-createRoles()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  }
-);
+// createRoles()
+//   .catch((error) => {
+//     console.error(error);
+//     process.exit(1);
+//   }
+// );
 
-setTimeout(() => {
-  console.log('Creating roles...');
-}, 2000);
+// setTimeout(() => {
+//   console.log('Creating roles...');
+// }, 2000);
 
 createUsers()
   .catch((error) => {
@@ -177,17 +177,17 @@ createUsers()
   }
 );
 
-setTimeout(() => {
-  console.log('Creating users...');
-}, 2000);
+// setTimeout(() => {
+//   console.log('Creating users...');
+// }, 2000);
 
-createAdmins()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  }
-);
+// createAdmins()
+//   .catch((error) => {
+//     console.error(error);
+//     process.exit(1);
+//   }
+// );
 
-setTimeout(() => {
-  console.log('Creating admins...');
-}, 2000);
+// setTimeout(() => {
+//   console.log('Creating admins...');
+// }, 2000);

@@ -8,6 +8,7 @@ import { UpdateUserDataDto } from './dto/update-user-data.dto';
 import { isValidCPF } from 'src/decorators/cpf-or-cnpj.decorator';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
+import { FindToAccess } from './dto/find-to-access.dto';
 
 @Injectable()
 export class UserService {
@@ -204,6 +205,65 @@ export class UserService {
         throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
+  }
+
+  async findOneToAccess(findToAccess: FindToAccess) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        Document: {
+          content: findToAccess.user
+        },
+        active: true
+      }
+    });
+
+    console.log(user);
+    
+    if (!user) {
+      // await lastValueFrom(
+      //   this.httpService.post(this.createAuditLogUrl, {
+      //     topic: "Usuários",
+      //     type: "Error",
+      //     message: 'Falha ao buscar usuário: usuário não encontrado',
+      //     meta: {
+      //       user: findToAccess.user,
+      //     }
+      //   })
+      // )
+      // .then((response) => response.data)
+      // .catch((error) => {
+      //   this.errorLogger.error('Falha ao enviar log', error);
+      // });
+      // console.log('aaa');
+      
+      return { result: 404 }
+    }
+
+    const passwordMatch = await bcrypt.compare(findToAccess.password, user.password);
+
+    if (!passwordMatch) {
+      // await lastValueFrom(
+      //   this.httpService.post(this.createAuditLogUrl, {
+      //     topic: "Usuários",
+      //     type: "Error",
+      //     message: 'Falha ao buscar usuário: senha incorreta',
+      //     meta: {
+      //       target: user.id,
+      //       statusCode: 401
+      //     }
+      //   })
+      // )
+      // .then((response) => response.data)
+      // .catch((error) => {
+      //   this.errorLogger.error('Falha ao criar log', error);
+      // });
+
+      return { result: 401 };
+    }
+
+    return {
+      result: user.id
+    };
   }
 
   async findAllFrequenters() {

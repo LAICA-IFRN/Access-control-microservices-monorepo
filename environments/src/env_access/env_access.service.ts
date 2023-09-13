@@ -496,6 +496,68 @@ export class EnvAccessService {
     }
   }
 
+  async findAccessByUser(userId: string, environmentId: string) {
+    if (!isUUID(userId) || !isUUID(environmentId)) {
+      console.log('bbb');
+      
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao buscar acesso de usuário em ambiente: id inválido',
+          meta: {
+            userId,
+            environmentId
+          },
+        }).pipe(
+          catchError((error) => {
+            console.log(error);
+            throw new HttpException(
+              "Invalid id entry",
+              HttpStatus.BAD_REQUEST
+            );
+          })
+        )
+      )
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
+
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const now = new Date();
+    const access = await this.prisma.envAccess.findFirst({
+      where: {
+        userId,
+        environmentId,
+        active: true,
+        day: now.getDay(),
+        startTime: {
+          lte: now,
+        },
+        endTime: {
+          gte: now,
+        },
+        startPeriod: {
+          lte: now,
+        },
+        endPeriod: {
+          gte: now,
+        },
+      },
+    });
+
+    console.log('access\n', access)
+
+    return {
+      access: access ? true : false,
+    };
+  }
+
   async findOne(id: string) {
     if (!isUUID(id)) {
       await lastValueFrom(

@@ -43,3 +43,21 @@ export class UnauthorizedResponseEntity {
   ]})
   message: string
 }
+
+export class NotFoundToAccess {
+  @ApiProperty()
+  @ApiResponseProperty({ example: 404 })
+  message: number
+}
+
+export class OkToAccess {
+  @ApiProperty()
+  @ApiResponseProperty({ example: 'UUID' })
+  message: string
+}
+
+export class UnauthorizedToAccess {
+  @ApiProperty()
+  @ApiResponseProperty({ example: 401 })
+  message: number
+}

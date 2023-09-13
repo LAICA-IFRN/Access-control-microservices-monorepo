@@ -8,7 +8,8 @@ import { ApiBadRequestResponse,
   ApiNotFoundResponse, 
   ApiOkResponse, 
   ApiOperation, 
-  ApiTags 
+  ApiTags, 
+  ApiUnauthorizedResponse
 } from '@nestjs/swagger';
 import { UserStatusDto } from './dto/status-user.dto';
 import { UpdateUserDataDto } from './dto/update-user-data.dto';
@@ -16,8 +17,12 @@ import { UserEntity } from './entities/user.entity';
 import { BadRequestResponseEntity, 
   ConflictResponseEntity, 
   IdParamInvalidResponseEntity, 
-  NotFoundResponseEntity 
+  NotFoundResponseEntity, 
+  NotFoundToAccess,
+  OkToAccess,
+  UnauthorizedToAccess
 } from './entities/swagger-responses.entity';
+import { FindToAccess } from './dto/find-to-access.dto';
 
 @Controller()
 @ApiTags('Users')
@@ -32,6 +37,17 @@ export class UserController {
   create(@Body() body: CreateUserDto, @Req() req: UserRequestEntity) {
     const requestUser = req.user
     return this.userService.create(body);
+  }
+
+  @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })
+  @ApiNotFoundResponse({ type: NotFoundToAccess })
+  @ApiOkResponse({ type: OkToAccess })
+  @ApiUnauthorizedResponse({ type: UnauthorizedToAccess })
+  @Get('access')
+  findOneToAccess(@Body() findToAccess: FindToAccess) {
+    console.log('findOneToAccess');
+    
+    return this.userService.findOneToAccess(findToAccess);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar os usuários administradores' })

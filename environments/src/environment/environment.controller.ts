@@ -20,6 +20,7 @@ export class EnvironmentController {
   @ApiBadRequestResponse({ type: CreateBadRequestResponseEntity})
   @Post()
   create(@Body() createEnvironmentDto: CreateEnvironmentDto) {
+    console.log('env create')
     return this.environmentService.create(createEnvironmentDto);
   }
 
@@ -31,6 +32,7 @@ export class EnvironmentController {
     @Query('skip') skip: number, 
     @Query('take') take: number
   ) {
+    console.log('env findAll')
     const skipNumber = skip ? parseInt(skip.toString()) : 0;
     const takeNumber = take ? parseInt(take.toString()) : 10;
     return this.environmentService.findAll(skipNumber, takeNumber);
@@ -41,6 +43,7 @@ export class EnvironmentController {
   @ApiBadRequestResponse({ type: FindOneBadRequestResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log('env findOne')
     return this.environmentService.findOne(id);
   }
 
@@ -50,6 +53,7 @@ export class EnvironmentController {
   @ApiNotFoundResponse({ type: EnvironmentNotFoundResponseEntity })
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateEnvironmentDto: UpdateEnvironmentDto) {
+    console.log('env update')
     return this.environmentService.update(id, updateEnvironmentDto);
   }
   
@@ -59,6 +63,7 @@ export class EnvironmentController {
   @ApiNotFoundResponse({ type: EnvironmentNotFoundResponseEntity })
   @Patch(':id/status')
   changeStatus(@Param('id') id: string, @Body() updateEnvironmentDto: EnvStatusDto) {
+    console.log('env changeStatus')
     return this.environmentService.changeStatus(id, updateEnvironmentDto.status);
   }
 
@@ -68,6 +73,7 @@ export class EnvironmentController {
   @ApiNotFoundResponse({ type: EnvironmentNotFoundResponseEntity })
   @Delete(':id')
   remove(@Param('id') id: string) {
+    console.log('env remove')
     return this.environmentService.remove(id);
   }
 }

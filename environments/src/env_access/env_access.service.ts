@@ -528,7 +528,7 @@ export class EnvAccessService {
         HttpStatus.BAD_REQUEST
       );
     }
-
+    
     const now = new Date();
     const access = await this.prisma.envAccess.findFirst({
       where: {
@@ -550,8 +550,6 @@ export class EnvAccessService {
         },
       },
     });
-
-    console.log('access\n', access)
 
     return {
       access: access ? true : false,

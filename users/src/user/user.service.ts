@@ -216,25 +216,22 @@ export class UserService {
         active: true
       }
     });
-
-    console.log(user);
     
     if (!user) {
-      // await lastValueFrom(
-      //   this.httpService.post(this.createAuditLogUrl, {
-      //     topic: "Usuários",
-      //     type: "Error",
-      //     message: 'Falha ao buscar usuário: usuário não encontrado',
-      //     meta: {
-      //       user: findToAccess.user,
-      //     }
-      //   })
-      // )
-      // .then((response) => response.data)
-      // .catch((error) => {
-      //   this.errorLogger.error('Falha ao enviar log', error);
-      // });
-      // console.log('aaa');
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao buscar usuário: usuário não encontrado',
+          meta: {
+            user: findToAccess.user,
+          }
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
       
       return { result: 404 }
     }
@@ -242,21 +239,21 @@ export class UserService {
     const passwordMatch = await bcrypt.compare(findToAccess.password, user.password);
 
     if (!passwordMatch) {
-      // await lastValueFrom(
-      //   this.httpService.post(this.createAuditLogUrl, {
-      //     topic: "Usuários",
-      //     type: "Error",
-      //     message: 'Falha ao buscar usuário: senha incorreta',
-      //     meta: {
-      //       target: user.id,
-      //       statusCode: 401
-      //     }
-      //   })
-      // )
-      // .then((response) => response.data)
-      // .catch((error) => {
-      //   this.errorLogger.error('Falha ao criar log', error);
-      // });
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao buscar usuário: senha incorreta',
+          meta: {
+            target: user.id,
+            statusCode: 401
+          }
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
 
       return { result: 401 };
     }

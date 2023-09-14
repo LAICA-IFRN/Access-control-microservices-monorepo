@@ -89,7 +89,26 @@ export class AppService {
   }
 
   async proccessAccessWhenRFID(environmentId: string, rfid: string) {
-    const getRfidUrl = 'http:localhost:6005'
+    const getRfidUrl = `http://localhost:6005/devices/rfid/tag?tag=${rfid}`
+    const response = await lastValueFrom(
+      this.httpService.get(getRfidUrl).pipe(
+        catchError((error) => {
+          console.log(error);
+          
+          throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+        }
+      ))
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('falha ao buscar tag', error);
+    });
+    
+    if (!response.result) {
+      throw new HttpException('RFID not found', HttpStatus.NOT_FOUND);
+    }
+
+    return await this.findUserAccess(environmentId, response.result)
   }
 
   async proccessAccessWhenMobile(environmentId: string, mobile: string) {

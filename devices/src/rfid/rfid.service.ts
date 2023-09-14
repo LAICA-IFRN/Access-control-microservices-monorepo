@@ -21,7 +21,22 @@ export class RfidService {
       this.httpService.get(findUserEndpoint)
       .pipe(
         catchError((error) => {
-          console.log(error.response);
+          if (error.code === 'ECONNREFUSED') {
+            lastValueFrom(
+              this.httpService.post(this.createAuditLogUrl, {
+                topic: 'Dispositivos',
+                type: 'Error',
+                message: 'Falha ao criar Tag RFID: serviço de usuários indisponível',
+                meta: {
+                  device: 'RFID',
+                  userId: createRfidDto.userId,
+                }
+              })
+            )
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error)
+            })
+          }
 
           if (error.response?.status === 404) {
             lastValueFrom(
@@ -84,6 +99,8 @@ export class RfidService {
       )
     )
 
+    console.log(findUser);
+
     try {
       const rfid = await this.prismaService.tagRFID.create({
         data: createRfidDto,
@@ -108,6 +125,8 @@ export class RfidService {
       
       return rfid
     } catch (error) {
+      console.log('try\n', error);
+      
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -125,7 +144,7 @@ export class RfidService {
           this.errorLogger.error('Falha ao enviar log', error)
         })
 
-        throw new HttpException(error.meta.target, HttpStatus.CONFLICT)
+        throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT)
       } else {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -245,6 +264,58 @@ export class RfidService {
         throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
       }
     }
+  }
+
+  async findOneByTag(tag: string) {
+      const rfid = await this.prismaService.tagRFID.findFirst({
+        where: {
+          tag, active: true
+        }
+      })
+
+      const response = { result: null }
+
+      if (rfid) {
+        response.result = rfid.userId
+      }
+
+      return response
+
+      // if (error.code === 'P2025') {
+      //   await lastValueFrom(
+      //     this.httpService.post(this.createAuditLogUrl, {
+      //       topic: 'Dispositivos',
+      //       type: 'Error',
+      //       message: 'Falha buscar Tag RFID: registro não encontrado',
+      //       meta: {
+      //         device: 'RFID',
+      //         tag
+      //       }
+      //     })
+      //   )
+      //   .catch((error) => {
+      //     this.errorLogger.error('Falha ao enviar log', error)
+      //   })
+
+      //   throw new HttpException('Tag not found', HttpStatus.NOT_FOUND)
+      // } else {
+      //   await lastValueFrom(
+      //     this.httpService.post(this.createAuditLogUrl, {
+      //       topic: 'Dispositivos',
+      //       type: 'Error',
+      //       message: 'Falha buscar Tag RFID: erro interno, verificar logs de erro do serviço',
+      //       meta: {
+      //         device: 'RFID',
+      //         tag
+      //       }
+      //     })
+      //   )
+      //   .catch((error) => {
+      //     this.errorLogger.error('Falha ao enviar log', error)
+      //   })
+
+      //   throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
+      // }
   }
 
   async updateStatus(updateStatusRfidDto: UpdateStatusRfidDto) {

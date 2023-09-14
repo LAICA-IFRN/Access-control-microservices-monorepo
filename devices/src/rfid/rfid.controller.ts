@@ -20,8 +20,16 @@ export class RfidController {
     return this.rfidService.findAll(+skip, +take);
   }
 
+  @Get('tag')
+  findOneByTag(@Query('tag') tag: string) {
+    console.log('findOneByTag');
+    
+    return this.rfidService.findOneByTag(tag);
+  }
+
   @Get(':id')
   findOne(@Param('id') id: number) {
+    console.log('findOne');
     return this.rfidService.findOne(+id);
   }
 

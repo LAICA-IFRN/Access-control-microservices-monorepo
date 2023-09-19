@@ -41,6 +41,7 @@ model User {
   updatedAt DateTime    @updatedAt
   UserRoles UserRoles[]
   Document  Document?
+  Photo     Photo?
 }
 
 model Document {
@@ -51,3 +52,14 @@ model Document {
   User           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId         String       @unique
 }
+
+model Photo {
+  id            String @id @default(uuid())
+  fileName      String
+  contentLength Int
+  contentType   String
+  path          String
+  User          User?  @relation(fields: [userId], references: [id])
+  userId        String @unique
+}
+

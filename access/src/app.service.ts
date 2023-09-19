@@ -108,7 +108,7 @@ export class AppService {
       throw new HttpException('RFID not found', HttpStatus.NOT_FOUND);
     }
 
-    return await this.findUserAccess(environmentId, response.result)
+    return await this.validateUserAccess(environmentId, response.result)
   }
 
   async proccessAccessWhenMobile(environmentId: string, mobile: string) {
@@ -138,10 +138,10 @@ export class AppService {
       throw new HttpException('Invalid user password', HttpStatus.UNAUTHORIZED);
     }
 
-    return await this.findUserAccess(environmentId, response.result)
+    return await this.validateUserAccess(environmentId, response.result)
   }
 
-  async findUserAccess(environmentId: string, userId: string) {
+  async validateUserAccess(environmentId: string, userId: string) {
     const getUserAccessUrl = 'http://localhost:6002/environments/env-access/access'
     const response = await lastValueFrom(
       this.httpService.get(getUserAccessUrl, {
@@ -159,6 +159,10 @@ export class AppService {
     .catch((error) => {
       this.errorLogger.error('Falha ao buscar acesso de usuário', error);
     })
+
+    if (response) {
+      // TODO: integrar com o serviço de análise facial
+    }
 
     return response
   }

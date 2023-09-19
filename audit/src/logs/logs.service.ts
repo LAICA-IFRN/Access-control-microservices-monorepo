@@ -11,9 +11,13 @@ export class LogsService {
 
   async create(createLogDto: CreateLogDto) {
     try {
-      return await this.prisma.log.create({
+      const log = await this.prisma.log.create({
         data: createLogDto
       });
+
+      console.log(log)
+
+      return log;
     } catch (error) {
       this.errorLogger.error('Falha ao criar log', error.meta)
     }

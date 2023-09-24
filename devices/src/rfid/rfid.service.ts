@@ -266,56 +266,20 @@ export class RfidService {
     }
   }
 
-  async findOneByTag(tag: string) {
-      const rfid = await this.prismaService.tagRFID.findFirst({
-        where: {
-          tag, active: true
-        }
-      })
-
-      const response = { result: null }
-
-      if (rfid) {
-        response.result = rfid.userId
+  async findOneByTag(tag: string) { // para uso do serviço de acesso
+    const rfid = await this.prismaService.tagRFID.findFirst({
+      where: {
+        tag, active: true
       }
+    })
 
-      return response
+    const response = { result: null }
 
-      // if (error.code === 'P2025') {
-      //   await lastValueFrom(
-      //     this.httpService.post(this.createAuditLogUrl, {
-      //       topic: 'Dispositivos',
-      //       type: 'Error',
-      //       message: 'Falha buscar Tag RFID: registro não encontrado',
-      //       meta: {
-      //         device: 'RFID',
-      //         tag
-      //       }
-      //     })
-      //   )
-      //   .catch((error) => {
-      //     this.errorLogger.error('Falha ao enviar log', error)
-      //   })
+    if (rfid) {
+      response.result = rfid.userId
+    }
 
-      //   throw new HttpException('Tag not found', HttpStatus.NOT_FOUND)
-      // } else {
-      //   await lastValueFrom(
-      //     this.httpService.post(this.createAuditLogUrl, {
-      //       topic: 'Dispositivos',
-      //       type: 'Error',
-      //       message: 'Falha buscar Tag RFID: erro interno, verificar logs de erro do serviço',
-      //       meta: {
-      //         device: 'RFID',
-      //         tag
-      //       }
-      //     })
-      //   )
-      //   .catch((error) => {
-      //     this.errorLogger.error('Falha ao enviar log', error)
-      //   })
-
-      //   throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
-      // }
+    return response
   }
 
   async updateStatus(updateStatusRfidDto: UpdateStatusRfidDto) {

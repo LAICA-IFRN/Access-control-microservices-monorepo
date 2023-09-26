@@ -9,6 +9,7 @@ import { isValidCPF } from 'src/decorators/cpf-or-cnpj.decorator';
 import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { FindToAccess } from './dto/find-to-access.dto';
+import * as fs from 'fs';
 
 @Injectable()
 export class UserService {
@@ -20,7 +21,27 @@ export class UserService {
     private httpService: HttpService
   ) {}
 
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto, file: Express.Multer.File) {
+    if (!file) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao criar usuário: foto não enviada',
+          meta: {
+            target: createUserDto.name,
+            statusCode: 400
+          }
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
+
+      throw new HttpException('Photo not sent', HttpStatus.BAD_REQUEST);
+    }
+
     if (
       createUserDto.roles.includes('ADMIN') 
       && createUserDto.roles.length > 1
@@ -142,10 +163,122 @@ export class UserService {
       this.errorLogger.error('Falha ao criar log', error);
     });
 
+    fs.promises.readFile(file.path)
+      .then(response => {
+        const base64Image = response.toString('base64');
+        const encodedImage = `data:${file.mimetype};base64,${base64Image}`;
+
+        (async () => {
+          await this.prisma.photo.create({
+            data: {
+              encoded: encodedImage,
+              User: { connect: { id: createdUser.id } }
+            }
+          });
+        })()
+      })
+      .catch(err => {
+        lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Usuários",
+            type: "Error",
+            message: 'Falha ao criar usuário: erro ao ler foto',
+            meta: {
+              target: createdUser.id,
+              statusCode: 400
+            }
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
+  
+        this.errorLogger.error('Falha na leitura da imagem', err);
+  
+        throw new HttpException('Error reading photo after user creation', HttpStatus.BAD_REQUEST);
+      })
+
+    fs.unlink(file.path, (err) => {
+      if (err) {
+        lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Usuários",
+            type: "Error",
+            message: 'Falha ao criar usuário: erro ao deletar foto',
+            meta: {
+              target: createdUser.id,
+              statusCode: 400
+            }
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
+  
+        this.errorLogger.error('Falha ao deletar imagem', err);
+  
+        throw new HttpException('Error deleting photo after user creation', HttpStatus.BAD_REQUEST);
+      }
+    });
+
     // if (createUserDto.mac) {} // TODO: enviar msg para o serviço responsável
     // if (createUserDto.tag) {} // TODO: enviar msg para o serviço responsável
   
     return createdUser;
+  }
+
+  async findUserPhoto(userId: string) {
+    if (!isUUID(userId)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao buscar foto de usuário: id inválido',
+          meta: {
+            target: userId,
+            statusCode: 400
+          }
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
+
+      throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
+    }
+
+    try {
+      const photo = await this.prisma.photo.findFirst({
+        where: { userId }
+      });
+
+      if (!photo) {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Usuários",
+            type: "Error",
+            message: 'Falha ao buscar foto de usuário: usuário não encontrado',
+            meta: {
+              target: userId,
+              statusCode: 404
+            }
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
+
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+      }
+
+      return photo.encoded;
+    } catch (error) {
+      this.errorLogger.error('Falha ao buscar foto de usuário', error);
+
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findOne(id: string) {

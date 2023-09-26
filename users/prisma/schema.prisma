@@ -55,10 +55,7 @@ model Document {
 
 model Photo {
   id            String @id @default(uuid())
-  fileName      String
-  contentLength Int
-  contentType   String
-  path          String
+  encoded       String
   User          User?  @relation(fields: [userId], references: [id])
   userId        String @unique
 }

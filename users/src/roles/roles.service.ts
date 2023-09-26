@@ -290,8 +290,6 @@ export class RolesService {
         }
       })
     } catch (error) {
-      console.log(error);
-      
       if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {

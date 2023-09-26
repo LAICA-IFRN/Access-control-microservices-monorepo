@@ -1,10 +1,12 @@
 from flask import Flask, request, abort
 import face_recognition
+import os
 
 app = Flask(__name__)
 
 @app.route("/security/verify/user", methods=['GET'])
 def endpoint():
+  print(request.json)
   captured_image_path = request.json.get('capturedImagePath', None)
   if captured_image_path is None:
     abort(400, "capturedImagePath is required")
@@ -19,9 +21,14 @@ def endpoint():
   user_image_encoding = face_recognition.face_encodings(user_image)[0]
   captured_image_encoding = face_recognition.face_encodings(captured_image)[0]
 
+  os.remove('../' + captured_image_path)
+  os.remove('../' + user_image_path)
+
   results = face_recognition.compare_faces([user_image_encoding], captured_image_encoding, tolerance=0.5)
 
   response = True if int(results[0]) == 1 else False
+
+  # TODO: enviar log para o serviço de auditoria caso response seja False
 
   return {
     "result": response

@@ -10,6 +10,10 @@ export class AccessDto {
     @ApiProperty()
     @IsMACAddress()
     mac: string
+
+    @ApiProperty()
+    @IsString()
+    encoded: string
     
     @ApiProperty()
     @IsOptional()

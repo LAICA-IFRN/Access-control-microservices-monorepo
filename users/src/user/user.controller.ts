@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req, UseInterceptors, UploadedFile } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserRequestEntity } from './entities/user-request.entity';
@@ -23,6 +23,8 @@ import { BadRequestResponseEntity,
   UnauthorizedToAccess
 } from './entities/swagger-responses.entity';
 import { FindToAccess } from './dto/find-to-access.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 
 @Controller()
 @ApiTags('Users')
@@ -34,9 +36,23 @@ export class UserController {
   @ApiConflictResponse({type: ConflictResponseEntity })
   @ApiBadRequestResponse({ type: BadRequestResponseEntity })
   @Post()
-  create(@Body() body: CreateUserDto, @Req() req: UserRequestEntity) {
+  @UseInterceptors(
+    FileInterceptor('pic', {
+      storage: diskStorage({
+        destination: './temp',
+        filename: (req, file, cb) => {
+          cb(null, file.originalname);
+        },
+      }),
+    }),
+  )
+  create(
+    @Body() body: CreateUserDto,
+    @Req() req: UserRequestEntity,
+    @UploadedFile() file: Express.Multer.File
+  ) {
     const requestUser = req.user
-    return this.userService.create(body);
+    return this.userService.create(body, file);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })
@@ -45,9 +61,12 @@ export class UserController {
   @ApiUnauthorizedResponse({ type: UnauthorizedToAccess })
   @Get('access')
   findOneToAccess(@Body() findToAccess: FindToAccess) {
-    console.log('findOneToAccess');
-    
     return this.userService.findOneToAccess(findToAccess);
+  }
+
+  @Get(':id/photo')
+  findUserPhoto(@Param('id') id: string) {
+    return this.userService.findUserPhoto(id);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar os usuários administradores' })
@@ -93,8 +112,6 @@ export class UserController {
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: UserStatusDto) {
-    console.log('update status');
-
     return this.userService.updateStatus(id, body.status);
   }
 
@@ -104,8 +121,6 @@ export class UserController {
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: UpdateUserDataDto) {
-    console.log('update');
-    
     return this.userService.update(id, body);
   }
 }

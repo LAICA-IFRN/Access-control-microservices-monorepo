@@ -4,6 +4,7 @@ import { EnvAccessController } from './env_access.controller';
 import { HttpModule } from '@nestjs/axios';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { EnvAccessConflictMiddleware } from './middlewares/env-access-conflict.middleware';
+import * as cors from 'cors';
 
 @Module({
   imports: [

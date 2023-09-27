@@ -70,6 +70,8 @@ export class Esp32Service {
     )
 
     try {
+      // TODO: mudar a forma de criar o esp pois o campo mac8266 do dto não existe no model esp32
+      //       necessario fazer um "Connect"
       const esp32 = await this.prisma.esp32.create({ data: createEsp32Dto }); 
 
       await lastValueFrom(
@@ -91,6 +93,8 @@ export class Esp32Service {
 
       return esp32;
     } catch (error) {
+      console.log(error);
+      
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {

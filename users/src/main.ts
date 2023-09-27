@@ -27,7 +27,8 @@ async function bootstrap() {
           ),
         })
       ]
-    })
+    }),
+    cors: true
   });
 
   app.useGlobalPipes(new ValidationPipe({
@@ -45,13 +46,6 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('users/api', app, document);
-
-  // app.enableCors(
-  //   { 
-  //     origin: ['http://localhost:6000'],
-  //     methods: ['POST', 'PATCH', 'DELETE', 'GET']
-  //   }
-  // );
 
   await app.listen(6001);
 }

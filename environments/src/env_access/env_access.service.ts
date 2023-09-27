@@ -1006,6 +1006,8 @@ export class EnvAccessService {
 
       return envAccess;
     } catch (error) {
+      console.log(error);
+      
       if (error.code === 'P2025') {
         throw new HttpException(
           'Environment not found',

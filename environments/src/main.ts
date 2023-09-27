@@ -27,7 +27,8 @@ async function bootstrap() {
           ),
         })
       ]
-    })
+    }),
+    cors: true
   });
   
   app.useGlobalPipes(new ValidationPipe({

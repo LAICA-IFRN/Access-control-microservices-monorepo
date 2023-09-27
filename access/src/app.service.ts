@@ -247,51 +247,68 @@ export class AppService {
       throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
     }
 
-    const userImagePath = await this.saveUserPhoto(userId)
-    const captureImagePath = await this.saveCapturePhoto(captureEncodedImage)
+    // const userImagePath = await this.saveUserPhoto(userId)
+    // const captureImagePath = await this.saveCapturePhoto(captureEncodedImage)
 
-    const facialRecognitionVerifyUrl = 'http://localhost:6008/security/verify/user'
-    const facialRecognition = await lastValueFrom(
-      this.httpService.get(facialRecognitionVerifyUrl, {
-        data: {
-          capturedImagePath: captureImagePath,
-          userImagePath: userImagePath
+    // const facialRecognitionVerifyUrl = 'http://localhost:6008/security/verify/user'
+    // const facialRecognition = await lastValueFrom(
+    //   this.httpService.get(facialRecognitionVerifyUrl, {
+    //     data: {
+    //       capturedImagePath: captureImagePath,
+    //       userImagePath: userImagePath
+    //     }
+    //   }).pipe(
+    //     catchError((error) => {
+    //       if (error.response.status === 400) {
+    //         throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+    //       } else {
+    //         throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+    //       }
+    //     })
+    //   )
+    // )
+    // .then((response) => response.data)
+    // .catch((error) => {
+    //   this.errorLogger.error('Falha ao realizar análise facial', error);
+    // })
+
+    // if (facialRecognition.result === false) {
+    //   await lastValueFrom(
+    //     this.httpService.post(this.createAuditLogUrl, {
+    //       topic: 'Acesso',
+    //       type: 'Info',
+    //       message: 'Acesso à ambiente negado: Análise facial não aprovada',
+    //       meta: {
+    //         environmentId,
+    //         userId,
+    //         captureEncodedImage
+    //       }
+    //     })
+    //   ).catch((error) => {
+    //     this.errorLogger.error('Falha ao enviar log', error);
+    //   })
+
+    //   throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+    // }
+
+    // return { access: facialRecognition.result }
+
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: 'Acesso',
+        type: 'Info',
+        message: 'Acesso à ambiente permitido',
+        meta: {
+          environmentId,
+          userId,
+          captureEncodedImage
         }
-      }).pipe(
-        catchError((error) => {
-          if (error.response.status === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          }
-        })
-      )
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao realizar análise facial', error);
+      })
+    ).catch((error) => {
+      this.errorLogger.error('Falha ao enviar log', error);
     })
 
-    if (facialRecognition.result === false) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Acesso',
-          type: 'Info',
-          message: 'Acesso à ambiente negado: Análise facial não aprovada',
-          meta: {
-            environmentId,
-            userId,
-            captureEncodedImage
-          }
-        })
-      ).catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      })
-
-      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
-    }
-
-    return { access: facialRecognition.result }
+    return accessResponse
   }
 
   async saveUserPhoto(userId: string) {

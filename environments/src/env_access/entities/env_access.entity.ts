@@ -6,15 +6,6 @@ type access = { day: number, startTime: string, endTime: string, active: boolean
 export class EnvAccessEntity implements EnvAccess {
   @ApiProperty()
   id: string;
-  
-  @ApiProperty()
-  day: number;
-  
-  @ApiProperty()
-  startTime: Date;
-  
-  @ApiProperty()
-  endTime: Date;
 
   @ApiProperty()
   startPeriod: Date;

@@ -26,13 +26,13 @@ export class EnvAccessController {
     return this.envAccessService.create(createEnvAccessDto);
   }
 
-  // @ApiOperation({ description: 'Endpoint para verificar paridade de horário em outro ambiente para o mesmo dia e horário de um usuário'})
-  // @ApiOkResponse({ type: swagger.FindParityResponseEntity, isArray: true })
-  // @Get('parity')
-  // findParity(@Body() createEnvAccessDto: CreateEnvAccessDto) {
-  //   console.log('acc findParity');
-  //   return this.envAccessService.findParity(createEnvAccessDto);
-  // }
+  @ApiOperation({ description: 'Endpoint para verificar paridade de horário em outro ambiente para o mesmo dia e horário de um usuário'})
+  @ApiOkResponse({ type: swagger.FindParityResponseEntity, isArray: true })
+  @Get('parity')
+  findParity(@Body() createEnvAccessDto: CreateEnvAccessDto) {
+    console.log('acc findParity');
+    return this.envAccessService.findParity(createEnvAccessDto);
+  }
 
   // @ApiOperation({ description: 'Endpoint para listar todos os acessos ao ambiente'})
   // @ApiOkResponse({ type: EnvAccessEntity, isArray: true })

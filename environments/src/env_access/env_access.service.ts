@@ -7,6 +7,7 @@ import { catchError, lastValueFrom } from 'rxjs';
 import { isUUID } from 'class-validator';
 import { EnvAccessStatusDto } from './dto/status-env_access.dto';
 import { AccessDto } from './dto/access.dto';
+import { Access, EnvAccess } from '@prisma/client';
 
 @Injectable()
 export class EnvAccessService {
@@ -160,37 +161,147 @@ export class EnvAccessService {
       );
     }
 
+    let envAccess: EnvAccess;
     try {
-      const envAccess = await this.prisma.envAccess.create({
+      envAccess = await this.prisma.envAccess.create({
         data: {
-          userId,
-          environmentId,
+          userId: createEnvAccessDto.userId,
+          environmentId: createEnvAccessDto.environmentId,
           startPeriod,
           endPeriod,
-          //createdById: ,
         },
       });
-      
-      const accesses = [];
+    } catch (error) {
+      if (error.code === 'P2002') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente: registro já existe',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 400,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-      for (const access of createEnvAccessDto.access) {
-        const startTime = new Date(
-          new Date().toDateString() + ' ' + access.startTime
+        throw new HttpException(
+          'Environment access already exists',
+          HttpStatus.BAD_REQUEST
         );
+      } else if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente: registro não encontrado',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 404,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-        const endTime = new Date(
-          new Date().toDateString() + ' ' + access.endTime
+        throw new HttpException(
+          'Environment not found',
+          HttpStatus.NOT_FOUND
         );
+      } else if (error.code === 'P2003') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente: chave duplicada',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 400,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-        if (startTime >= endTime) {
+        throw new HttpException(
+          'Environment access already exists',
+          HttpStatus.CONFLICT
+        );
+      } else {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente: erro interno, verificar logs de erro do serviço',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 500,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
+
+        this.errorLogger.error('Falha do sistema (500)', error);
+
+        throw new HttpException(
+          "Can't create environment access",
+          HttpStatus.FORBIDDEN
+        );
+      }
+    }
+
+    const accesses: Access[] = [];
+    for (const access of createEnvAccessDto.access) {
+      const startTime = new Date(
+        new Date().toDateString() + ' ' + access.startTime
+      );
+      const endTime = new Date(
+        new Date().toDateString() + ' ' + access.endTime
+      );
+
+      if (startTime >= endTime) {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente: horário de início maior ou igual ao horário de término',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: access.startTime, endTime: access.endTime}],
+              statusCode: 400,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
+        
+        try {
+          await this.prisma.envAccess.delete({
+            where: {
+              id: envAccess.id,
+            },
+          });          
+        } catch (error) {
           await lastValueFrom(
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao verificar horário de acesso na criação de acesso à ambiente: horário de início maior ou igual ao horário de término',
+              message: 'Falha ao deletar acesso à ambiente durante cancelamento de sua criação: erro interno, verificar logs de erro do serviço',
               meta: {
-                target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: access.startTime, endTime: access.endTime}],
-                statusCode: 400,
+                target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+                statusCode: 500,
               },
             })
           )
@@ -198,13 +309,22 @@ export class EnvAccessService {
           .catch((error) => {
             this.errorLogger.error('Falha ao criar log', error);
           });
-      
+
+          this.errorLogger.error('Falha do sistema (500)', error);
+
           throw new HttpException(
-            'startTime must be less than endTime',
-            HttpStatus.BAD_REQUEST
+            "Can't create environment access",
+            HttpStatus.FORBIDDEN
           );
         }
 
+        throw new HttpException(
+          'startTime must be less than endTime',
+          HttpStatus.BAD_REQUEST
+        );
+      }
+
+      try {
         for (const day of access.days) {
           accesses.push(
             await this.prisma.access.create({
@@ -217,226 +337,237 @@ export class EnvAccessService {
             })
           );
         }
-      }
+      } catch (error) {
+        await this.prisma.envAccess.delete({
+          where: {
+            id: envAccess.id,
+          },
+        });
 
+        if (error.code === 'P2002') {
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Acesso de ambiente',
+              type: 'Error',
+              message: 'Falha ao criar acesso à ambiente: registro já existe',
+              meta: {
+                target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+                statusCode: 400,
+              },
+            })
+          )
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+          throw new HttpException(
+            'Environment access already exists',
+            HttpStatus.BAD_REQUEST
+          );
+        } else if (error.code === 'P2025') {
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Acesso de ambiente',
+              type: 'Error',
+              message: 'Falha ao criar acesso à ambiente: registro não encontrado',
+              meta: {
+                target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+                statusCode: 404,
+              },
+            })
+          )
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+          throw new HttpException(
+            'Environment not found',
+            HttpStatus.NOT_FOUND
+          );
+        } else if (error.code === 'P2003') {
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Acesso de ambiente',
+              type: 'Error',
+              message: 'Falha ao criar acesso à ambiente: chave duplicada',
+              meta: {
+                target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+                statusCode: 400,
+              },
+            })
+          )
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+          throw new HttpException(
+            'Environment access already exists',
+            HttpStatus.CONFLICT
+          );
+        } else {
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Acesso de ambiente',
+              type: 'Error',
+              message: 'Falha ao criar acesso à ambiente: erro interno, verificar logs de erro do serviço',
+              meta: {
+                target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+                statusCode: 500,
+              },
+            })
+          )
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error);
+          });
+        }
+      }
+    }
+
+    return {
+      ...envAccess,
+      accesses,
+    };
+  }
+
+  async findParity(createEnvAccessDto: CreateEnvAccessDto) {
+    const startPeriod = new Date(createEnvAccessDto.startPeriod);
+    const endPeriod = new Date(createEnvAccessDto.endPeriod);
+
+    if (startPeriod >= endPeriod) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
-          type: 'Info',
-          message: 'Acesso à ambiente criado com sucesso',
+          type: 'Error',
+          message: 'Falha ao verificar período de acesso na criação de acesso à ambiente: período de início maior ou igual ao período de término',
           meta: {
-            target: [
-              createEnvAccessDto.userId, 
-              createEnvAccessDto.environmentId, 
-              {
-                startPeriod: createEnvAccessDto.startPeriod, 
-                endPeriod: createEnvAccessDto.endPeriod
-              }
-            ],
-            statusCode: 201,
+            target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startPeriod: createEnvAccessDto.startPeriod, endPeriod: createEnvAccessDto.endPeriod}],
+            statusCode: 400,
           },
         })
       )
+      .then((response) => response.data)
       .catch((error) => {
         this.errorLogger.error('Falha ao criar log', error);
       });
-      console.log(accesses[0]);
-      
-      return {
-        ...envAccess,
-        accesses,
-      };
-    } catch (error) {
-      console.log(error);
-      
-      if (error.code === 'P2002') {
+
+      throw new HttpException(
+        'startPeriod must be less than endPeriod',
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const parity = []
+    for (const access of createEnvAccessDto.access) {
+      const startTime = new Date(
+        new Date().toDateString() + ' ' + access.startTime
+      );
+
+      const endTime = new Date(
+        new Date().toDateString() + ' ' + access.endTime
+      );
+
+      if (startTime >= endTime) {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: conflito com registro existente',
+            message: 'Falha ao buscar paridade de acesso à ambiente: horário de início maior ou igual ao horário de término',
             meta: {
-              target: [
-                createEnvAccessDto.userId, 
-                createEnvAccessDto.environmentId, 
-                {
-                  startPeriod: createEnvAccessDto.startPeriod, 
-                  endPeriod: createEnvAccessDto.endPeriod
-                }
-              ],
-              statusCode: 409,
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: access.startTime, endTime: access.endTime}],
+              statusCode: 400,
             },
           })
         )
+        .then((response) => response.data)
         .catch((error) => {
           this.errorLogger.error('Falha ao criar log', error);
         });
 
         throw new HttpException(
-          `EnvAccess already exists: ${error.meta.target}`,
-          HttpStatus.CONFLICT
-        );
-      } else if (error.code === 'P2003') {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Acesso de ambiente',
-            type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: violação de chave estrangeira',
-            meta: {
-              target: [
-                createEnvAccessDto.userId,
-                createEnvAccessDto.environmentId,
-              ],
-              statusCode: 409,
-            },
-          })
-        )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-
-        throw new HttpException(
-          `Foreign key constraint failed on the field: ${error.meta.field_name}`,
-          HttpStatus.CONFLICT
-        );
-      } else if (error.code === 'P2025') {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Acesso de ambiente',
-            type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: ambiente não encontrado',
-            meta: {
-              target: [
-                createEnvAccessDto.userId,
-                createEnvAccessDto.environmentId,
-              ],
-              statusCode: 404,
-            },
-          })
-        )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-
-        throw new HttpException(
-          'Environment not found',
-          HttpStatus.NOT_FOUND
-        );
-      } else {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Acesso de ambiente',
-            type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: erro interno',
-            meta: {
-              target: [
-                createEnvAccessDto.userId,
-                createEnvAccessDto.environmentId,
-              ],
-              statusCode: 500,
-            },
-          })
-        )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-
-        this.errorLogger.error('Falha do sistema na criação de acesso à ambiente', error);
-
-        throw new HttpException(
-          "Can't create environment access",
-          HttpStatus.FORBIDDEN
+          'startTime must be less than endTime',
+          HttpStatus.BAD_REQUEST
         );
       }
+
+      // buscar conflito de horário e período
+      const envAccesses = await this.prisma.envAccess.findMany({
+        where: {
+          userId: createEnvAccessDto.userId,
+          active: true,
+          startPeriod: {
+            lte: startPeriod,
+          },
+          endPeriod: {
+            gte: endPeriod,
+          },
+          NOT: {
+            environmentId: createEnvAccessDto.environmentId,
+          },
+          Access: {
+            some: {
+              day: {
+                in: access.days,
+              },
+              OR: [
+                {
+                  startTime: {
+                    lte: startTime,
+                  },
+                  endTime: {
+                    gte: startTime,
+                  },
+                },
+                {
+                  startTime: {
+                    lte: endTime,
+                  },
+                  endTime: {
+                    gte: endTime,
+                  },
+                },
+                {
+                  startTime: {
+                    gte: startTime,
+                  },
+                  endTime: {
+                    lte: endTime,
+                  },
+                },
+              ],
+            },
+          },
+        },
+        select: {
+          startPeriod: true,
+          endPeriod: true,
+          Access: {
+            select: {
+              day: true,
+              startTime: true,
+              endTime: true,
+            }
+          }
+        }
+      });
+
+      parity.push(envAccesses);
     }
+
+    return parity;
   }
 
-  // async findParity(createEnvAccessDto: CreateEnvAccessDto) {
-  //   const startTime = new Date(
-  //     new Date().toDateString() + ' ' + createEnvAccessDto.startTime
-  //   );
-
-  //   const endTime = new Date(
-  //     new Date().toDateString() + ' ' + createEnvAccessDto.endTime
-  //   );
-
-  //   if (startTime >= endTime) {
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao buscar paridade de acesso à ambiente: horário de início maior ou igual ao horário de término',
-  //         meta: {
-  //           target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: createEnvAccessDto.startTime, endTime: createEnvAccessDto.endTime}],
-  //           statusCode: 400,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error);
-  //     });
-
-  //     throw new HttpException(
-  //       'startTime must be less than endTime',
-  //       HttpStatus.BAD_REQUEST
-  //     );
-  //   }
-
-  //   const envAccesses = await this.prisma.envAccess.findMany({
-  //     where: {
-  //       userId: createEnvAccessDto.userId,
-  //       active: true,
-  //       day: {
-  //         in: createEnvAccessDto.days
-  //       },
-  //       OR: [
-  //         {
-  //           startTime: {
-  //             lte: startTime,
-  //           },
-  //           endTime: {
-  //             gte: startTime,
-  //           },
-  //         },
-  //         {
-  //           startTime: {
-  //             lte: endTime,
-  //           },
-  //           endTime: {
-  //             gte: endTime,
-  //           },
-  //         },
-  //         {
-  //           startTime: {
-  //             gte: startTime,
-  //           },
-  //           endTime: {
-  //             lte: endTime,
-  //           },
-  //         },
-  //       ],
-  //       NOT: {
-  //         environmentId: createEnvAccessDto.environmentId,
-  //       }
-  //     },
-  //     select: {
-  //       day: true,
-  //       startTime: true,
-  //       endTime: true,
-  //     }
-  //   });
-
-  //   return envAccesses;
-  // }
-
-  // async findAll() {
-  //   return await this.prisma.envAccess.findMany({
-  //     where: {
-  //       active: true,
-  //     },
-  //   });
-  // }
+  async findAll(skip?: number, take?: number) {
+    return await this.prisma.envAccess.findMany({
+      where: {
+        active: true,
+      },
+      skip,
+      take,
+    });
+  }
 
   async hasEnvManagerOnEnv(userId: string, environmentId: string) {
     if (!isUUID(userId) || !isUUID(environmentId)) {
@@ -475,412 +606,413 @@ export class EnvAccessService {
     return hasEnvManager
   }
 
-  // async verifyAccessByUser(userId: string, environmentId: string) {
-  //   if (!isUUID(userId) || !isUUID(environmentId)) {
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao verificar acesso de usuário em ambiente: id inválido',
-  //         meta: {
-  //           target: [userId, environmentId],
-  //           statusCode: 400,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error);
-  //     });
+  async verifyAccessByUser(userId: string, environmentId: string) {
+    if (!isUUID(userId) || !isUUID(environmentId)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao verificar acesso de usuário em ambiente: id inválido',
+          meta: {
+            target: [userId, environmentId],
+            statusCode: 400,
+          },
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
 
-  //     throw new HttpException(
-  //       "Invalid id entry",
-  //       HttpStatus.BAD_REQUEST
-  //     );
-  //   }
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
-  //   const envManager = await this.prisma.envManager.findFirst({
-  //     where: { 
-  //       userId, 
-  //       environmentId
-  //     }
-  //   });
+    const envManager = await this.prisma.envManager.findFirst({
+      where: { 
+        userId, 
+        environmentId
+      }
+    });
 
-  //   const hasEnvManager = envManager ? true : false;
-  //   const active = envManager?.active;
+    const hasEnvManager = envManager ? true : false;
+    const active = envManager?.active;
     
-  //   return {
-  //     hasEnvManager,
-  //     active
-  //   }
-  // }
+    return {
+      hasEnvManager,
+      active
+    }
+  }
 
-  // async findAccessByUser(userId: string, environmentId: string) {
-  //   if (!isUUID(userId) || !isUUID(environmentId)) {
-  //     console.log('bbb');
-      
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao buscar acesso de usuário em ambiente: id inválido',
-  //         meta: {
-  //           userId,
-  //           environmentId
-  //         },
-  //       }).pipe(
-  //         catchError((error) => {
-  //           console.log(error);
-  //           throw new HttpException(
-  //             "Invalid id entry",
-  //             HttpStatus.BAD_REQUEST
-  //           );
-  //         })
-  //       )
-  //     )
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao enviar log', error);
-  //     });
+  async findAccessByUser(userId: string, environmentId: string) {
+    if (!isUUID(userId) || !isUUID(environmentId)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao buscar acesso de usuário em ambiente: id inválido',
+          meta: {
+            userId,
+            environmentId
+          },
+        }).pipe(
+          catchError((error) => {
+            console.log(error);
+            throw new HttpException(
+              "Invalid id entry",
+              HttpStatus.BAD_REQUEST
+            );
+          })
+        )
+      )
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
 
-  //     throw new HttpException(
-  //       "Invalid id entry",
-  //       HttpStatus.BAD_REQUEST
-  //     );
-  //   }
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
     
-  //   const now = new Date();
-  //   const access = await this.prisma.envAccess.findFirst({
-  //     where: {
-  //       userId,
-  //       environmentId,
-  //       active: true,
-  //       day: now.getDay(),
-  //       startTime: {
-  //         lte: now,
-  //       },
-  //       endTime: {
-  //         gte: now,
-  //       },
-  //       startPeriod: {
-  //         lte: now,
-  //       },
-  //       endPeriod: {
-  //         gte: now,
-  //       },
-  //     },
-  //   });
+    const now = new Date();
+    const access = await this.prisma.envAccess.findFirst({
+      where: {
+        userId,
+        environmentId,
+        active: true,
+        startPeriod: {
+          lte: now,
+        },
+        endPeriod: {
+          gte: now,
+        },
+        Access: {
+          some: {
+            day: now.getDay(),
+            startTime: {
+              lte: now,
+            },
+            endTime: {
+              gte: now,
+            },
+          }
+        }
+      },
+    });
 
-  //   return {
-  //     access: access ? true : false,
-  //   };
-  // }
+    return {
+      access: access ? true : false,
+    };
+  }
 
-  // async findOne(id: string) {
-  //   if (!isUUID(id)) {
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao buscar acesso à ambiente: id inválido',
-  //         meta: {
-  //           target: [id],
-  //           statusCode: 400,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error);
-  //     });
+  async findOne(id: string) {
+    if (!isUUID(id)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao buscar acesso à ambiente: id inválido',
+          meta: {
+            target: [id],
+            statusCode: 400,
+          },
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
       
-  //     throw new HttpException(
-  //       "Invalid id entry",
-  //       HttpStatus.BAD_REQUEST
-  //     );
-  //   }
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
-  //   try {
-  //     return await this.prisma.envAccess.findFirstOrThrow({
-  //       where: {
-  //         id,
-  //         active: true,
-  //       },
-  //     });
-  //   } catch (error) {
-  //     if (error.code === 'P2025') {
-  //       await lastValueFrom(
-  //         this.httpService.post(this.createAuditLogUrl, {
-  //           topic: 'Acesso de ambiente',
-  //           type: 'Error',
-  //           message: 'Falha ao buscar acesso à ambiente: registro não encontrado',
-  //           meta: {
-  //             target: [id],
-  //             statusCode: 404,
-  //           },
-  //         })
-  //       )
-  //       .then((response) => response.data)
-  //       .catch((error) => {
-  //         this.errorLogger.error('Falha ao criar log', error);
-  //       });
+    try {
+      return await this.prisma.envAccess.findFirstOrThrow({
+        where: {
+          id,
+          active: true,
+        }
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao buscar acesso à ambiente: registro não encontrado',
+            meta: {
+              target: [id],
+              statusCode: 404,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-  //       throw new HttpException(
-  //         'Environment access not found',
-  //         HttpStatus.NOT_FOUND
-  //       );
-  //     } else {
-  //       await lastValueFrom(
-  //         this.httpService.post(this.createAuditLogUrl, {
-  //           topic: 'Acesso de ambiente',
-  //           type: 'Error',
-  //           message: 'Falha ao buscar acesso à ambiente: erro interno, verificar logs de erro do serviço',
-  //           meta: {
-  //             target: [id],
-  //             statusCode: 500,
-  //           },
-  //         })
-  //       )
-  //       .then((response) => response.data)
-  //       .catch((error) => {
-  //         this.errorLogger.error('Falha ao criar log', error);
-  //       });
+        throw new HttpException(
+          'Environment access not found',
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao buscar acesso à ambiente: erro interno, verificar logs de erro do serviço',
+            meta: {
+              target: [id],
+              statusCode: 500,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-  //       this.errorLogger.error('Falha ao buscar acesso à ambiente', error);
+        this.errorLogger.error('Falha ao buscar acesso à ambiente', error);
 
-  //       throw new HttpException(
-  //         "Can't find environment access",
-  //         HttpStatus.FORBIDDEN
-  //       );
-  //     }
-  //   }
-  // }
+        throw new HttpException(
+          "Can't find environment access",
+          HttpStatus.FORBIDDEN
+        );
+      }
+    }
+  }
 
-  // async findAllByFrequenter(userId: string) {
-  //   if (!isUUID(userId)) {
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao buscar os acessos à ambiente de frequentador: id inválido',
-  //         meta: {
-  //           target: [userId],
-  //           statusCode: 400,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error);
-  //     });
+  async findAllByFrequenter(userId: string) {
+    if (!isUUID(userId)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao buscar os acessos à ambiente de frequentador: id inválido',
+          meta: {
+            target: [userId],
+            statusCode: 400,
+          },
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
 
-  //     throw new HttpException(
-  //       "Invalid id entry",
-  //       HttpStatus.BAD_REQUEST
-  //     );
-  //   }
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
-  //   return await this.prisma.envAccess.findMany({
-  //     where: {
-  //       userId,
-  //       active: true,
-  //     },
-  //   });
-  // }
+    return await this.prisma.envAccess.findMany({
+      where: {
+        userId,
+        active: true,
+      },
+    });
+  }
 
-  // async findAllInactives() {
-  //   return await this.prisma.envAccess.findMany({
-  //     where: {
-  //       active: false,
-  //     },
-  //   });
-  // }
+  async findAllInactives() {
+    return await this.prisma.envAccess.findMany({
+      where: {
+        active: false,
+      },
+    });
+  }
 
-  // async findAllByEnvironmentId(environmentId: string) {
-  //   if (!isUUID(environmentId)) {
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao buscar os acessos à ambiente por ambiente: id inválido',
-  //         meta: {
-  //           target: [environmentId],
-  //           statusCode: 400,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error);
-  //     });
+  async findAllByEnvironmentId(environmentId: string) {
+    if (!isUUID(environmentId)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao buscar os acessos à ambiente por ambiente: id inválido',
+          meta: {
+            target: [environmentId],
+            statusCode: 400,
+          },
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
 
-  //     throw new HttpException(
-  //       "Invalid id entry",
-  //       HttpStatus.BAD_REQUEST
-  //     );
-  //   }
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
-  //   try {
-  //     return await this.prisma.envAccess.findMany({
-  //       where: {
-  //         environmentId,
-  //         active: true,
-  //       },
-  //     });
-  //   } catch (error) {
-  //     if (error.code === 'P2025') {
-  //       await lastValueFrom(
-  //         this.httpService.post(this.createAuditLogUrl, {
-  //           topic: 'Acesso de ambiente',
-  //           type: 'Error',
-  //           message: 'Falha ao buscar os acessos à ambiente por ambiente: registro não encontrado',
-  //           meta: {
-  //             target: [environmentId],
-  //             statusCode: 404,
-  //           },
-  //         })
-  //       )
-  //       .then((response) => response.data)
-  //       .catch((error) => {
-  //         this.errorLogger.error('Falha ao criar log', error);
-  //       });
+    try {
+      return await this.prisma.envAccess.findMany({
+        where: {
+          environmentId,
+          active: true,
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao buscar os acessos à ambiente por ambiente: registro não encontrado',
+            meta: {
+              target: [environmentId],
+              statusCode: 404,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-  //       throw new HttpException(
-  //         'Environment not found',
-  //         HttpStatus.NOT_FOUND
-  //       );
-  //     }
-  //   }
+        throw new HttpException(
+          'Environment not found',
+          HttpStatus.NOT_FOUND
+        );
+      }
+    }
+  }
 
-  // }
+  async updateStatus(id: string, envAccessStatusDto: EnvAccessStatusDto) {
+    if (!isUUID(id)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao atualizar status de acesso à ambiente: id inválido',
+          meta: {
+            target: [id],
+            statusCode: 400,
+          },
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
 
-  // async updateStatus(id: string, envAccessStatusDto: EnvAccessStatusDto) {
-  //   if (!isUUID(id)) {
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao atualizar status de acesso à ambiente: id inválido',
-  //         meta: {
-  //           target: [id],
-  //           statusCode: 400,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error);
-  //     });
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
 
-  //     throw new HttpException(
-  //       "Invalid id entry",
-  //       HttpStatus.BAD_REQUEST
-  //     );
-  //   }
+    const envAccess = await this.prisma.envAccess.findUnique({
+      where: {
+        id,
+      },
+    });
 
-  //   const envAccess = await this.prisma.envAccess.findUnique({
-  //     where: {
-  //       id,
-  //     },
-  //   });
+    if (!envAccess) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Error',
+          message: 'Falha ao atualizar status de acesso à ambiente: registro não encontrado',
+          meta: {
+            target: [id],
+            statusCode: 400,
+          },
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
 
-  //   if (!envAccess) {
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Error',
-  //         message: 'Falha ao atualizar status de acesso à ambiente: registro não encontrado',
-  //         meta: {
-  //           target: [id],
-  //           statusCode: 400,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error);
-  //     });
+      throw new HttpException(
+        "Environment access not found",
+        HttpStatus.NOT_FOUND
+      );
+    }
 
-  //     throw new HttpException(
-  //       "Environment access not found",
-  //       HttpStatus.NOT_FOUND
-  //     );
-  //   }
+    try {
+      const envAccess = await this.prisma.envAccess.update({
+        where: {
+          id,
+        },
+        data: {
+          active: envAccessStatusDto.status,
+        },
+      });
 
-  //   try {
-  //     const envAccess = await this.prisma.envAccess.update({
-  //       where: {
-  //         id,
-  //       },
-  //       data: {
-  //         active: envAccessStatusDto.status,
-  //       },
-  //     });
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Info',
+          message: 'Status de acesso à ambiente atualizado com sucesso',
+          meta: {
+            target: [id],
+            statusCode: 200,
+          },
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error)
+      });
 
-  //     await lastValueFrom(
-  //       this.httpService.post(this.createAuditLogUrl, {
-  //         topic: 'Acesso de ambiente',
-  //         type: 'Info',
-  //         message: 'Status de acesso à ambiente atualizado com sucesso',
-  //         meta: {
-  //           target: [id],
-  //           statusCode: 200,
-  //         },
-  //       })
-  //     )
-  //     .then((response) => response.data)
-  //     .catch((error) => {
-  //       this.errorLogger.error('Falha ao criar log', error)
-  //     });
+      return envAccess;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao atualizar status de acesso à ambiente: registro não encontrado',
+            meta: {
+              target: [id],
+              statusCode: 400,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-  //     return envAccess;
-  //   } catch (error) {
-  //     if (error.code === 'P2025') {
-  //       await lastValueFrom(
-  //         this.httpService.post(this.createAuditLogUrl, {
-  //           topic: 'Acesso de ambiente',
-  //           type: 'Error',
-  //           message: 'Falha ao atualizar status de acesso à ambiente: registro não encontrado',
-  //           meta: {
-  //             target: [id],
-  //             statusCode: 400,
-  //           },
-  //         })
-  //       )
-  //       .then((response) => response.data)
-  //       .catch((error) => {
-  //         this.errorLogger.error('Falha ao criar log', error);
-  //       });
+        throw new HttpException(
+          'Environment not found',
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao atualizar status de acesso à ambiente: erro interno, verificar os logs de erro do serviço',
+            meta: {
+              target: [id],
+              statusCode: 500,
+            },
+          })
+        )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
-  //       throw new HttpException(
-  //         'Environment not found',
-  //         HttpStatus.NOT_FOUND
-  //       );
-  //     } else {
-  //       await lastValueFrom(
-  //         this.httpService.post(this.createAuditLogUrl, {
-  //           topic: 'Acesso de ambiente',
-  //           type: 'Error',
-  //           message: 'Falha ao atualizar status de acesso à ambiente: erro interno, verificar os logs de erro do serviço',
-  //           meta: {
-  //             target: [id],
-  //             statusCode: 500,
-  //           },
-  //         })
-  //       )
-  //       .then((response) => response.data)
-  //       .catch((error) => {
-  //         this.errorLogger.error('Falha ao criar log', error);
-  //       });
+        this.errorLogger.error('Falha do sistema (500)', error);
 
-  //       this.errorLogger.error('Falha do sistema (500)', error);
-
-  //       throw new HttpException(
-  //         "Can't update environment access",
-  //         HttpStatus.FORBIDDEN
-  //       );
-  //     }
-  //   }
-  // }
+        throw new HttpException(
+          "Can't update environment access",
+          HttpStatus.FORBIDDEN
+        );
+      }
+    }
+  }
 
   // async update(id: string, updateEnvAccessDto: UpdateEnvAccessDto) {
   //   if (!isUUID(id)) {

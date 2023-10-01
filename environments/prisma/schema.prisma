@@ -44,7 +44,7 @@ model Access {
   EnvAccess    EnvAccess?  @relation(fields: [envAccessId], references: [id], onDelete: Cascade)
   createdAt    DateTime    @default(now())
   updatedAt    DateTime    @updatedAt
-  EnvManager   EnvManager? @relation(fields: [envManagerId], references: [id])
+  EnvManager   EnvManager? @relation(fields: [envManagerId], references: [id]) // onDelete: Cascade
   envManagerId String?
   active       Boolean     @default(true)
 

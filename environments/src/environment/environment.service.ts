@@ -29,7 +29,11 @@ export class EnvironmentService {
         },
       }).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
+          console.log(error);
+          if (error.response.status === 'ECONNREFUSED') {
+            this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+          } else if (error.response.data.statusCode === 400) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
                 topic: "Ambiente",
@@ -100,7 +104,7 @@ export class EnvironmentService {
         data: {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
-          adminId: createEnvironmentDto.adminId
+          createdBy: createEnvironmentDto.adminId
         },
       })
 
@@ -110,7 +114,7 @@ export class EnvironmentService {
           type: "Info",
           message: 'Ambiente criado: ' + environment.name || '',
           meta: {
-            adminId: environment.adminId,
+            createdBy: environment.createdBy,
             environmentId: environment.id
           }
         })
@@ -350,7 +354,7 @@ export class EnvironmentService {
           type: "Info",
           message: 'Ambiente atualizado',
           meta: {
-            adminId: environment.adminId,
+            createdBy: environment.createdBy,
             environmentId: environment.id
           }
         })
@@ -470,7 +474,7 @@ export class EnvironmentService {
           type: "Info", 
           message: 'Status de ambiente atualizado: ' + environment.name || '',
           meta: {
-            adminId: environment.adminId,
+            createdBy: environment.createdBy,
             environmentId: environment.id,
             status: environment.active
           }
@@ -563,7 +567,7 @@ export class EnvironmentService {
           type: "Info",
           message: 'Ambiente removido: ' + environment.name || '',
           meta: {
-            adminId: environment.adminId,
+            createdBy: environment.createdBy,
             environmentId: environment.id
           }
         })
@@ -587,7 +591,6 @@ export class EnvironmentService {
             }
           })
         )
-        .then((response) => response.data)
         .catch((error) => {
           this.errorLogger.error('Falha ao criar log', error);
         });

@@ -2,23 +2,17 @@ import { IsIn, IsOptional } from 'class-validator';
 import { IsTimeFormat } from '../decorators/is-time-format.decorator';
 import { IsDateFormat } from '../decorators/is-date-format.decorator';
 import { ApiProperty } from '@nestjs/swagger';
+import { AccessDto } from './access.dto';
 
 export class UpdateEnvAccessDto {
   
   @IsOptional()
-  @IsIn([0, 1, 2, 3, 4, 5, 6])
   @ApiProperty()
-  day: number;
-  
+  accessesToRemove: AccessDto[];
+
   @IsOptional()
-  @IsTimeFormat()
   @ApiProperty()
-  startTime: string;
-  
-  @IsOptional()
-  @IsTimeFormat()
-  @ApiProperty()
-  endTime: string;
+  accessesToAdd: AccessDto[];
 
   @IsOptional()
   @IsDateFormat()

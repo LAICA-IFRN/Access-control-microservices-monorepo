@@ -1,5 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { EnvAccess } from "@prisma/client";
+import { Access, EnvAccess } from "@prisma/client";
+
+type access = { day: number, startTime: string, endTime: string, active: boolean };
 
 export class EnvAccessEntity implements EnvAccess {
   @ApiProperty()
@@ -28,6 +30,9 @@ export class EnvAccessEntity implements EnvAccess {
   
   @ApiProperty({ default: true })
   active: boolean;
+
+  @ApiProperty()
+  accesses: Access[];
   
   @ApiProperty({ default: new Date()})
   createdAt: Date;

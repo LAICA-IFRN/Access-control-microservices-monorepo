@@ -16,7 +16,7 @@ export class EnvironmentEntity implements Environment {
   active: boolean;
   
   @ApiProperty()
-  adminId: string;
+  createdBy: string;
   
   @ApiProperty({ default: new Date() })
   createdAt: Date;

@@ -12,7 +12,7 @@ model Environment {
   name        String       @unique
   description String?
   active      Boolean      @default(true)
-  adminId     String
+  createdBy   String
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
   EnvAccess   EnvAccess[]
@@ -21,29 +21,46 @@ model Environment {
 
 model EnvAccess {
   id            String      @id @default(uuid())
-  day           Int
-  startTime     DateTime
-  endTime       DateTime
   startPeriod   DateTime    @default(now())
   endPeriod     DateTime
   active        Boolean     @default(true)
   userId        String
+  // createdBy     String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   environmentId String
   Environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  Access        Access[]
 
-  @@unique([day, startTime, endTime, userId, environmentId, startPeriod, endPeriod])
+  @@unique([userId, environmentId])
+}
+
+model Access {
+  id           String      @id @default(uuid())
+  day          Int
+  startTime    DateTime
+  endTime      DateTime
+  envAccessId  String?
+  EnvAccess    EnvAccess?  @relation(fields: [envAccessId], references: [id], onDelete: Cascade)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+  EnvManager   EnvManager? @relation(fields: [envManagerId], references: [id]) // onDelete: Cascade
+  envManagerId String?
+  active       Boolean     @default(true)
+
+  @@unique([day, startTime, endTime, envAccessId])
 }
 
 model EnvManager {
   id            String      @id @default(uuid())
   active        Boolean     @default(true)
   userId        String
+  // createdBy     String
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   environmentId String
   Environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
+  Access        Access[]
 
   @@unique([userId, environmentId])
 }

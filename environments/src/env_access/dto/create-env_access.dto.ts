@@ -1,23 +1,9 @@
 import { ArrayNotEmpty, IsArray, IsIn, IsUUID } from "class-validator";
-import { IsTimeFormat } from "../decorators/is-time-format.decorator";
 import { IsDateFormat } from "../decorators/is-date-format.decorator";
 import { ApiProperty } from "@nestjs/swagger";
+import { AccessDto } from "./access.dto";
 
 export class CreateEnvAccessDto {
-  @ApiProperty()
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsIn([0, 1, 2, 3, 4, 5, 6], { each: true })
-  days: number[];
-  
-  @ApiProperty()
-  @IsTimeFormat()
-  startTime: string;
-
-  @ApiProperty()
-  @IsTimeFormat()
-  endTime: string;
-
   @ApiProperty()
   @IsDateFormat()
   startPeriod: string;
@@ -33,5 +19,14 @@ export class CreateEnvAccessDto {
   @ApiProperty()
   @IsUUID()
   environmentId: string;
+
+  @ApiProperty()
+  @IsUUID()
+  createdBy: string;
+
+  @ApiProperty()
+  @IsArray()
+  @ArrayNotEmpty()
+  access: AccessDto[];
 }
 

@@ -188,7 +188,7 @@ createDocumentTypes()
 
 setTimeout(() => {
   console.log('Creating document types...');
-}, 2000);
+}, 4000);
 
 createRoles()
   .catch((error) => {
@@ -199,7 +199,7 @@ createRoles()
 
 setTimeout(() => {
   console.log('Creating roles...');
-}, 2000);
+}, 4000);
 
 createUsers()
   .catch((error) => {
@@ -210,7 +210,7 @@ createUsers()
 
 setTimeout(() => {
   console.log('Creating users...');
-}, 2000);
+}, 4000);
 
 createAdmins()
   .catch((error) => {
@@ -221,4 +221,4 @@ createAdmins()
 
 setTimeout(() => {
   console.log('Creating admins...');
-}, 2000);
+}, 4000);

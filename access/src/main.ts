@@ -35,6 +35,8 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true
   }));
+
+  app.setGlobalPrefix('service/access');
   
   const config = new DocumentBuilder()
     .setTitle('Serviço de Acesso')
@@ -44,7 +46,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  
+  app.setGlobalPrefix('');
+
   await app.listen(6006);
 }
 bootstrap();

@@ -36,6 +36,7 @@ async function bootstrap() {
     forbidNonWhitelisted: true
   }));
 
+  app.setGlobalPrefix('service/users')
   const config = new DocumentBuilder()
     .setTitle('Serviço de Usuários')
     .setDescription('Descrição do serviço de usuários que faz parte do dominio de usuários do sistema de controle de acesso do Laica')
@@ -44,7 +45,8 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-
+  app.setGlobalPrefix('');
+  
   await app.listen(6001);
 }
 bootstrap();

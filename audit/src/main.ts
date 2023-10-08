@@ -36,6 +36,8 @@ async function bootstrap() {
     forbidNonWhitelisted: true
   }));
 
+  app.setGlobalPrefix('service/audit');
+
   const config = new DocumentBuilder()
     .setTitle('Serviço de Auditoria')
     .setDescription('Descrição do serviço de auditoria que faz parte do dominio de auditoria do sistema de controle de acesso do Laica')
@@ -44,6 +46,7 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
+  app.setGlobalPrefix('');
 
   await app.listen(6004);
 }

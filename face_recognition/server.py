@@ -4,7 +4,7 @@ import os
 
 app = Flask(__name__)
 
-@app.route("/security/verify/user", methods=['GET'])
+@app.route("/verify/user", methods=['GET'])
 def endpoint():
   print(request.json)
   captured_image_path = request.json.get('capturedImagePath', None)

@@ -36,8 +36,6 @@ async function bootstrap() {
     forbidNonWhitelisted: true
   }));
 
-  app.setGlobalPrefix('environments')
-
   const config = new DocumentBuilder()
     .setTitle('Serviço de Ambientes')
     .setDescription('Descrição do serviço de ambientes que faz parte do dominio de ambientes do sistema de controle de acesso do Laica')
@@ -45,7 +43,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('environments/api', app, document);
+  SwaggerModule.setup('api', app, document);
 
   await app.listen(6002);
 }

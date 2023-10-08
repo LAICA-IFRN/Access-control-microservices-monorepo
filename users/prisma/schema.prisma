@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite" // "postgresql"
+  url      = "file:./users.db" //env("DATABASE_URL")
 }
 
 model Role {
@@ -54,9 +54,8 @@ model Document {
 }
 
 model Photo {
-  id            String @id @default(uuid())
-  encoded       String
-  User          User?  @relation(fields: [userId], references: [id])
-  userId        String @unique
+  id      String @id @default(uuid())
+  encoded String
+  User    User?  @relation(fields: [userId], references: [id])
+  userId  String @unique
 }
-

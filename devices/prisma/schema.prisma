@@ -3,8 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider = "sqlite" // "postgresql"
+  url      = "file:./users.db" //env("DATABASE_URL")
 }
 
 model TagRFID {

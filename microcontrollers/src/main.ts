@@ -35,9 +35,6 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true
   }));
-
-  app.setGlobalPrefix('microcontrollers')
-
   const config = new DocumentBuilder()
   .setTitle('Serviço de Microcontroladores')
   .setDescription('Descrição do serviço de microcontroladores que faz parte do dominio de microcontroladores do sistema de controle de acesso do Laica')
@@ -45,7 +42,7 @@ async function bootstrap() {
   .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('microcontrollers/api', app, document);
+  SwaggerModule.setup('api', app, document);
 
   await app.listen(6003);
 }

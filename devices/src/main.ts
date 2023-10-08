@@ -36,8 +36,6 @@ async function bootstrap() {
     forbidNonWhitelisted: true
   }));
 
-  app.setGlobalPrefix('devices')
-
   const config = new DocumentBuilder()
     .setTitle('Serviço de Dispositivos')
     .setDescription('Descrição do serviço de dispositivos que faz parte do dominio de dispositivos do sistema de controle de acesso do Laica')
@@ -45,7 +43,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('devices/api', app, document);
+  SwaggerModule.setup('api', app, document);
 
   await app.listen(6005);
 }

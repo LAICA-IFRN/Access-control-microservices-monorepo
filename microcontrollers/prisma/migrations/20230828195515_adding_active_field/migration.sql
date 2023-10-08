@@ -1,5 +1,0 @@
--- AlterTable
-ALTER TABLE "Esp32" ADD COLUMN     "active" BOOLEAN NOT NULL DEFAULT true;
-
--- AlterTable
-ALTER TABLE "Esp8266" ADD COLUMN     "active" BOOLEAN NOT NULL DEFAULT true;

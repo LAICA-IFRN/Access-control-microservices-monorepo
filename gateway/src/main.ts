@@ -3,9 +3,7 @@ import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, cors: true);
-
-  app.setGlobalPrefix('gateway')
+  const app = await NestFactory.create(AppModule, { cors: true });
 
   const config = new DocumentBuilder()
     .setTitle('API Gateway')
@@ -16,6 +14,6 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('gateway/api', app, document);
 
-  await app.listen(8000);
+  await app.listen(6000);
 }
 bootstrap();

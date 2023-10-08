@@ -1,0 +1,9 @@
+-- CreateTable
+CREATE TABLE "Log" (
+    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "type" TEXT NOT NULL,
+    "topic" TEXT NOT NULL,
+    "message" TEXT NOT NULL,
+    "meta" TEXT
+);

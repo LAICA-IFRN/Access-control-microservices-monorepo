@@ -8,7 +8,7 @@ import { isUUID } from 'class-validator';
 
 @Injectable()
 export class Esp8266Service {
-  private readonly createAuditLogUrl = 'http://localhost:6004/audit/logs'
+  private readonly createAuditLogUrl = 'http://localhost:6004/service/audit/logs'
   private readonly errorLogger = new Logger()
 
   constructor (

@@ -7,8 +7,8 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AppService {
-  private readonly createAuditLogUrl = 'http://localhost:6004/audit/logs'
-  private readonly getEsp32Url = 'http://localhost:6003/microcontrollers/esp32/mac'
+  private readonly createAuditLogUrl = 'http://localhost:6004/service/audit/logs'
+  private readonly getEsp32Url = 'http://localhost:6003/service/microcontrollers/esp32/mac'
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -91,7 +91,7 @@ export class AppService {
   }
 
   async proccessAccessWhenRFID(environmentId: string, rfid: string, captureEncodedImage: string) {
-    const getRfidUrl = `http://localhost:6005/devices/rfid/tag?tag=${rfid}`
+    const getRfidUrl = `http://localhost:6005/service/devices/rfid/tag?tag=${rfid}`
     const response = await lastValueFrom(
       this.httpService.get(getRfidUrl).pipe(
         catchError((error) => {
@@ -118,7 +118,7 @@ export class AppService {
   async proccessAccessWhenUserAndPassword(
     environmentId: string, user: string, password: string, captureEncodedImage: string
   ) {
-    const getUserUrl = 'http://localhost:6001/users/access'
+    const getUserUrl = 'http://localhost:6001/service/users/access'
     const response = await lastValueFrom(
       this.httpService.get(getUserUrl, {
         data: {
@@ -170,7 +170,7 @@ export class AppService {
   }
 
   async validateUserAccess(environmentId: string, userId: string, captureEncodedImage: string) {
-    const verifyUserRoleUrl = 'http://localhost:6001/users/roles/verify'
+    const verifyUserRoleUrl = 'http://localhost:6001/service/users/roles/verify'
     const isFrequenter = await lastValueFrom(
       this.httpService.get(verifyUserRoleUrl, {
         data: {
@@ -210,7 +210,7 @@ export class AppService {
 
     let accessResponse = { access: false }
     if (isFrequenter) {
-      const getUserAccessUrl = 'http://localhost:6002/environments/env-access/access'
+      const getUserAccessUrl = 'http://localhost:6002/service/environments/env-access/access'
       accessResponse = await lastValueFrom(
         this.httpService.get(getUserAccessUrl, {
           data: {
@@ -250,7 +250,7 @@ export class AppService {
     const userImagePath = await this.saveUserPhoto(userId)
     const captureImagePath = await this.saveCapturePhoto(captureEncodedImage)
 
-    const facialRecognitionVerifyUrl = 'http://localhost:6008/security/verify/user'
+    const facialRecognitionVerifyUrl = 'http://localhost:6008/service/facial-recognition/verify/user'
     const facialRecognition = await lastValueFrom(
       this.httpService.get(facialRecognitionVerifyUrl, {
         data: {
@@ -295,7 +295,7 @@ export class AppService {
   }
 
   async saveUserPhoto(userId: string) {
-    const getUserPhotoUrl = `http://localhost:6001/users/${userId}/photo`
+    const getUserPhotoUrl = `http://localhost:6001/service/users/${userId}/photo`
     const userEncodedPhoto = await lastValueFrom(
       this.httpService.get(getUserPhotoUrl).pipe(
         catchError((error) => {

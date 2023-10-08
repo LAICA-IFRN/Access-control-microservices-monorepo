@@ -9,7 +9,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class EnvironmentService {
-  private readonly createAuditLogUrl = 'http://localhost:6004/audit/logs'
+  private readonly createAuditLogUrl = 'http://localhost:6004/service/audit/logs'
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -19,7 +19,7 @@ export class EnvironmentService {
   ) {} 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-    const verifyRoleEndpoint = 'http://localhost:6001/users/roles/verify';
+    const verifyRoleEndpoint = 'http://localhost:6001/service/users/roles/verify';
 
     const isAdmin = await lastValueFrom(
       this.httpService.get(verifyRoleEndpoint, {
@@ -124,16 +124,6 @@ export class EnvironmentService {
         console.log(error);
         this.errorLogger.error('Falha ao criar log', error);
       });
-
-      // const pattern = { cmd: "create" };
-      // const payload = {
-      //   topic: "Ambiente",
-      //   type: "info",
-      //   message: 'Environment created',
-      // };
-      // console.log(payload);
-      
-      // this.auditService.send(pattern, payload);
 
       return environment
     } catch (error) {

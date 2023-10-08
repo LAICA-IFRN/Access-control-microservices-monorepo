@@ -5,7 +5,7 @@ export class DeviceRoutes {
   private readonly deviceRfidUrl: string;
 
   constructor() {
-    this.deviceRfidUrl = 'http://localhost:6005/devices/rfid'
+    this.deviceRfidUrl = 'http://localhost:6005/service/devices/rfid'
   }
 
   createRfid(): string {

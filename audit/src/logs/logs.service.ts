@@ -10,12 +10,17 @@ export class LogsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createLogDto: CreateLogDto) {
+    const meta = JSON.stringify(createLogDto.meta)
+    
     try {
       const log = await this.prisma.log.create({
-        data: createLogDto
+        data: {
+          type: createLogDto.type,
+          message: createLogDto.message,
+          topic: createLogDto.topic,
+          meta
+        }
       });
-
-      console.log(log)
 
       return log;
     } catch (error) {
@@ -49,8 +54,16 @@ export class LogsService {
   
       const pages = Math.ceil(count / take)
   
+      const logsWithMetaObject = logs.map(log => {
+        const meta = JSON.parse(log.meta)
+        return {
+          ...log,
+          meta
+        }
+      })
+  
       return {
-        logs,
+        logsWithMetaObject,
         count,
         pages
       }

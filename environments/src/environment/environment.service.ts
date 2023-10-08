@@ -9,7 +9,7 @@ import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class EnvironmentService {
-  private readonly createAuditLogUrl = 'http://localhost:6004/service/audit/logs'
+  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -19,7 +19,7 @@ export class EnvironmentService {
   ) {} 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-    const verifyRoleEndpoint = 'http://localhost:6001/service/users/roles/verify';
+    const verifyRoleEndpoint = 'http://laica.ifrn.edu.br/service/users/roles/verify';
 
     const isAdmin = await lastValueFrom(
       this.httpService.get(verifyRoleEndpoint, {

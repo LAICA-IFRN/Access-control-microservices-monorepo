@@ -7,7 +7,7 @@ import { catchError, lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class RfidService {
-  private readonly createAuditLogUrl = 'http://localhost:6004/service/audit/logs'
+  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -16,7 +16,7 @@ export class RfidService {
   ) {}
 
   async create(createRfidDto: CreateRfidDto) {
-    const findUserEndpoint = `http://localhost:6001/service/users/${createRfidDto.userId}`
+    const findUserEndpoint = `http://laica.ifrn.edu.br/service/users/${createRfidDto.userId}`
     const findUser = await lastValueFrom(
       this.httpService.get(findUserEndpoint)
       .pipe(

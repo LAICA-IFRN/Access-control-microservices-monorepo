@@ -10,7 +10,7 @@ import { FindOneByMacDto } from './dto/find-by-mac.dto';
 
 @Injectable()
 export class Esp32Service {
-  private readonly createAuditLogUrl = 'http://localhost:6004/service/audit/logs'
+  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
   private readonly errorLogger = new Logger()
 
   constructor (
@@ -19,7 +19,7 @@ export class Esp32Service {
   ) {}
 
   async create(createEsp32Dto: CreateEsp32Dto) {
-    const getEnvironmentUrl = `http://localhost:6002/service/environments/env/${createEsp32Dto.environmentId}`
+    const getEnvironmentUrl = `http://laica.ifrn.edu.br/service/environments/env/${createEsp32Dto.environmentId}`
     await lastValueFrom(
       this.httpService.get(getEnvironmentUrl).pipe(
         catchError((error) => {

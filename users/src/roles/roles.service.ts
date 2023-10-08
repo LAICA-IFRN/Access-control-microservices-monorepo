@@ -10,7 +10,7 @@ import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class RolesService {
-  private readonly createAuditLogUrl = 'http://localhost:6004/service/audit/logs'
+  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
   private readonly errorLogger = new Logger()
 
   constructor(

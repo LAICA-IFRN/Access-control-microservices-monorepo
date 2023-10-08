@@ -5,7 +5,7 @@ export class UserRoutes {
   private readonly baseUrl: string;
 
   constructor() {
-    this.baseUrl = 'http://localhost:6001/service/users'
+    this.baseUrl = 'http://laica.ifrn.edu.br/service/users'
   }
 
   create(): string {

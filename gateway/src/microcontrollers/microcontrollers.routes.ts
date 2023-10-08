@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class MicrocontrollersRoutes {
-  private readonly microcontrollersBaseUrl = 'http://localhost:6003/service/microcontrollers';
+  private readonly microcontrollersBaseUrl = 'http://laica.ifrn.edu.br/service/microcontrollers';
   private readonly esp32BaseUrl = this.microcontrollersBaseUrl + '/esp32';
   private readonly esp8266BaseUrl = this.microcontrollersBaseUrl + '/esp8266';
 

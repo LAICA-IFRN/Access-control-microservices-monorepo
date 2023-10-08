@@ -8,9 +8,9 @@ export class EnvRoutes {
   private readonly envAccessBaseUrl: string;
 
   constructor() {
-    this.envBaseUrl = 'http://localhost:6002/service/environments/env'
-    this.envManagerBaseUrl = 'http://localhost:6002/service/environments/env-manager'
-    this.envAccessBaseUrl = 'http://localhost:6002/service/environments/env-access'
+    this.envBaseUrl = 'http://laica.ifrn.edu.br/service/environments/env'
+    this.envManagerBaseUrl = 'http://laica.ifrn.edu.br/service/environments/env-manager'
+    this.envAccessBaseUrl = 'http://laica.ifrn.edu.br/service/environments/env-access'
   }
 
   create(): string {

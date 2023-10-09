@@ -1349,4 +1349,123 @@ export class EnvAccessService {
       }
     }
   }
+
+  async remove(id: string) {
+    if (!isUUID(id)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Info',
+          message: 'Falha ao remover acesso à ambiente: id inválido',
+          meta: {
+            target: [id],
+            statusCode: 400,
+          },
+        })
+      )
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
+
+      throw new HttpException(
+        "Invalid id entry",
+        HttpStatus.BAD_REQUEST
+      );
+    }
+
+    const envAccess = await this.prisma.envAccess.findFirst({
+      where: {
+        id, active: true,
+      },
+    });
+
+    if (!envAccess) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Info',
+          message: 'Falha ao remover acesso à ambiente: registro não encontrado',
+          meta: {
+            target: [id],
+            statusCode: 404,
+          },
+        })
+      )
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
+
+      throw new HttpException(
+        "Environment access not found",
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    try {
+      const envAccess = await this.prisma.envAccess.delete({
+        where: {
+          id,
+          active: true,
+        }
+      });
+
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: 'Acesso de ambiente',
+          type: 'Info',
+          message: 'Acesso à ambiente removido com sucesso',
+          meta: {
+            target: [id],
+            statusCode: 200,
+          },
+        })
+      )
+
+      return envAccess;
+    } catch (error) {
+      if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Info',
+            message: 'Falha ao remover acesso à ambiente: registro não encontrado',
+            meta: {
+              target: [id],
+              statusCode: 404,
+            },
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
+
+        throw new HttpException(
+          'Environment not found',
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Info',
+            message: 'Falha ao remover acesso à ambiente: erro interno, verificar os logs de erro do serviço',
+            meta: {
+              target: [id],
+              statusCode: 500,
+            },
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
+
+        this.errorLogger.error('Falha do sistema (500)', error);
+
+        throw new HttpException(
+          "Can't remove environment access",
+          HttpStatus.FORBIDDEN
+        );
+      }
+    }
+  }
 }

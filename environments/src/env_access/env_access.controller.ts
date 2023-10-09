@@ -111,4 +111,14 @@ export class EnvAccessController {
   ) {
     return this.envAccessService.update(id, updateEnvAccessDto);
   }
+
+  @ApiOperation({ description: 'Endpoint para remover um acesso ao ambiente' })
+  // @ApiOkResponse({ type: swagger.DeleteSuccessResponseEntity })
+  // @ApiNotFoundResponse({ type: swagger.DeleteNotFoundResponseEntity })
+  @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
+  // @ApiForbiddenResponse({ type: swagger.DeleteForbiddenResponseEntity })
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.envAccessService.remove(id);
+  }
 }

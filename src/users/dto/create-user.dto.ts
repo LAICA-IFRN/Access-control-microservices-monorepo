@@ -50,7 +50,6 @@ import {
     @IsOptional()
     @ApiProperty({ required: false })
     tag?: string
-    // TODO: adcionar validação de RFID no padrão "xxxxxxxx" ou "xx xx xx xx", onde cada "x" é um hexadecimal
     
     @IsOptional()
     @IsMACAddress()

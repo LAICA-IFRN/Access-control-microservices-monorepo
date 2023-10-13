@@ -19,12 +19,16 @@ import { BadRequestResponseEntity,
   IdParamInvalidResponseEntity, 
   NotFoundResponseEntity, 
   NotFoundToAccess,
+  NotFoundToToken,
   OkToAccess,
-  UnauthorizedToAccess
+  OkToToken,
+  UnauthorizedToAccess,
+  UnauthorizedToToken
 } from './entities/swagger-responses.entity';
 import { FindToAccess } from './dto/find-to-access.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
+import { ValidateToToken } from './dto/validate-to-token.dto';
 
 @Controller()
 @ApiTags('Users')
@@ -64,25 +68,29 @@ export class UserController {
     return this.userService.findOneToAccess(findToAccess);
   }
 
-  @Get(':id/photo')
-  findUserPhoto(@Param('id') id: string) {
-    return this.userService.findUserPhoto(id);
+  @ApiOperation({ description: 'Endpoint para validar usuário para criação de token de autorização' })
+  @ApiOkResponse({ type: OkToToken })
+  @ApiUnauthorizedResponse({ type: UnauthorizedToToken })
+  @ApiNotFoundResponse({ type: NotFoundToToken })
+  @Get('validate')
+  validateToToken(@Body() validateToToken: ValidateToToken) {
+    return this.userService.validateToToken(validateToToken);
   }
-
+  
   @ApiOperation({ description: 'Endpoint para buscar os usuários administradores' })
   @ApiOkResponse({ type: UserEntity, isArray: true })
   @Get('admin')
   findAllAdmins() {
     return this.userService.findAllAdmins();
   }
-
+  
   @ApiOperation({ description: 'Endpoint para buscar os usuários frequentadores' })
   @ApiOkResponse({ type: UserEntity, isArray: true })
   @Get('frequenter')
   findAllFrequenters() {
     return this.userService.findAllFrequenters();
   }
-
+  
   @ApiOperation({ description: 'Endpoint para buscar os usuários gestores de ambiente' })
   @ApiOkResponse({ type: UserEntity, isArray: true })
   @Get('environment-manager')
@@ -96,6 +104,13 @@ export class UserController {
   findAllInactive() {
     return this.userService.findAllInactive();
   }
+  
+  @Get(':id/photo')
+  findUserPhoto(@Param('id') id: string) {
+    console.log('findUserPhoto');
+    
+    return this.userService.findUserPhoto(id);
+  }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário' })
   @ApiOkResponse({ type: UserEntity })
@@ -103,8 +118,10 @@ export class UserController {
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log('findOne');
     return this.userService.findOne(id);
   }
+  
 
   @ApiOperation({ description: 'Endpoint para atualizar o status de um usuário' })
   @ApiOkResponse({ type: UserEntity })

@@ -2,11 +2,9 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class DeviceRoutes {
-  private readonly deviceRfidUrl: string;
+  private readonly deviceRfidUrl = process.env.DEVICES_SERVICE_URL + '/rfid'
 
-  constructor() {
-    this.deviceRfidUrl = 'http://laica.ifrn.edu.br/service/devices/rfid'
-  }
+  constructor () {}
 
   createRfid(): string {
     return `${this.deviceRfidUrl}`;

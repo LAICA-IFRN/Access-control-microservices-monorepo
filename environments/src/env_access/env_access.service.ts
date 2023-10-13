@@ -10,7 +10,8 @@ import { Access, EnvAccess } from '@prisma/client';
 
 @Injectable()
 export class EnvAccessService {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
+  private readonly verifyRoleEndpoint = `${process.env.USERS_SERVICE_URL}/roles/verify`
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -19,12 +20,11 @@ export class EnvAccessService {
   ) {}
 
   async create(createEnvAccessDto: CreateEnvAccessDto) {
-    const verifyRoleEndpoint = 'http://laica.ifrn.edu.br/service/users/roles/verify';
     const isFrequenter = await lastValueFrom(
-      this.httpService.get(verifyRoleEndpoint, {
+      this.httpService.get(this.verifyRoleEndpoint, {
         data: {
           userId: createEnvAccessDto.userId,
-          role: 'FREQUENTER',
+          roles: ['FREQUENTER'],
         },
       }).pipe(
         catchError((error) => {

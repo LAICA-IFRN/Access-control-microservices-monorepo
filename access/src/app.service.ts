@@ -7,11 +7,11 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AppService {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
-  private readonly getEsp32Url = 'http://laica.ifrn.edu.br/service/microcontrollers/esp32/mac'
-  private readonly errorLogger = new Logger()
-
+  
   constructor(
+    private readonly getEsp32Url = `${process.env.MICROCONTROLLERS_SERVICE_URL}/esp32/mac`,
+    private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`,
+    private readonly errorLogger = new Logger(),
     private readonly httpService: HttpService,
   ) {}
 
@@ -91,7 +91,7 @@ export class AppService {
   }
 
   async proccessAccessWhenRFID(environmentId: string, rfid: string, captureEncodedImage: string) {
-    const getRfidUrl = `http://laica.ifrn.edu.br/service/devices/rfid/tag?tag=${rfid}`
+    const getRfidUrl = `${process.env.DEVICES_SERVICE_URL}/rfid/tag?tag=${rfid}`
     const response = await lastValueFrom(
       this.httpService.get(getRfidUrl).pipe(
         catchError((error) => {
@@ -118,7 +118,7 @@ export class AppService {
   async proccessAccessWhenUserAndPassword(
     environmentId: string, user: string, password: string, captureEncodedImage: string
   ) {
-    const getUserUrl = 'http://laica.ifrn.edu.br/service/users/access'
+    const getUserUrl = `${process.env.USERS_SERVICE_URL}}/access`
     const response = await lastValueFrom(
       this.httpService.get(getUserUrl, {
         data: {
@@ -170,12 +170,12 @@ export class AppService {
   }
 
   async validateUserAccess(environmentId: string, userId: string, captureEncodedImage: string) {
-    const verifyUserRoleUrl = 'http://laica.ifrn.edu.br/service/users/roles/verify'
+    const verifyUserRoleUrl = `${process.env.USERS_SERVICE_URL}/roles/verify`
     const isFrequenter = await lastValueFrom(
       this.httpService.get(verifyUserRoleUrl, {
         data: {
           userId,
-          role: 'FREQUENTER'
+          roles: ['FREQUENTER']
         }
       }).pipe(
         catchError((error) => {
@@ -210,7 +210,7 @@ export class AppService {
 
     let accessResponse = { access: false }
     if (isFrequenter) {
-      const getUserAccessUrl = 'http://laica.ifrn.edu.br/service/environments/env-access/access'
+      const getUserAccessUrl = `${process.env.ENVIRONMENTS_SERVICE_URL}/env-access/access`
       accessResponse = await lastValueFrom(
         this.httpService.get(getUserAccessUrl, {
           data: {
@@ -250,7 +250,7 @@ export class AppService {
     const userImagePath = await this.saveUserPhoto(userId)
     const captureImagePath = await this.saveCapturePhoto(captureEncodedImage)
 
-    const facialRecognitionVerifyUrl = 'http://laica.ifrn.edu.br/service/facial-recognition/verify/user'
+    const facialRecognitionVerifyUrl = `${process.env.FACIAL_RECOGNITION_SERVICE_URL}/verify/user`
     const facialRecognition = await lastValueFrom(
       this.httpService.get(facialRecognitionVerifyUrl, {
         data: {
@@ -295,7 +295,7 @@ export class AppService {
   }
 
   async saveUserPhoto(userId: string) {
-    const getUserPhotoUrl = `http://laica.ifrn.edu.br/service/users/${userId}/photo`
+    const getUserPhotoUrl = `${process.env.USERS_SERVICE_URL}/${userId}/photo`
     const userEncodedPhoto = await lastValueFrom(
       this.httpService.get(getUserPhotoUrl).pipe(
         catchError((error) => {

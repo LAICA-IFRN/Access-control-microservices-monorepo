@@ -30,8 +30,8 @@ export class RolesController {
   @ApiBadRequestResponse({ type: swagger.BadRequestVerifyResponseEntity })
   @Get('roles/verify')
   checkRole(@Body() verifyRoleDto: VerifyRoleDto) {
-    const { userId, role } = verifyRoleDto;
-    return this.rolesService.checkRole(userId, role);
+    const { userId, roles } = verifyRoleDto;
+    return this.rolesService.checkRole(userId, roles);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar os papéis de um usuário' })

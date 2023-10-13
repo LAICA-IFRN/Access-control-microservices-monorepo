@@ -7,7 +7,8 @@ import { catchError, lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class RfidService {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
+  private readonly usersServiceUrl = `${process.env.USERS_SERVICE_URL}`
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -16,11 +17,15 @@ export class RfidService {
   ) {}
 
   async create(createRfidDto: CreateRfidDto) {
-    const findUserEndpoint = `http://laica.ifrn.edu.br/service/users/${createRfidDto.userId}`
+    console.log('create service');
+    
+    const findUserEndpoint = `${this.usersServiceUrl}/${createRfidDto.userId}`
     const findUser = await lastValueFrom(
       this.httpService.get(findUserEndpoint)
       .pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {

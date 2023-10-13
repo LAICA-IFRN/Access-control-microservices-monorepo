@@ -10,9 +10,9 @@ import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class RolesService {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly errorLogger = new Logger()
-
+  
   constructor(
     private prisma: PrismaService,
     private httpService: HttpService
@@ -42,7 +42,7 @@ export class RolesService {
     const { rolesToAdd } = createRoleDto;
     const roles: UserRoles[] = []
 
-    const hasAdminRole = await this.checkRole(userId, 'ADMIN')
+    const hasAdminRole = await this.checkRole(userId, ['ADMIN'])
     const containsAdminRoleToAdd = rolesToAdd.includes('ADMIN')
 
     if (
@@ -254,7 +254,7 @@ export class RolesService {
     return user.UserRoles;
   }
 
-  async checkRole(id: string, role: string) {
+  async checkRole(id: string, roles: string[]) {
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -315,7 +315,7 @@ export class RolesService {
     }
 
     const userRoles: any = user.UserRoles
-    const hasRole = userRoles.some((userRole: any) => userRole.Role.name === role)
+    const hasRole = userRoles.some((userRole: any) => roles.includes(userRole.Role.name))
 
     return hasRole
   }
@@ -404,7 +404,7 @@ export class RolesService {
     const { rolesToDelete } = deleteRoleDto;
     const roles: UserRoles[] = []
 
-    const hasAdminRole = await this.checkRole(userId, 'ADMIN')
+    const hasAdminRole = await this.checkRole(userId, ['ADMIN'])
     if (hasAdminRole) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {

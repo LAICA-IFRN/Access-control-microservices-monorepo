@@ -1,4 +1,5 @@
 import { ApiProperty, ApiResponseProperty } from "@nestjs/swagger";
+import { UUID } from "crypto";
 
 export class BadRequestResponseEntity {
   @ApiProperty()
@@ -60,4 +61,22 @@ export class UnauthorizedToAccess {
   @ApiProperty()
   @ApiResponseProperty({ example: 401 })
   message: number
+}
+
+export class OkToToken {
+  @ApiProperty()
+  @ApiResponseProperty({ example: 'd39dadcf-9562-472c-b8c1-a7c4e6312f07' })
+  userId: UUID
+}
+
+export class UnauthorizedToToken {
+  @ApiProperty()
+  @ApiResponseProperty({ example: 'Incorrect password' })
+  message: string
+}
+
+export class NotFoundToToken {
+  @ApiProperty()
+  @ApiResponseProperty({ example: 'User not found' })
+  message: string
 }

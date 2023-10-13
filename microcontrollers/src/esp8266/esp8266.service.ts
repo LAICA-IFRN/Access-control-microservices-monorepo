@@ -8,15 +8,17 @@ import { isUUID } from 'class-validator';
 
 @Injectable()
 export class Esp8266Service {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
-  private readonly errorLogger = new Logger()
-
+  
   constructor (
+    private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL,
+    private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`,
+    private readonly errorLogger = new Logger(),
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService
   ) {}
 
   async create(createEsp8266Dto: CreateEsp8266Dto) {
+    // TODO: pesquisar se o ambiente existe
     try {
       const esp8266 = await this.prisma.esp8266.create({
         data: {

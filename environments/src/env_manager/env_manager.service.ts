@@ -8,7 +8,8 @@ import { isUUID } from 'class-validator';
 
 @Injectable()
 export class EnvManagerService {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly verifyRoleEndpoint = `${process.env.USERS_SERVICE_URL}/roles/verify`
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -17,12 +18,11 @@ export class EnvManagerService {
   ) {}
 
   async create(createEnvManagerDto: CreateEnvManagerDto) {
-    const verifyRoleEndpoint = 'http://laica.ifrn.edu.br/service/users/roles/verify';
     const isEnvManager = await lastValueFrom(
-      this.httpService.get(verifyRoleEndpoint, {
+      this.httpService.get(this.verifyRoleEndpoint, {
         data: {
           userId: createEnvManagerDto.userId,
-          role: 'ENVIRONMENT_MANAGER',
+          roles: ['ENVIRONMENT_MANAGER'],
         },
       }).pipe(
         catchError((error) => {

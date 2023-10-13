@@ -10,15 +10,18 @@ import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { FindToAccess } from './dto/find-to-access.dto';
 import * as fs from 'fs';
+import { ValidateToToken } from './dto/validate-to-token.dto';
 
 @Injectable()
 export class UserService {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly createMobileDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/mobile`
+  private readonly createRFIDDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/rfid`
   private readonly errorLogger = new Logger()
-
+  
   constructor(
-    private prisma: PrismaService,
-    private httpService: HttpService
+    private readonly prisma: PrismaService,
+    private readonly httpService: HttpService
   ) {}
 
   async create(createUserDto: CreateUserDto, file: Express.Multer.File) {
@@ -394,6 +397,60 @@ export class UserService {
     return {
       result: user.id
     };
+  }
+
+  async validateToToken(validateToToken: ValidateToToken) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        Document: {
+          content: validateToToken.document
+        },
+        active: true
+      }
+    });
+    
+    if (!user) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao buscar usuário: usuário não encontrado',
+          meta: {
+            user: validateToToken.document
+          }
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error);
+      });
+      
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const passwordMatch = await bcrypt.compare(validateToToken.password, user.password);
+
+    if (!passwordMatch) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao buscar usuário: senha incorreta',
+          meta: {
+            target: user.id,
+            statusCode: 401
+          }
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
+
+      throw new HttpException('Incorrect password', HttpStatus.UNAUTHORIZED);
+    }
+
+    return { userId: user.id };
   }
 
   async findAllFrequenters() {

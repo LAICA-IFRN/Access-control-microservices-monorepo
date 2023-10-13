@@ -10,18 +10,18 @@ import { FindOneByMacDto } from './dto/find-by-mac.dto';
 
 @Injectable()
 export class Esp32Service {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
-  private readonly errorLogger = new Logger()
-
+  
   constructor (
+    private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL,
+    private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`,
+    private readonly errorLogger = new Logger(),
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService
   ) {}
 
   async create(createEsp32Dto: CreateEsp32Dto) {
-    const getEnvironmentUrl = `http://laica.ifrn.edu.br/service/environments/env/${createEsp32Dto.environmentId}`
     await lastValueFrom(
-      this.httpService.get(getEnvironmentUrl).pipe(
+      this.httpService.get(this.environmentsServiceUrl + createEsp32Dto.environmentId).pipe(
         catchError((error) => {
           console.log(error);
           
@@ -155,8 +155,6 @@ export class Esp32Service {
 
         this.errorLogger.error('Falha do sistema (500)', error);
 
-        console.log(error);
-        
         throw new HttpException(
           "Can't create esp32 record",
           HttpStatus.FORBIDDEN

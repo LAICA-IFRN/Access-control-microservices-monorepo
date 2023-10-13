@@ -27,8 +27,7 @@ async function bootstrap() {
           ),
         })
       ]
-    }),
-    cors: true
+    })
   });
   
   app.useGlobalPipes(new ValidationPipe({
@@ -40,13 +39,21 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Serviço de Ambientes')
-    .setDescription('Descrição do serviço de ambientes que faz parte do dominio de ambientes do sistema de controle de acesso do Laica')
+    .setDescription('Documentação do serviço de ambientes do sistema de controle de acesso do Laica')
     .setVersion('0.1')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  app.setGlobalPrefix('');
+
+  app.enableCors({
+    origin: [
+      process.env.ALLOWED_GATEWAY_ORIGIN,
+      process.env.ALLOWED_MICROCONTROLLERS_ORIGIN
+    ],
+    methods: process.env.ALLOWED_METHODS,
+    credentials: true,
+  });
 
   await app.listen(6002);
 }

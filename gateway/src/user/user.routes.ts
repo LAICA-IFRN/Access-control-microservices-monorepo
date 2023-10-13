@@ -2,12 +2,10 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class UserRoutes {
-  private readonly baseUrl: string;
+  private readonly baseUrl = process.env.USERS_SERVICE_URL;
 
-  constructor() {
-    this.baseUrl = 'http://laica.ifrn.edu.br/service/users'
-  }
-
+  constructor() {}
+  
   create(): string {
     return `${this.baseUrl}`;
   }

@@ -10,7 +10,7 @@ async function bootstrap() {
     logger: WinstonModule.createLogger({
       transports: [
         new transports.File({
-          filename: 'src/errors/%DATE%.log',
+          filename: 'src/errors/json.log',
           format: format.combine(format.timestamp(), format.json()),
           zippedArchive: false,
           maxFiles: 30,
@@ -27,8 +27,7 @@ async function bootstrap() {
           ),
         })
       ]
-    }),
-    cors: true
+    })
   });
 
   app.useGlobalPipes(new ValidationPipe({
@@ -37,16 +36,27 @@ async function bootstrap() {
   }));
 
   app.setGlobalPrefix('service/users')
+
   const config = new DocumentBuilder()
     .setTitle('Serviço de Usuários')
-    .setDescription('Descrição do serviço de usuários que faz parte do dominio de usuários do sistema de controle de acesso do Laica')
+    .setDescription('Documentação do serviço de usuários do sistema de controle de acesso do Laica')
     .setVersion('0.1')
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
-  app.setGlobalPrefix('');
   
+  app.enableCors({
+    origin: [
+      process.env.ALLOWED_GATEWAY_ORIGIN,
+      process.env.ALLOWED_ENVIRONMENTS_ORIGIN,
+      process.env.ALLOWED_ACCESS_ORIGIN,
+      process.env.ALLOWED_DEVICES_ORIGIN
+    ],
+    methods: process.env.ALLOWED_METHODS,
+    credentials: true,
+  });
+
   await app.listen(6001);
 }
 bootstrap();

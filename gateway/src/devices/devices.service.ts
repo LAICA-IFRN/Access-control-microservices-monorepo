@@ -5,41 +5,42 @@ import { catchError, lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class DevicesService {
+
   constructor(
     private readonly httpService: HttpService,
     private readonly deviceRoutes: DeviceRoutes,
   ) {}
 
   async createRfid(body: any) {
-    const { data } = await lastValueFrom(
+    const response = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.createRfid(), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
+          if (error.response?.data?.statusCode === 404) {
             throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
+              error.response?.data?.message,
+              error.response?.data?.statusCode,
             );
-          } else if (error.response.data.statusCode === 400) {
+          } else if (error.response?.data?.statusCode === 400) {
             throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
+              error.response?.data?.message,
+              error.response?.data?.statusCode,
             );
-          } else if (error.response.data.statusCode === 409) {
+          } else if (error.response?.data?.statusCode === 409) {
             throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
+              error.response?.data?.message,
+              error.response?.data?.statusCode,
             );
           } else {
             throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
+              error.response?.data?.message,
+              error.response?.data?.statusCode,
             );
           }
         })
       )
     );
-
-    return data;
+    
+    return response.data;
   }
 
   async findOneRfid(id: string) {

@@ -3,15 +3,10 @@ import { Injectable } from "@nestjs/common";
 
 @Injectable()
 export class EnvRoutes {
-  private readonly envBaseUrl: string;
-  private readonly envManagerBaseUrl: string;
-  private readonly envAccessBaseUrl: string;
-
-  constructor() {
-    this.envBaseUrl = 'http://laica.ifrn.edu.br/service/environments/env'
-    this.envManagerBaseUrl = 'http://laica.ifrn.edu.br/service/environments/env-manager'
-    this.envAccessBaseUrl = 'http://laica.ifrn.edu.br/service/environments/env-access'
-  }
+  private readonly envServiceBaseUrl = process.env.ENVIRONMENTS_SERVICE_URL
+  private readonly envBaseUrl = this.envServiceBaseUrl + '/env'
+  private readonly envManagerBaseUrl = this.envServiceBaseUrl + '/env-manager'
+  private readonly envAccessBaseUrl = this.envServiceBaseUrl + '/env-access'
 
   create(): string {
     return `${this.envBaseUrl}`;

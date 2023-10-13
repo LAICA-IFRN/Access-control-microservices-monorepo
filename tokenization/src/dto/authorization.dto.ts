@@ -1,10 +1,10 @@
-import { ArrayNotEmpty, IsArray, IsIn, IsUUID } from "class-validator";
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty } from "@nestjs/swagger";
+import { ArrayNotEmpty, IsArray, IsIn, IsJWT } from "class-validator";
 
-export class VerifyRoleDto {
-  @IsUUID()
+export class AuthorizationDto {
   @ApiProperty()
-  userId: string;
+  @IsJWT()
+  token: string;
 
   @IsArray()
   @ArrayNotEmpty()

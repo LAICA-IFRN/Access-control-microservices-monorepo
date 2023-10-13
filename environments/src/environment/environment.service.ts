@@ -1,31 +1,29 @@
-import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { isUUID } from 'class-validator';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
-import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class EnvironmentService {
-  private readonly createAuditLogUrl = 'http://laica.ifrn.edu.br/service/audit/logs'
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly verifyRoleEndpoint = `${process.env.USERS_SERVICE_URL}/roles/verify`
   private readonly errorLogger = new Logger()
-
+  
   constructor(
     private httpService: HttpService,
     private prisma: PrismaService,
-    @Inject("AUDIT_SERVICE") private readonly auditService: ClientProxy
   ) {} 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-    const verifyRoleEndpoint = 'http://laica.ifrn.edu.br/service/users/roles/verify';
 
     const isAdmin = await lastValueFrom(
-      this.httpService.get(verifyRoleEndpoint, {
+      this.httpService.get(this.verifyRoleEndpoint, {
         data: {
           userId: createEnvironmentDto.adminId,
-          role: 'ADMIN',
+          roles: ['ADMIN'],
         },
       }).pipe(
         catchError((error) => {

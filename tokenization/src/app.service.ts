@@ -7,23 +7,27 @@ import { AuthorizationDto } from './dto/authorization.dto';
 
 @Injectable()
 export class AppService {
+  private readonly jwtSecret = process.env.JWT_SECRET
+  private readonly jwtExpirationTime = process.env.JWT_EXPIRATION_TIME
+  private readonly createAuditLogUrl = process.env.CREATE_AUDIT_LOG_URL
+  private readonly validateUserUrl = process.env.VALIDATE_USER_URL
+  private readonly errorLogger = new Logger()
+
   constructor(
-    private readonly jwtSecret = process.env.JWT_SECRET,
-    private readonly jwtExpirationTime = process.env.JWT_EXPIRATION_TIME,
-    private readonly createAuditLogUrl = process.env.CREATE_AUDIT_LOG_URL,
-    private readonly errorLogger = new Logger(),
     private readonly httpService: HttpService,
   ) {}
 
   async tokenize(tokenizeDto: TokenizeDto) {
     const data = await lastValueFrom(
       this.httpService.get(
-        `${process.env.USER_SERVICE_URL}/validate`,
+        this.validateUserUrl,
         {
           data: tokenizeDto,
         },
       ).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {

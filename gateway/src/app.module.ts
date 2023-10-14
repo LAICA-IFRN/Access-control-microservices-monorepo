@@ -5,7 +5,6 @@ import { MicrocontrollersModule } from './microcontrollers/microcontrollers.modu
 import { DevicesModule } from './devices/devices.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
-import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [

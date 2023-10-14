@@ -7,12 +7,12 @@ import { AuthorizationDto } from './dto/authorization.dto';
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Post()
+  @Post('tokenize')
   tokenize(@Body() tokenizeDto: TokenizeDto) {
     return this.appService.tokenize(tokenizeDto);
   }
 
-  @Get()
+  @Get('authorize')
   authorize(@Body() authorizationDto: AuthorizationDto) {
     return this.appService.authorize(authorizationDto)
   }

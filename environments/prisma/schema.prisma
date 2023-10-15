@@ -7,60 +7,71 @@ datasource db {
   url      = "file:./users.db" //env("DATABASE_URL")
 }
 
-model Environment {
-  id          String       @id @default(uuid())
-  name        String       @unique
-  description String?
-  active      Boolean      @default(true)
-  createdBy   String
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  EnvAccess   EnvAccess[]
-  EnvManager  EnvManager[]
+model environment {
+  id                             String                           @id @default(uuid())
+  name                           String                           @unique
+  description                    String?
+  active                         Boolean                          @default(true)
+  created_by                     String
+  created_at                     DateTime                         @default(now())
+  updated_at                     DateTime                         @updatedAt
+  environment_user               environment_user[]
+  environment_manager            environment_manager[]
+  environment_restriction_access environment_restriction_access[]
 }
 
-model EnvAccess {
-  id            String      @id @default(uuid())
-  startPeriod   DateTime    @default(now())
-  endPeriod     DateTime
-  active        Boolean     @default(true)
-  userId        String
-  // createdBy     String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  environmentId String
-  Environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
-  Access        Access[]
+model environment_restriction_access {
+  id             String      @id @default(uuid())
+  description    String
+  day            Int
+  start_time     DateTime
+  end_time       DateTime
+  environment_id String
+  environment    environment @relation(fields: [environment_id], references: [id])
 
-  @@unique([userId, environmentId])
+  @@unique([day, start_time, end_time, environment_id])
 }
 
-model Access {
-  id           String      @id @default(uuid())
-  day          Int
-  startTime    DateTime
-  endTime      DateTime
-  envAccessId  String?
-  EnvAccess    EnvAccess?  @relation(fields: [envAccessId], references: [id], onDelete: Cascade)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
-  EnvManager   EnvManager? @relation(fields: [envManagerId], references: [id]) // onDelete: Cascade
-  envManagerId String?
-  active       Boolean     @default(true)
+model environment_manager {
+  id             String      @id @default(uuid())
+  active         Boolean     @default(true)
+  user_id        String
+  created_by     String
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  environment_id String
+  environment    environment @relation(fields: [environment_id], references: [id])
 
-  @@unique([day, startTime, endTime, envAccessId])
+  @@unique([user_id, environment_id])
 }
 
-model EnvManager {
-  id            String      @id @default(uuid())
-  active        Boolean     @default(true)
-  userId        String
-  // createdBy     String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  environmentId String
-  Environment   Environment @relation(fields: [environmentId], references: [id], onDelete: Cascade)
-  Access        Access[]
+model environment_user {
+  id                              String                            @id @default(uuid())
+  start_period                    DateTime                          @default(now())
+  end_period                      DateTime
+  active                          Boolean                           @default(true)
+  user_id                         String
+  created_by                      String
+  created_at                      DateTime                          @default(now())
+  updated_at                      DateTime                          @updatedAt
+  environment_id                  String
+  environment                     environment                       @relation(fields: [environment_id], references: [id])
+  environment_user_access_control environment_user_access_control[]
 
-  @@unique([userId, environmentId])
+  @@unique([user_id, environment_id])
+}
+
+model environment_user_access_control {
+  id                  String            @id @default(uuid())
+  day                 Int
+  start_time          DateTime
+  end_time            DateTime
+  active              Boolean           @default(true)
+  no_access_restrict  Boolean           @default(false)
+  created_at          DateTime          @default(now())
+  updated_at          DateTime          @updatedAt
+  environment_user_id String?
+  environment_user    environment_user? @relation(fields: [environment_user_id], references: [id])
+
+  @@unique([day, start_time, end_time, environment_user_id])
 }

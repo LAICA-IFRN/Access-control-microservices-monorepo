@@ -7,55 +7,49 @@ datasource db {
   url      = "file:./users.db" //env("DATABASE_URL")
 }
 
-model Role {
+model role {
   id        Int         @id @default(autoincrement())
   name      String      @unique
-  UserRoles UserRoles[]
+  user_role user_role[]
 }
 
-model DocumentType {
-  id       Int        @id @default(autoincrement())
-  name     String     @unique
-  Document Document[]
+model document_type {
+  id   Int    @id @default(autoincrement())
+  name String @unique
+  user user[]
 }
 
-model UserRoles {
-  id        String   @id @default(uuid())
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  Role      Role     @relation(fields: [roleId], references: [id])
-  userId    String
-  User      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  roleId    Int
+model user_role {
+  id         String   @id @default(uuid())
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  role_id    Int
+  role       role     @relation(fields: [role_id], references: [id])
+  user_id    String
+  user       user     @relation(fields: [user_id], references: [id])
 
-  @@unique([userId, roleId], name: "UserRoles_userId_roleId_unique")
+  @@unique([user_id, role_id], name: "user_role_user_id_role_id_unique")
 }
 
-model User {
-  id        String      @id @default(uuid())
-  name      String?
-  email     String?     @unique
-  password  String?
-  active    Boolean     @default(true)
-  createdAt DateTime    @default(now())
-  updatedAt DateTime    @updatedAt
-  UserRoles UserRoles[]
-  Document  Document?
-  Photo     Photo?
+model user {
+  id               String        @id @default(uuid())
+  name             String
+  email            String        @unique
+  password         String
+  active           Boolean
+  created_by       String
+  created_at       DateTime      @default(now())
+  updated_at       DateTime      @updatedAt
+  document         String
+  document_type    document_type @relation(fields: [document_type_id], references: [id])
+  document_type_id Int
+  user_image       user_image?
+  user_role        user_role[]
 }
 
-model Document {
-  id             Int          @id @default(autoincrement())
-  content        String       @unique
-  DocumentType   DocumentType @relation(fields: [documentTypeId], references: [id])
-  documentTypeId Int
-  User           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId         String       @unique
-}
-
-model Photo {
+model user_image {
   id      String @id @default(uuid())
   encoded String
-  User    User?  @relation(fields: [userId], references: [id])
-  userId  String @unique
+  user    user?  @relation(fields: [user_id], references: [id])
+  user_id String @unique
 }

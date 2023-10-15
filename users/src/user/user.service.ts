@@ -1,226 +1,83 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { User } from '@prisma/client';
+import { user } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { isUUID } from 'class-validator';
 import { UpdateUserDataDto } from './dto/update-user-data.dto';
-import { isValidCPF } from 'src/decorators/cpf-or-cnpj.decorator';
-import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { FindToAccess } from './dto/find-to-access.dto';
-import * as fs from 'fs';
 import { ValidateToToken } from './dto/validate-to-token.dto';
+import { AuditLogService } from 'src/providers/audit-log/audit-log.service';
+import { AuditConstants } from 'src/providers/audit-log/audit-contants';
 
 @Injectable()
 export class UserService {
-  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly createMobileDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/mobile`
   private readonly createRFIDDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/rfid`
   private readonly errorLogger = new Logger()
   
   constructor(
     private readonly prisma: PrismaService,
-    private readonly httpService: HttpService
+    private readonly httpService: HttpService,
+    private readonly auditLogService: AuditLogService
   ) {}
 
-  async create(createUserDto: CreateUserDto, file: Express.Multer.File) {
-    if (!file) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao criar usuário: foto não enviada',
-          meta: {
-            target: createUserDto.name,
-            statusCode: 400
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
-
-      throw new HttpException('Photo not sent', HttpStatus.BAD_REQUEST);
-    }
-
+  async create(createUserDto: CreateUserDto, userId: string) {
     if (
-      createUserDto.roles.includes('ADMIN') 
+      createUserDto.roles.includes('ADMIN')
       && createUserDto.roles.length > 1
     ) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao criar usuário: usuário admin não pode ter outros papéis',
-          meta: {
-            target: createUserDto.roles,
-            statusCode: 400
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error.meta);
-      });
-
-      throw new HttpException(
-        'Admin user cannot have other roles',
-        HttpStatus.BAD_REQUEST
-      );
+      this.auditLogService.create(AuditConstants.createUserBadRequest({target: createUserDto, statusCode: 400}));
+      throw new HttpException('Admin user cannot have other roles', HttpStatus.BAD_REQUEST);
     }
 
     const roundsOfHashing = 10;
     const hashedPassword = await bcrypt.hash(createUserDto.password, roundsOfHashing);
-  
-    let documentType: string;
-  
-    if (createUserDto.identifier) {
-      documentType = isValidCPF(createUserDto.identifier) ? 'CPF' : 'CNPJ';
-    } else {
-      documentType = 'REGISTRATION';
-    }
-  
-    let createdUser: User;
+
+    let createdUser: user;
   
     try {
-      await this.prisma.$transaction(async (prisma) => {
-        createdUser = await prisma.user.create({
-          data: {
-            name: createUserDto.name,
-            email: createUserDto.email,
-            password: hashedPassword,
-          },
-        });
-
-        await prisma.document.create({
-          data: {
-            content: createUserDto.identifier,
-            DocumentType: { connect: { name: documentType } },
-            User: { connect: { id: createdUser.id } },
-          },
-        });
-      });
+      createdUser = await this.prisma.user.create(this.factoryCreateUser(createUserDto, hashedPassword, userId));
     } catch (error) {
       if (error.code === 'P2002') {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Ambiente",
-            type: "Error",
-            message: 'Falha ao criar usuário: conflito com registro existente',
-            meta: {
-              target: error.meta.target,
-              statusCode: 409
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-
+        this.auditLogService.create(AuditConstants.createUserP2002({target: error.meta.target, statusCode: 409}));
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
       } else {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Ambiente",
-            type: "Error",
-            message: 'Falha ao criar ambiente: erro interno, verificar logs de erro do serviço',
-            meta: {
-              context: error,
-              statusCode: 403
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-
-        throw new HttpException("Can't create user", HttpStatus.FORBIDDEN);
+        this.auditLogService.create(AuditConstants.createUser({context: error, statusCode: 422}));
+        throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
 
+    let roles
     for (const role of createUserDto.roles) {
-      await this.prisma.userRoles.create({
+      roles = await this.prisma.user_role.create({
         data: {
-          User: { connect: { id: createdUser.id } },
-          Role: { connect: { name: role } },
+          user: { connect: { id: createdUser.id } },
+          role: { connect: { name: role } },
         },
       });
     }
 
-    await lastValueFrom(
-      this.httpService.post(this.createAuditLogUrl, {
+    if (roles.length !== createUserDto.roles.length) {
+      this.auditLogService.create({
         topic: "Usuários",
-        type: "Info",
-        message: `Usuário criado: ${createdUser.name || ''}`,
+        type: "Error",
+        message: 'Falha ao criar papés de usuário: erro interno, verificar logs de erro do serviço',
         meta: {
-          target: createdUser.id
+          expected: createUserDto.roles,
+          created: roles.map((role) => role.Role.name),
+          statusCode: 403
         }
-      })
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao criar log', error);
-    });
+      });
+    }
 
-    fs.promises.readFile(file.path)
-      .then(response => {
-        const base64Image = response.toString('base64');
-        const encodedImage = `data:${file.mimetype};base64,${base64Image}`;
-
-        (async () => {
-          await this.prisma.photo.create({
-            data: {
-              encoded: encodedImage,
-              User: { connect: { id: createdUser.id } }
-            }
-          });
-        })()
-      })
-      .catch(err => {
-        lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao criar usuário: erro ao ler foto',
-            meta: {
-              target: createdUser.id,
-              statusCode: 400
-            }
-          })
-        )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        });
-  
-        this.errorLogger.error('Falha na leitura da imagem', err);
-  
-        throw new HttpException('Error reading photo after user creation', HttpStatus.BAD_REQUEST);
-      })
-
-    fs.unlink(file.path, (err) => {
-      if (err) {
-        lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao criar usuário: erro ao deletar foto',
-            meta: {
-              target: createdUser.id,
-              statusCode: 400
-            }
-          })
-        )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        });
-  
-        this.errorLogger.error('Falha ao deletar imagem', err);
-  
-        throw new HttpException('Error deleting photo after user creation', HttpStatus.BAD_REQUEST);
+    this.auditLogService.create({
+      topic: "Usuários",
+      type: "Info",
+      message: 'Usuário criado: ' + createdUser.name || '',
+      meta: {
+        target: createdUser.id
       }
     });
 
@@ -230,53 +87,60 @@ export class UserService {
     return createdUser;
   }
 
+  private factoryCreateUser(createUserDto: CreateUserDto, hashedPassword: string, userId: string): any {
+    return {
+      data: {
+        name: createUserDto.name,
+        email: createUserDto.email,
+        password: hashedPassword,
+        active: true,
+        user_image: {
+          create: {
+            encoded: createUserDto.encodedImage
+          }
+        },
+        document_type: { connect: { name: createUserDto.documentType } },
+        document: createUserDto.document,
+        created_by: userId
+      }
+    };
+  }
+
   async findUserPhoto(userId: string) {
     if (!isUUID(userId)) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar foto de usuário: id inválido',
-          meta: {
-            target: userId,
-            statusCode: 400
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Error",
+        message: 'Falha ao buscar foto de usuário: id inválido',
+        meta: {
+          userId,
+          statusCode: 400
+        }
       });
 
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
     try {
-      const photo = await this.prisma.photo.findFirst({
-        where: { userId }
+      const userImage = await this.prisma.user_image.findFirst({
+        where: { user_id: userId }
       });
 
-      if (!photo) {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao buscar foto de usuário: usuário não encontrado',
-            meta: {
-              target: userId,
-              statusCode: 404
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
+      if (!userImage) {
+        this.auditLogService.create({
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao buscar foto de usuário: usuário não encontrado',
+          meta: {
+            userId,
+            statusCode: 404
+          }
         });
 
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
 
-      return photo.encoded;
+      return userImage.encoded;
     } catch (error) {
       this.errorLogger.error('Falha ao buscar foto de usuário', error);
 
@@ -286,20 +150,14 @@ export class UserService {
 
   async findOne(id: string) {
     if (!isUUID(id)) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar usuário: id inválido',
-          meta: {
-            target: id,
-            statusCode: 400
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Error",
+        message: 'Falha ao buscar usuário: id inválido',
+        meta: {
+          target: id,
+          statusCode: 400
+        }
       });
 
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
@@ -309,35 +167,28 @@ export class UserService {
       return await this.prisma.user.findFirstOrThrow({
         where: { id, active: true },
         include: {
-          UserRoles: {
+          user_role: {
             include: {
-              Role: true
+              role: true
             }
           }
         }
       });
     } catch (error) {
       if (error.code === 'P2025') {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao buscar usuário: usuário não encontrado',
-            meta: {
-              target: id,
-              statusCode: 404
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
+        this.auditLogService.create({
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao buscar usuário: usuário não encontrado',
+          meta: {
+            target: id,
+            statusCode: 404
+          }
         });
 
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else {
         this.errorLogger.error('Falha do sistema (500)', error.response);
-
         throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
@@ -346,27 +197,19 @@ export class UserService {
   async findOneToAccess(findToAccess: FindToAccess) {
     const user = await this.prisma.user.findFirst({
       where: {
-        Document: {
-          content: findToAccess.user
-        },
+        document: findToAccess.user,
         active: true
       }
     });
     
     if (!user) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar usuário: usuário não encontrado',
-          meta: {
-            user: findToAccess.user,
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Error",
+        message: 'Falha ao buscar usuário durante acesso: usuário não encontrado',
+        meta: {
+          user: findToAccess.user
+        }
       });
       
       return { result: 404 }
@@ -375,20 +218,14 @@ export class UserService {
     const passwordMatch = await bcrypt.compare(findToAccess.password, user.password);
 
     if (!passwordMatch) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar usuário: senha incorreta',
-          meta: {
-            target: user.id,
-            statusCode: 401
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Error",
+        message: 'Falha ao buscar usuário durante acesso: senha incorreta',
+        meta: {
+          userId: user.id,
+          statusCode: 401
+        }
       });
 
       return { result: 401 };
@@ -402,28 +239,20 @@ export class UserService {
   async validateToToken(validateToToken: ValidateToToken) {
     const user = await this.prisma.user.findFirst({
       where: {
-        Document: {
-          content: validateToToken.document
-        },
+        document: validateToToken.document,
         active: true
       }
     });
     
     if (!user) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar usuário: usuário não encontrado',
-          meta: {
-            user: validateToToken.document
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
+      // this.auditLog.create({
+      //   topic: "Usuários",
+      //   type: "Error",
+      //   message: 'Falha ao buscar usuário durante validação de token: usuário não encontrado',
+      //   meta: {
+      //     user: validateToToken.document
+      //   }
+      // });
       
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
@@ -431,21 +260,15 @@ export class UserService {
     const passwordMatch = await bcrypt.compare(validateToToken.password, user.password);
 
     if (!passwordMatch) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar usuário: senha incorreta',
-          meta: {
-            target: user.id,
-            statusCode: 401
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+      // this.auditLog.create({
+      //   topic: "Usuários",
+      //   type: "Error",
+      //   message: 'Falha ao buscar usuário durante validação de token: senha incorreta',
+      //   meta: {
+      //     userId: user.id,
+      //     statusCode: 401
+      //   }
+      // });
 
       throw new HttpException('Incorrect password', HttpStatus.UNAUTHORIZED);
     }
@@ -456,9 +279,9 @@ export class UserService {
   async findAllFrequenters() {
     return await this.prisma.user.findMany({
       where: {
-        UserRoles: {
+        user_role: {
           some: {
-            Role: {
+            role: {
               name: 'FREQUENTER'
             },
             active: true
@@ -472,9 +295,9 @@ export class UserService {
   async findAllAdmins() {
     return await this.prisma.user.findMany({
       where: {
-        UserRoles: {
+        user_role: {
           some: {
-            Role: {
+            role: {
               name: 'ADMIN'
             },
             active: true
@@ -488,9 +311,9 @@ export class UserService {
   async findAllEnvironmentManager() {
     return await this.prisma.user.findMany({
       where: {
-        UserRoles: {
+        user_role: {
           some: {
-            Role: {
+            role: {
               name: 'ENVIRONMENT_MANAGER'
             },
             active: true
@@ -507,31 +330,25 @@ export class UserService {
         active: false
       },
       include: {
-        UserRoles: {
+        user_role: {
           include: {
-            Role: true
+            role: true
           }
         }
       }
     });
   }
 
-  async updateStatus(id: string, status: boolean) {
+  async updateStatus(id: string, status: boolean, userId: string) {
     if (!isUUID(id)) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao atualizar status de usuário: id inválido',
-          meta: {
-            target: id,
-            statusCode: 400
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Error",
+        message: 'Falha ao atualizar status de usuário: id inválido',
+        meta: {
+          target: id,
+          statusCode: 400
+        }
       });
 
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
@@ -542,52 +359,39 @@ export class UserService {
         where: { id },
         data: { 
           active: status, 
-          UserRoles: {
+          user_role: {
             updateMany: {
-              where: { userId: id },
+              where: { user_id: id },
               data: { active: status }
             },
           }
         },
         include: {
-          UserRoles: true
+          user_role: true
         }
       });
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Info",
-          message: 'Status de usuário atualizado: ' + (status ? 'Ativado' : 'Desativado'),
-          meta: {
-            target: user.id,
-            status: user.active
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Info",
+        message: `Status de usuário atualizado: ${user.name} - ${user.active ? 'Ativo' : 'Inativo'}`,
+        meta: {
+          author: userId
+        }
       });
 
       // TODO: inativar tag, mac e relações com ambientes em seus respectivos serviços
       
     } catch (error) {
       if (error.code === 'P2025') {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao atualizar status de usuário: usuário não encontrado',
-            meta: {
-              target: id,
-              statusCode: 404
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
+        this.auditLogService.create({
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao atualizar status de usuário: usuário não encontrado',
+          meta: {
+            target: id,
+            statusCode: 404
+          }
         });
 
         throw new HttpException(
@@ -595,20 +399,14 @@ export class UserService {
           HttpStatus.NOT_FOUND
         );
       } else {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao atualizar status de usuário: erro interno, verificar logs de erro do serviço',
-            meta: {
-              context: error,
-              statusCode: 403
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
+        this.auditLogService.create({
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao atualizar status de usuário: erro interno, verificar logs de erro do serviço',
+          meta: {
+            context: error,
+            statusCode: 403
+          }
         });
 
         throw new HttpException("Can't create user", HttpStatus.FORBIDDEN);
@@ -617,22 +415,16 @@ export class UserService {
   }
 
   // TODO: testar
-  async update(id: string, updateUserDataDto: UpdateUserDataDto) {
+  async update(id: string, updateUserDataDto: UpdateUserDataDto, userId: string) {
     if (!isUUID(id)) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao atualizar usuário: id inválido',
-          meta: {
-            target: id,
-            statusCode: 400
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Error",
+        message: 'Falha ao atualizar usuário: id inválido',
+        meta: {
+          target: id,
+          statusCode: 400
+        }
       });
 
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
@@ -649,89 +441,58 @@ export class UserService {
           name: updateUserDataDto.name,
           email: updateUserDataDto.email,
           password: updateUserDataDto.password,
-          Document: {
-            update: {
-              content: updateUserDataDto.identifier
-            }
-          }
+          document: updateUserDataDto.document
         },
-        where: { id },
-        include: {
-          Document: true
-        }
+        where: { id }
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Info",
-          message: 'Usuário atualizado: ' + user.name || '',
-          meta: {
-            target: user.id
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
+      this.auditLogService.create({
+        topic: "Usuários",
+        type: "Info",
+        message: `Usuário atualizado: ${user.name}`,
+        meta: {
+          userId: user.id
+        }
       });
 
       return user;
     } catch (error) {
       if (error.code === 'P2025') {
-        lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao atualizar usuário: usuário não encontrado',
-            meta: {
-              target: id,
-              statusCode: 404
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
+        this.auditLogService.create({
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao atualizar usuário: usuário não encontrado',
+          meta: {
+            target: id,
+            statusCode: 404
+          }
         });
 
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else if (error.code === 'P2002') {
-        lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao atualizar usuário: conflito com registro existente',
-            meta: {
-              target: error.meta.target,
-              statusCode: 409
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
+        this.auditLogService.create({
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao atualizar usuário: conflito com registro existente',
+          meta: {
+            target: error.meta.target,
+            statusCode: 409
+          }
         });
 
         throw new HttpException('Already exists', HttpStatus.CONFLICT);
       } else {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Usuários",
-            type: "Error",
-            message: 'Falha ao atualizar usuário: erro interno, verificar logs de erro do serviço',
-            meta: {
-              context: error,
-              statusCode: 403
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
+        this.auditLogService.create({
+          topic: "Usuários",
+          type: "Error",
+          message: 'Falha ao atualizar usuário: erro interno, verificar logs de erro do serviço',
+          meta: {
+            context: error,
+            statusCode: 422
+          }
         });
 
-        throw new HttpException("Can't update user", HttpStatus.FORBIDDEN);
+        throw new HttpException("Can't update user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
   }

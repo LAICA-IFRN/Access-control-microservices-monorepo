@@ -7,30 +7,19 @@ datasource db {
   url      = "file:./users.db" //env("DATABASE_URL")
 }
 
-// TODO: adicionar status (pending, created)
-model Esp32 {
-  id            Int      @id @default(autoincrement())
-  mac           String   @unique
-  ip            String   @unique
-  environmentId String
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  Esp8266       Esp8266?
-
-  @@unique([mac, ip, environmentId])
+model microcontroller_type {
+  id   Int    @id @default(autoincrement())
+  name String
 }
 
-model Esp8266 {
-  id            Int      @id @default(autoincrement())
+model microcontroller {
+  id            String   @id @default(uuid())
   mac           String   @unique
   ip            String   @unique
   environmentId String
   active        Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
-  Esp32         Esp32?   @relation(fields: [esp32Id], references: [id])
-  esp32Id       Int?     @unique
 
   @@unique([mac, ip, environmentId])
 }

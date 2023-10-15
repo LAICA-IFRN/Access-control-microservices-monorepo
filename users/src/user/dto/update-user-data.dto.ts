@@ -12,7 +12,7 @@ export class UpdateUserDataDto {
   @IsCPFOrCNPJ()
   @IsOptional()
   @ApiProperty({ required: false})
-  identifier?: string
+  document?: string
 
   @IsEmail()
   @IsOptional()

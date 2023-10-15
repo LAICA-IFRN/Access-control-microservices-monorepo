@@ -1,15 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
 import { EnvironmentsService } from './environments.service';
+import { RolesGuard } from 'src/guards/roles.guard';
+import { Roles } from 'src/decorators/roles.decorator';
 
 @Controller('environments')
 export class EnvironmentsController {
   constructor(private readonly environmentsService: EnvironmentsService) {}
 
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   @Post('env')
   create(@Body() createEnvironmentDto: any) {
     return this.environmentsService.create(createEnvironmentDto);
   }
 
+  @Roles('ADMIN')
+  @UseGuards(RolesGuard)
   @Get('env')
   findAll(@Query('skip') skip: number, @Query('take') take: number) {
     return this.environmentsService.findAll(skip, take);

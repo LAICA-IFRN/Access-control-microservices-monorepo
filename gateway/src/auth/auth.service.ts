@@ -21,7 +21,7 @@ export class AuthService {
     )
     .then((response) => response.data)
     .catch((error) => {
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      throw new HttpException(error.response, error.response.data.statusCode);
     })
 
     return response;

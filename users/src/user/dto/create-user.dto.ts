@@ -1,6 +1,7 @@
 import { 
   ArrayNotEmpty, 
   IsArray, 
+  IsBase64, 
   IsEmail, 
   IsIn, 
   IsMACAddress, 
@@ -29,7 +30,12 @@ export class CreateUserDto {
   @IsCPFOrCNPJ()
   @IsOptional()
   @ApiProperty({ required: false})
-  identifier?: string
+  document: string
+
+  documentType: 'CPF' | 'CNPJ' | 'Registration'
+
+  @IsBase64()
+  encodedImage: string
 
   @IsEmail()
   @IsOptional()

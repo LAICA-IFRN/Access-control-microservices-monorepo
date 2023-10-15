@@ -11,6 +11,7 @@ export class AppService {
   private readonly jwtExpirationTime = process.env.JWT_EXPIRATION_TIME
   private readonly createAuditLogUrl = process.env.CREATE_AUDIT_LOG_URL
   private readonly validateUserUrl = process.env.VALIDATE_USER_URL
+  private readonly verifyAuthorizationUrl = process.env.VERIFY_AUTHORIZATION_URL
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -26,8 +27,6 @@ export class AppService {
         },
       ).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
@@ -44,7 +43,9 @@ export class AppService {
             })
 
             throw new HttpException('Users service unavailable', HttpStatus.SERVICE_UNAVAILABLE)
-          } else if (error.response?.status === 404) {
+          }
+          
+          if (error.response?.status === 404) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Tokenização',
@@ -121,7 +122,9 @@ export class AppService {
           document: tokenizeDto.document,
         }
       })
-    )
+    ).catch((error) => {
+      this.errorLogger.error('Falha ao enviar log', error)
+    })
 
     return {
       accessToken: token
@@ -137,7 +140,7 @@ export class AppService {
 
     const isAuthorized = await lastValueFrom(
       this.httpService.get(
-        `${process.env.USER_SERVICE_URL}/roles/verify`,
+        this.verifyAuthorizationUrl,
         {
           data: {
             userId: decodedToken.sub,
@@ -146,6 +149,8 @@ export class AppService {
         },
       ).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {

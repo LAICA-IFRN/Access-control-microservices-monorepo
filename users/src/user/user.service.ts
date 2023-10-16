@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
-import { user } from '@prisma/client';
+import { user, user_role } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { isUUID } from 'class-validator';
@@ -41,15 +41,15 @@ export class UserService {
       createdUser = await this.prisma.user.create(this.factoryCreateUser(createUserDto, hashedPassword, userId));
     } catch (error) {
       if (error.code === 'P2002') {
-        this.auditLogService.create(AuditConstants.createUserP2002({target: error.meta.target, statusCode: 409}));
+        this.auditLogService.create(AuditConstants.createUserConflict({target: error.meta.target, statusCode: 409}));
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
       } else {
-        this.auditLogService.create(AuditConstants.createUser({context: error, statusCode: 422}));
+        this.auditLogService.create(AuditConstants.createUserError({context: error, statusCode: 422}));
         throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
 
-    let roles
+    let roles: any
     for (const role of createUserDto.roles) {
       roles = await this.prisma.user_role.create({
         data: {
@@ -60,26 +60,14 @@ export class UserService {
     }
 
     if (roles.length !== createUserDto.roles.length) {
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Error",
-        message: 'Falha ao criar papés de usuário: erro interno, verificar logs de erro do serviço',
-        meta: {
-          expected: createUserDto.roles,
-          created: roles.map((role) => role.Role.name),
-          statusCode: 403
-        }
-      });
+      this.auditLogService.create(AuditConstants.createUserRolesError({
+        expected: createUserDto.roles, 
+        created: roles.map((role) => role.Role.name), 
+        statusCode: 403
+      }));
     }
 
-    this.auditLogService.create({
-      topic: "Usuários",
-      type: "Info",
-      message: 'Usuário criado: ' + createdUser.name || '',
-      meta: {
-        target: createdUser.id
-      }
-    });
+    this.auditLogService.create(AuditConstants.createUserOk({userId: createdUser.id, author: userId, statusCode: 201}));
 
     // if (createUserDto.mac) {} // TODO: enviar msg para o serviço responsável
     // if (createUserDto.tag) {} // TODO: enviar msg para o serviço responsável
@@ -106,18 +94,9 @@ export class UserService {
     };
   }
 
-  async findUserPhoto(userId: string) {
+  async findUserImage(userId: string) {
     if (!isUUID(userId)) {
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Error",
-        message: 'Falha ao buscar foto de usuário: id inválido',
-        meta: {
-          userId,
-          statusCode: 400
-        }
-      });
-
+      this.auditLogService.create(AuditConstants.findUserImageBadRequest({userId, statusCode: 400}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -127,45 +106,26 @@ export class UserService {
       });
 
       if (!userImage) {
-        this.auditLogService.create({
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar foto de usuário: usuário não encontrado',
-          meta: {
-            userId,
-            statusCode: 404
-          }
-        });
-
+        this.auditLogService.create(AuditConstants.findUserImageBadRequest({userId, statusCode: 404}))
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
 
       return userImage.encoded;
     } catch (error) {
       this.errorLogger.error('Falha ao buscar foto de usuário', error);
-
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async findOne(id: string) {
-    if (!isUUID(id)) {
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Error",
-        message: 'Falha ao buscar usuário: id inválido',
-        meta: {
-          target: id,
-          statusCode: 400
-        }
-      });
-
+  async findOne(userId: string) {
+    if (!isUUID(userId)) {
+      this.auditLogService.create(AuditConstants.findOneBadRequest({userId, statusCode: 400}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
     try {
       return await this.prisma.user.findFirstOrThrow({
-        where: { id, active: true },
+        where: { id: userId, active: true },
         include: {
           user_role: {
             include: {
@@ -176,16 +136,7 @@ export class UserService {
       });
     } catch (error) {
       if (error.code === 'P2025') {
-        this.auditLogService.create({
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao buscar usuário: usuário não encontrado',
-          meta: {
-            target: id,
-            statusCode: 404
-          }
-        });
-
+        this.auditLogService.create(AuditConstants.findOneNotFound({userId, statusCode: 404}))
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else {
         this.errorLogger.error('Falha do sistema (500)', error.response);
@@ -203,31 +154,14 @@ export class UserService {
     });
     
     if (!user) {
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Error",
-        message: 'Falha ao buscar usuário durante acesso: usuário não encontrado',
-        meta: {
-          user: findToAccess.user
-        }
-      });
-      
+      this.auditLogService.create(AuditConstants.findOneNotFound({document: findToAccess.user, statusCode: 404}))
       return { result: 404 }
     }
 
     const passwordMatch = await bcrypt.compare(findToAccess.password, user.password);
 
     if (!passwordMatch) {
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Error",
-        message: 'Falha ao buscar usuário durante acesso: senha incorreta',
-        meta: {
-          userId: user.id,
-          statusCode: 401
-        }
-      });
-
+      this.auditLogService.create(AuditConstants.findOneToAccessUnauthorizhed({userId: user.id, statusCode: 401}))
       return { result: 401 };
     }
 
@@ -245,31 +179,14 @@ export class UserService {
     });
     
     if (!user) {
-      // this.auditLog.create({
-      //   topic: "Usuários",
-      //   type: "Error",
-      //   message: 'Falha ao buscar usuário durante validação de token: usuário não encontrado',
-      //   meta: {
-      //     user: validateToToken.document
-      //   }
-      // });
-      
+      this.auditLogService.create(AuditConstants.validateToTokenNotFound({document: user.document, statusCode: 404}))
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
     const passwordMatch = await bcrypt.compare(validateToToken.password, user.password);
 
     if (!passwordMatch) {
-      // this.auditLog.create({
-      //   topic: "Usuários",
-      //   type: "Error",
-      //   message: 'Falha ao buscar usuário durante validação de token: senha incorreta',
-      //   meta: {
-      //     userId: user.id,
-      //     statusCode: 401
-      //   }
-      // });
-
+      this.auditLogService.create(AuditConstants.validateToTokenUnauthorizhed({userId: user.id, statusCode: 401}))
       throw new HttpException('Incorrect password', HttpStatus.UNAUTHORIZED);
     }
 
@@ -277,80 +194,91 @@ export class UserService {
   }
 
   async findAllFrequenters() {
-    return await this.prisma.user.findMany({
-      where: {
-        user_role: {
-          some: {
-            role: {
-              name: 'FREQUENTER'
-            },
-            active: true
-          }
-        },
-        active: true
-      }
-    });
+    try {
+      return await this.prisma.user.findMany({
+        where: {
+          user_role: {
+            some: {
+              role: {
+                name: 'FREQUENTER'
+              },
+              active: true
+            }
+          },
+          active: true
+        }
+      });
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllError({target: 'frequenters', statusCode: 500}))
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findAllAdmins() {
-    return await this.prisma.user.findMany({
-      where: {
-        user_role: {
-          some: {
-            role: {
-              name: 'ADMIN'
-            },
-            active: true
-          }
-        },
-        active: true
-      }
-    });
+    try {
+      return await this.prisma.user.findMany({
+        where: {
+          user_role: {
+            some: {
+              role: {
+                name: 'ADMIN'
+              },
+              active: true
+            }
+          },
+          active: true
+        }
+      });
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllError({target: 'admins', statusCode: 500}))
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findAllEnvironmentManager() {
-    return await this.prisma.user.findMany({
-      where: {
-        user_role: {
-          some: {
-            role: {
-              name: 'ENVIRONMENT_MANAGER'
-            },
-            active: true
-          }
-        },
-        active: true
-      }
-    });
+    try {
+      return await this.prisma.user.findMany({
+        where: {
+          user_role: {
+            some: {
+              role: {
+                name: 'ENVIRONMENT_MANAGER'
+              },
+              active: true
+            }
+          },
+          active: true
+        }
+      });
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllError({target: 'environment_managers', statusCode: 500}))
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async findAllInactive() {
-    return await this.prisma.user.findMany({
-      where: {
-        active: false
-      },
-      include: {
-        user_role: {
-          include: {
-            role: true
+    try {
+      return await this.prisma.user.findMany({
+        where: {
+          active: false
+        },
+        include: {
+          user_role: {
+            include: {
+              role: true
+            }
           }
         }
-      }
-    });
+      });
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllError({target: 'inactives', statusCode: 500}))
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async updateStatus(id: string, status: boolean, userId: string) {
     if (!isUUID(id)) {
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Error",
-        message: 'Falha ao atualizar status de usuário: id inválido',
-        meta: {
-          target: id,
-          statusCode: 400
-        }
-      });
-
+      this.auditLogService.create(AuditConstants.updateStatusBadRequest({userId: id, statusCode: 400}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -371,45 +299,15 @@ export class UserService {
         }
       });
 
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Info",
-        message: `Status de usuário atualizado: ${user.name} - ${user.active ? 'Ativo' : 'Inativo'}`,
-        meta: {
-          author: userId
-        }
-      });
-
+      this.auditLogService.create(AuditConstants.updateStatusOk({userId: id, name: user.name, active: user.active}))
       // TODO: inativar tag, mac e relações com ambientes em seus respectivos serviços
-      
     } catch (error) {
       if (error.code === 'P2025') {
-        this.auditLogService.create({
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao atualizar status de usuário: usuário não encontrado',
-          meta: {
-            target: id,
-            statusCode: 404
-          }
-        });
-
-        throw new HttpException(
-          'User not found',
-          HttpStatus.NOT_FOUND
-        );
+        this.auditLogService.create(AuditConstants.updateStatusNotFound({userId, statusCode: 404}))
+        throw new HttpException('User not found',  HttpStatus.NOT_FOUND);
       } else {
-        this.auditLogService.create({
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao atualizar status de usuário: erro interno, verificar logs de erro do serviço',
-          meta: {
-            context: error,
-            statusCode: 403
-          }
-        });
-
-        throw new HttpException("Can't create user", HttpStatus.FORBIDDEN);
+        this.auditLogService.create(AuditConstants.updateStatusNotFound({context: error, statusCode: 422}))
+        throw new HttpException("Can't update user status", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
   }
@@ -417,16 +315,7 @@ export class UserService {
   // TODO: testar
   async update(id: string, updateUserDataDto: UpdateUserDataDto, userId: string) {
     if (!isUUID(id)) {
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Error",
-        message: 'Falha ao atualizar usuário: id inválido',
-        meta: {
-          target: id,
-          statusCode: 400
-        }
-      });
-
+      this.auditLogService.create(AuditConstants.updateBadRequest({userId: id, author: userId}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -446,52 +335,17 @@ export class UserService {
         where: { id }
       })
 
-      this.auditLogService.create({
-        topic: "Usuários",
-        type: "Info",
-        message: `Usuário atualizado: ${user.name}`,
-        meta: {
-          userId: user.id
-        }
-      });
-
+      this.auditLogService.create(AuditConstants.updateOk({userId: id, author: userId}))
       return user;
     } catch (error) {
       if (error.code === 'P2025') {
-        this.auditLogService.create({
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao atualizar usuário: usuário não encontrado',
-          meta: {
-            target: id,
-            statusCode: 404
-          }
-        });
-
+        this.auditLogService.create(AuditConstants.updateNotFound({userId: id, statusCode: 404}))
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else if (error.code === 'P2002') {
-        this.auditLogService.create({
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao atualizar usuário: conflito com registro existente',
-          meta: {
-            target: error.meta.target,
-            statusCode: 409
-          }
-        });
-
+        this.auditLogService.create(AuditConstants.updateNotFound({userId: id, statusCode: 409, author: userId, target: error.meta.target}))
         throw new HttpException('Already exists', HttpStatus.CONFLICT);
       } else {
-        this.auditLogService.create({
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao atualizar usuário: erro interno, verificar logs de erro do serviço',
-          meta: {
-            context: error,
-            statusCode: 422
-          }
-        });
-
+        this.auditLogService.create(AuditConstants.updateError({statusCode: 422, author: userId, target: error.meta.target}))
         throw new HttpException("Can't update user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }

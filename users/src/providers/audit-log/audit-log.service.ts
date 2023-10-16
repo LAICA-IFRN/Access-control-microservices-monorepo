@@ -19,7 +19,7 @@ export class AuditLogService {
     try {
       this.httpService.post(this.createAuditLogUrl, log);
     } catch (error) {
-      this.errorLogger.error(error);
+      this.errorLogger.error('Falha ao enviar log', error);
     }
   }
 }

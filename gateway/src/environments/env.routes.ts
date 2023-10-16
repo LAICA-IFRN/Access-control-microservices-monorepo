@@ -32,7 +32,6 @@ export class EnvRoutes {
     return `${this.envBaseUrl}/${id}`;
   }
 
-  // faça métodos para todos os endpoints do env_manager ../../../environments/src/env_manager/env_manager.controller.ts
   createManager(): string {
     return `${this.envManagerBaseUrl}`;
   }
@@ -62,7 +61,6 @@ export class EnvRoutes {
     return `${this.envManagerBaseUrl}/${id}`;
   }
 
-  // faça métodos para todos os endpoints do env_access ../../../environments/src/env_access/env_access.controller.ts
   createAccess(): string {
     return `${this.envAccessBaseUrl}`;
   }

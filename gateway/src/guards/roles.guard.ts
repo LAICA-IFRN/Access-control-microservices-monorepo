@@ -48,6 +48,8 @@ export class RolesGuard implements CanActivate {
       );
     });
 
+    request['userId'] = response.userId
+
     return response;
   }
 }

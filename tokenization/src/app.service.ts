@@ -210,10 +210,10 @@ export class AppService {
     )
     .then((response) => response.data)
 
-    if (!isAuthorized) {
-      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
-    }
+    // if (!isAuthorized) {
+    //   throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
+    // }
 
-    return { isAuthorized }
+    return { isAuthorized, userId: decodedToken.sub }
   }
 }

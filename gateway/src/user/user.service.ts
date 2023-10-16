@@ -174,9 +174,9 @@ export class UserService {
     return data;
   }
 
-  async findAllRoles(id: string) {
+  async findAllRolesFromUser(id: string) {
     const { data } = await lastValueFrom(
-      this.httpService.get(this.userRoutes.findAllRoles(id)).pipe(
+      this.httpService.get(this.userRoutes.findAllRolesFromUser(id)).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);

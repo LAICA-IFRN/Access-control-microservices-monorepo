@@ -42,7 +42,7 @@ export class UserRoutes {
     return `${this.baseUrl}/${id}/roles`;
   }
 
-  findAllRoles(id: string): string {
+  findAllRolesFromUser(id: string): string {
     return `${this.baseUrl}/${id}/roles`;
   }
 

@@ -5,6 +5,7 @@ import { MicrocontrollersModule } from './microcontrollers/microcontrollers.modu
 import { DevicesModule } from './devices/devices.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
+import { AccessModule } from './access/access.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { AuthModule } from './auth/auth.module';
     EnvironmentsModule,
     MicrocontrollersModule,
     DevicesModule,
-    AuthModule
+    AuthModule,
+    AccessModule
   ]
 })
 export class AppModule {}

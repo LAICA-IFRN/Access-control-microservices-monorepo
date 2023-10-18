@@ -1,10 +1,10 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Esp32 } from "@prisma/client";
+import { microcontroller } from "@prisma/client";
 
-export class Esp32Entity implements Esp32 {
+export class Esp32Entity implements microcontroller {
   
   @ApiProperty()  
-  id: number;
+  id: string;
   
   @ApiProperty()  
   mac: string;
@@ -14,6 +14,9 @@ export class Esp32Entity implements Esp32 {
   
   @ApiProperty()  
   environmentId: string;
+
+  @ApiProperty()
+  microcontroller_type_id: number;
   
   @ApiProperty()  
   active: boolean;

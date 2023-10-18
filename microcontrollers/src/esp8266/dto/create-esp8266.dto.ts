@@ -14,8 +14,4 @@ export class CreateEsp8266Dto {
   @ApiProperty()
   @IsUUID()
   environmentId: string;
-
-  @ApiProperty()
-  @IsNumber()
-  esp32Id?: number;
 }

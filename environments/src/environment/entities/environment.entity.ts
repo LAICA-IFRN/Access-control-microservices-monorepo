@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Environment } from "@prisma/client";
+import { environment } from "@prisma/client";
 
-export class EnvironmentEntity implements Environment {
+export class EnvironmentEntity implements environment {
   
   @ApiProperty()
   id: string;
@@ -16,11 +16,11 @@ export class EnvironmentEntity implements Environment {
   active: boolean;
   
   @ApiProperty()
-  createdBy: string;
+  created_by: string;
   
   @ApiProperty({ default: new Date() })
-  createdAt: Date;
+  created_at: Date;
   
   @ApiProperty({ default: new Date() })
-  updatedAt: Date;
+  updated_at: Date;
 }

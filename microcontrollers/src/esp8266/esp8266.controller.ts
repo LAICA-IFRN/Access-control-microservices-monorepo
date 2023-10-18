@@ -51,8 +51,8 @@ export class Esp8266Controller {
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @ApiBadRequestResponse({ type: swagger.IdParamInvalidResponseEntity })
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.esp8266Service.findOne(+id);
+  findOne(@Param('id') id: string) {
+    return this.esp8266Service.findOne(id);
   }
 
   @ApiOperation({ description: 'Endpoint para atualizar um esp8266' })
@@ -61,8 +61,8 @@ export class Esp8266Controller {
   @ApiConflictResponse({ type: swagger.CreateConflictResponseEntity })
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateEsp8266Dto: UpdateEsp8266Dto) {
-    return this.esp8266Service.update(+id, updateEsp8266Dto);
+  update(@Param('id') id: string, @Body() updateEsp8266Dto: UpdateEsp8266Dto) {
+    return this.esp8266Service.update(id, updateEsp8266Dto);
   }
 
   @ApiOperation({ description: 'Endpoint para atualizar o status de um esp8266' })
@@ -70,8 +70,8 @@ export class Esp8266Controller {
   @ApiBadRequestResponse({ type: swagger.UpdateStatusBadRequesteEntity})
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @Patch(':id/status')
-  updateStatus(@Param('id') id: number, @Body() updateStatusEspDto: UpdateStatusEspDto) {
-    return this.esp8266Service.updateStatus(+id, updateStatusEspDto.status);
+  updateStatus(@Param('id') id: string, @Body() updateStatusEspDto: UpdateStatusEspDto) {
+    return this.esp8266Service.updateStatus(id, updateStatusEspDto.status);
   }
 
   @ApiOperation({ description: 'Endpoint para deletar um esp8266' })
@@ -79,7 +79,7 @@ export class Esp8266Controller {
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @ApiForbiddenResponse({ type: swagger.RemoveForbiddenResponseEntity })
   @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.esp8266Service.remove(+id);
+  remove(@Param('id') id: string) {
+    return this.esp8266Service.remove(id);
   }
 }

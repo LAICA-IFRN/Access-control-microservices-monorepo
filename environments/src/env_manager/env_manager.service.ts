@@ -156,10 +156,11 @@ export class EnvManagerService {
     }
     
     try {
-      const envManager = await this.prisma.envManager.create({
+      const envManager = await this.prisma.environment_manager.create({
         data: {
-          userId,
-          environmentId,
+          user_id: userId,
+          environment_id: environmentId,
+          created_by: '',
         },
       });
 
@@ -169,7 +170,7 @@ export class EnvManagerService {
           type: 'Info',
           message: 'Gestor de ambiente criado com sucesso',
           meta: {
-            target: [envManager.id, envManager.userId, envManager.environmentId],
+            target: [envManager.id, envManager.user_id, envManager.environment_id],
             statusCode: 201
           }
         })
@@ -274,7 +275,7 @@ export class EnvManagerService {
   }
 
   async findAll() {
-    return await this.prisma.envManager.findMany({
+    return await this.prisma.environment_manager.findMany({
       where: {
         active: true,
       },
@@ -305,10 +306,10 @@ export class EnvManagerService {
     }
 
     try {
-      const envAccess = await this.prisma.envAccess.findFirstOrThrow({
+      const envAccess = await this.prisma.environment_user.findFirstOrThrow({
         where: { 
-          userId,
-          environmentId,
+          user_id: userId,
+          environment_id: environmentId,
           active: true,
         }
       })
@@ -373,10 +374,10 @@ export class EnvManagerService {
       );
     }
 
-    const envAccess = await this.prisma.envAccess.findFirst({
+    const envAccess = await this.prisma.environment_user.findFirst({
       where: { 
-        userId,
-        environmentId
+        user_id: userId,
+        environment_id: environmentId,
       }
     });
 
@@ -414,7 +415,7 @@ export class EnvManagerService {
     }
 
     try {
-      return await this.prisma.envManager.findUnique({
+      return await this.prisma.environment_manager.findUnique({
         where: {
           id,
           active: true,
@@ -493,9 +494,9 @@ export class EnvManagerService {
       );
     }
 
-    return await this.prisma.envManager.findMany({
+    return await this.prisma.environment_manager.findMany({
       where: {
-        userId,
+        user_id: userId,
         active: true,
       },
     });
@@ -525,9 +526,9 @@ export class EnvManagerService {
       );
     }
 
-    return await this.prisma.envManager.findMany({
+    return await this.prisma.environment_manager.findMany({
       where: {
-        environmentId,
+        environment_id: environmentId,
         active: true,
       },
     });
@@ -558,7 +559,7 @@ export class EnvManagerService {
     }
 
     try {
-      const envManager = await this.prisma.envManager.update({
+      const envManager = await this.prisma.environment_manager.update({
         where: {
           id,
         },
@@ -573,7 +574,7 @@ export class EnvManagerService {
           type: 'Info',
           message: 'Status do gestor de ambiente atualizado com sucesso',
           meta: {
-            target: [envManager.id, envManager.userId, envManager.environmentId],
+            target: [envManager.id, envManager.user_id, envManager.environment_id],
             statusCode: 200
           }
         })

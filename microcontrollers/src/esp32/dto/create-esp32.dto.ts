@@ -14,14 +14,4 @@ export class CreateEsp32Dto {
   @ApiProperty()
   @IsUUID()
   environmentId: string;
-
-  @ApiProperty()
-  @IsOptional()
-  @IsMACAddress()
-  mac8266?: string
-
-  @ApiProperty()
-  @IsOptional()
-  @IsIP()
-  ip8266?: string
 }

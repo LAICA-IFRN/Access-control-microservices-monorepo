@@ -8,11 +8,11 @@ import { isUUID } from 'class-validator';
 
 @Injectable()
 export class Esp8266Service {
+  private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly errorLogger = new Logger()
   
   constructor (
-    private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL,
-    private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`,
-    private readonly errorLogger = new Logger(),
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService
   ) {}
@@ -20,12 +20,12 @@ export class Esp8266Service {
   async create(createEsp8266Dto: CreateEsp8266Dto) {
     // TODO: pesquisar se o ambiente existe
     try {
-      const esp8266 = await this.prisma.esp8266.create({
+      const esp8266 = await this.prisma.microcontroller.create({
         data: {
           environmentId: createEsp8266Dto.environmentId,
           mac: createEsp8266Dto.mac,
           ip: createEsp8266Dto.ip,
-          esp32Id: createEsp8266Dto.esp32Id
+          microcontroller_type_id: 2
         }
       })
 
@@ -103,9 +103,12 @@ export class Esp8266Service {
       // console.log('skip', skip);
       // console.log('take', take);
       
-      return await this.prisma.esp8266.findMany({
+      return await this.prisma.microcontroller.findMany({
         skip,
-        take
+        take,
+        where: {
+          microcontroller_type_id: 2
+        }
       })
     } catch (error) {
       console.log(error)
@@ -138,9 +141,10 @@ export class Esp8266Service {
     }
 
     try {
-      return await this.prisma.esp8266.findMany({
+      return await this.prisma.microcontroller.findMany({
         where: {
-          environmentId
+          environmentId,
+          microcontroller_type_id: 2
         }
       })
     } catch (error) {
@@ -194,9 +198,9 @@ export class Esp8266Service {
     } 
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     try {
-      return await this.prisma.esp8266.findUnique({
+      return await this.prisma.microcontroller.findUnique({
         where: {
           id
         }
@@ -253,9 +257,9 @@ export class Esp8266Service {
     }
   }
 
-  async update(id: number, updateEsp8266Dto: UpdateEsp8266Dto) {
+  async update(id: string, updateEsp8266Dto: UpdateEsp8266Dto) {
     try {
-      const esp8266 = await this.prisma.esp8266.update({
+      const esp8266 = await this.prisma.microcontroller.update({
         where: {
           id
         },
@@ -263,7 +267,6 @@ export class Esp8266Service {
           environmentId: updateEsp8266Dto.environmentId,
           mac: updateEsp8266Dto.mac,
           ip: updateEsp8266Dto.ip,
-          esp32Id: updateEsp8266Dto.esp32Id
         }
       })
 
@@ -358,9 +361,9 @@ export class Esp8266Service {
     }
   }
 
-  async updateStatus(id: number, status: boolean) {
+  async updateStatus(id: string, status: boolean) {
     try {
-      const esp8266 = await this.prisma.esp8266.update({
+      const esp8266 = await this.prisma.microcontroller.update({
         where: {
           id
         },
@@ -438,9 +441,9 @@ export class Esp8266Service {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: string) {
     try {
-      const esp8266 = await this.prisma.esp8266.delete({
+      const esp8266 = await this.prisma.microcontroller.delete({
         where: {
           id
         }

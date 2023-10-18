@@ -314,8 +314,11 @@ export class RolesService {
       }
     }
 
+    console.log(user.user_role);
+    
+
     const userRoles: any = user.user_role
-    const hasRole = userRoles.some((userRole: any) => roles.includes(userRole.Role.name))
+    const hasRole = userRoles.some((userRole: any) => roles.includes(userRole.role.name))
 
     return hasRole
   }

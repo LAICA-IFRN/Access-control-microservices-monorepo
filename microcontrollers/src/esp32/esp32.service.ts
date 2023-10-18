@@ -5,16 +5,16 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { isUUID } from 'class-validator';
 import { catchError, lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import { Esp32 } from '@prisma/client';
+import { microcontroller } from '@prisma/client';
 import { FindOneByMacDto } from './dto/find-by-mac.dto';
 
 @Injectable()
 export class Esp32Service {
+  private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly errorLogger = new Logger()
   
   constructor (
-    private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL,
-    private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`,
-    private readonly errorLogger = new Logger(),
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService
   ) {}
@@ -70,7 +70,10 @@ export class Esp32Service {
     )
 
     try {
-      const esp32 = await this.prisma.esp32.create({ data: createEsp32Dto }); 
+      const esp32 = await this.prisma.microcontroller.create({ data: {
+        ...createEsp32Dto,
+        microcontroller_type_id: 1
+      } }); 
 
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -168,15 +171,16 @@ export class Esp32Service {
       throw new HttpException('Invalid skip or take', HttpStatus.BAD_REQUEST)
     }
     
-    return await this.prisma.esp32.findMany({ skip, take });
+    return await this.prisma.microcontroller.findMany({ skip, take });
   }
 
   async findOneByMac(findOneByMac: FindOneByMacDto) {
     try {
-      const esp32 = await this.prisma.esp32.findFirstOrThrow({
+      const esp32 = await this.prisma.microcontroller.findFirstOrThrow({
         where: { 
           mac: findOneByMac.mac,
-          active: true
+          active: true,
+          microcontroller_type_id: 1
         }
       })
 
@@ -259,8 +263,8 @@ export class Esp32Service {
     }
 
     try {
-      return await this.prisma.esp32.findMany({
-        where: { environmentId }
+      return await this.prisma.microcontroller.findMany({
+        where: { environmentId, microcontroller_type_id: 1 }
       })
     } catch (error) {
       if (error.code === 'P2025') {
@@ -313,10 +317,10 @@ export class Esp32Service {
     }
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     try {
-      return this.prisma.esp32.findFirstOrThrow({
-        where: { id }
+      return this.prisma.microcontroller.findFirstOrThrow({
+        where: { id, microcontroller_type_id: 1 }
       })
     } catch (error) {
       if (error.code === 'P2025') {
@@ -369,10 +373,10 @@ export class Esp32Service {
     }
   }
 
-  async update(id: number, updateEsp32Dto: UpdateEsp32Dto) {
+  async update(id: string, updateEsp32Dto: UpdateEsp32Dto) {
     try {
-      const esp32 = await this.prisma.esp32.update({
-        where: { id },
+      const esp32 = await this.prisma.microcontroller.update({
+        where: { id, microcontroller_type_id: 1 },
         data: updateEsp32Dto
       })
 
@@ -467,10 +471,10 @@ export class Esp32Service {
     }
   }
 
-  async updateStatus(id: number, status: boolean) {
+  async updateStatus(id: string, status: boolean) {
     try {
-      const esp32 = await this.prisma.esp32.update({
-        where: { id },
+      const esp32 = await this.prisma.microcontroller.update({
+        where: { id, microcontroller_type_id: 1 },
         data: {
           active: status
         }
@@ -545,12 +549,12 @@ export class Esp32Service {
     }
   }
 
-  async remove(id: number) {
-    let esp32: Esp32
+  async remove(id: string) {
+    let esp32: microcontroller
 
     try {
-      esp32 = await this.prisma.esp32.delete({
-        where: { id }
+      esp32 = await this.prisma.microcontroller.delete({
+        where: { id, microcontroller_type_id: 1 }
       })
 
       await lastValueFrom(
@@ -644,115 +648,5 @@ export class Esp32Service {
     }
 
     return esp32;
-  }
-
-  async disconnectEsp8266(id: number) {
-    const esp8266 = await this.prisma.esp8266.findFirst({
-      where: { esp32Id: id }
-    })
-
-    if (!esp8266) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Microcontroladores',
-          type: 'Error',
-          message: 'Falha ao desconectar esp8266: esp8266 não encontrado',
-          meta: {
-            microcontroller: 'Esp32',
-            target: id,
-            statusCode: 404
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
-
-      throw new HttpException(
-        "Esp8266 not found",
-        HttpStatus.NOT_FOUND
-      );
-    }
-
-    try {
-      const esp32 = await this.prisma.esp32.update({
-        where: { id },
-        data: {
-          Esp8266: {
-            disconnect: true
-          },
-        }
-      })
-
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Microcontroladores',
-          type: 'Info',
-          message: 'Esp8266 desconectado com sucesso',
-          meta: {
-            microcontroller: 'Esp32',
-            esp8266Mac: esp8266.mac,
-            esp32Id: esp32.id,
-            statusCode: 200
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
-
-      return esp32;
-    } catch (error) {
-      console.log(error);
-      if (error.code === 'P2025') {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Microcontroladores',
-            type: 'Error',
-            message: 'Falha ao desconectar esp8266: registro não encontrado',
-            meta: {
-              microcontroller: 'Esp32',
-              target: id,
-              statusCode: 404
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-        
-        throw new HttpException(
-          "Esp32 not found",
-          HttpStatus.NOT_FOUND
-        );
-      } else {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Microcontroladores',
-            type: 'Error',
-            message: 'Falha ao desconectar esp8266: erro interno, verificar logs de erro do serviço',
-            meta: {
-              microcontroller: 'Esp32',
-              target: id,
-              statusCode: 500
-            }
-          })
-        )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-        
-        this.errorLogger.error('Falha do sistema (500)', error);
-        
-        throw new HttpException(
-          "Can't disconnect esp8266",
-          HttpStatus.FORBIDDEN
-        );
-      }
-    }
   }
 }

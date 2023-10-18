@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { EnvManager } from "@prisma/client";
+import { environment_manager } from "@prisma/client";
 
-export class EnvManagerEntity implements EnvManager {
+export class EnvManagerEntity implements environment_manager {
   
   @ApiProperty()  
   id: string;
@@ -10,14 +10,17 @@ export class EnvManagerEntity implements EnvManager {
   active: boolean;
   
   @ApiProperty()  
-  userId: string;
+  user_id: string;
   
   @ApiProperty()  
-  environmentId: string;
-  
-  @ApiProperty()  
-  createdAt: Date;
+  environment_id: string;
   
   @ApiProperty()
-  updatedAt: Date;
+  created_by: string;
+  
+  @ApiProperty()  
+  created_at: Date;
+  
+  @ApiProperty()
+  updated_at: Date;
 }

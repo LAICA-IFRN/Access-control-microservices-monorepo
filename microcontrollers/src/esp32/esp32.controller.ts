@@ -60,8 +60,8 @@ export class Esp32Controller {
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @ApiBadRequestResponse({ type: swagger.IdParamInvalidResponseEntity })
   @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.esp32Service.findOne(+id);
+  findOne(@Param('id') id: string) {
+    return this.esp32Service.findOne(id);
   }
 
   @ApiOperation({ description: 'Endpoint para atualizar um esp32' })
@@ -70,8 +70,8 @@ export class Esp32Controller {
   @ApiConflictResponse({ type: swagger.CreateConflictResponseEntity })
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateEsp32Dto: UpdateEsp32Dto) {
-    return this.esp32Service.update(+id, updateEsp32Dto);
+  update(@Param('id') id: string, @Body() updateEsp32Dto: UpdateEsp32Dto) {
+    return this.esp32Service.update(id, updateEsp32Dto);
   }
 
   @ApiOperation({ description: 'Endpoint para atualizar o status de um esp32' })
@@ -79,8 +79,8 @@ export class Esp32Controller {
   @ApiBadRequestResponse({ type: swagger.UpdateStatusBadRequesteEntity})
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @Patch(':id/status')
-  updateStatus(@Param('id') id: number, @Body() updateStatusEspDto: UpdateStatusEspDto) {
-    return this.esp32Service.updateStatus(+id, updateStatusEspDto.status);
+  updateStatus(@Param('id') id: string, @Body() updateStatusEspDto: UpdateStatusEspDto) {
+    return this.esp32Service.updateStatus(id, updateStatusEspDto.status);
   }
 
   @ApiOperation({ description: 'Endpoint para deletar um esp32' })
@@ -88,15 +88,7 @@ export class Esp32Controller {
   @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
   @ApiForbiddenResponse({ type: swagger.RemoveForbiddenResponseEntity })
   @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.esp32Service.remove(+id);
-  }
-
-  @ApiOperation({ description: 'Endpoint para desconectar o esp8266 do esp32' })
-  @ApiOkResponse({ type: Esp32Entity })
-  @ApiNotFoundResponse({ type: swagger.FindOneNotFoundResponseEntity })
-  @Patch(':id/disconnect/esp8266')
-  disconnectEsp8266(@Param('id') id: number) {
-    return this.esp32Service.disconnectEsp8266(+id);
+  remove(@Param('id') id: string) {
+    return this.esp32Service.remove(id);
   }
 }

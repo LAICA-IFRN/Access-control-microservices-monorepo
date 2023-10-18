@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "sqlite" // "postgresql"
-  url      = "file:./users.db" //env("DATABASE_URL")
+  url      = "file:./sqlite.db" //env("DATABASE_URL")
 }
 
 model microcontroller_type {
@@ -13,13 +13,14 @@ model microcontroller_type {
 }
 
 model microcontroller {
-  id            String   @id @default(uuid())
-  mac           String   @unique
-  ip            String   @unique
-  environmentId String
-  active        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                      String   @id @default(uuid())
+  mac                     String   @unique
+  ip                      String   @unique
+  environmentId           String
+  active                  Boolean  @default(true)
+  microcontroller_type_id Int
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   @@unique([mac, ip, environmentId])
 }

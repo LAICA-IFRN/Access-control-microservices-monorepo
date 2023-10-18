@@ -102,7 +102,7 @@ export class EnvironmentService {
         data: {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
-          createdBy: createEnvironmentDto.adminId
+          created_by: createEnvironmentDto.adminId
         },
       })
 
@@ -112,7 +112,7 @@ export class EnvironmentService {
           type: "Info",
           message: 'Ambiente criado: ' + environment.name || '',
           meta: {
-            createdBy: environment.createdBy,
+            created_by: environment.created_by,
             environmentId: environment.id
           }
         })
@@ -342,7 +342,7 @@ export class EnvironmentService {
           type: "Info",
           message: 'Ambiente atualizado',
           meta: {
-            createdBy: environment.createdBy,
+            createdBy: environment.created_by,
             environmentId: environment.id
           }
         })
@@ -462,7 +462,7 @@ export class EnvironmentService {
           type: "Info", 
           message: 'Status de ambiente atualizado: ' + environment.name || '',
           meta: {
-            createdBy: environment.createdBy,
+            createdBy: environment.created_by,
             environmentId: environment.id,
             status: environment.active
           }
@@ -555,7 +555,7 @@ export class EnvironmentService {
           type: "Info",
           message: 'Ambiente removido: ' + environment.name || '',
           meta: {
-            createdBy: environment.createdBy,
+            createdBy: environment.created_by,
             environmentId: environment.id
           }
         })

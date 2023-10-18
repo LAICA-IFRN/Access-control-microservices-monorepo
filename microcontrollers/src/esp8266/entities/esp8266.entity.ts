@@ -1,16 +1,19 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Esp8266 } from "@prisma/client";
+import { microcontroller } from "@prisma/client";
 
-export class Esp8266Entity implements Esp8266 {
+export class Esp8266Entity implements microcontroller {
   
   @ApiProperty()
-  id: number;
+  id: string;
   
   @ApiProperty()
   ip: string;
   
   @ApiProperty()
   mac: string;
+
+  @ApiProperty()
+  microcontroller_type_id: number;
   
   @ApiProperty()
   environmentId: string;
@@ -23,7 +26,5 @@ export class Esp8266Entity implements Esp8266 {
   
   @ApiProperty()
   updatedAt: Date;
-  
-  @ApiProperty()
-  esp32Id: number;
+
 }

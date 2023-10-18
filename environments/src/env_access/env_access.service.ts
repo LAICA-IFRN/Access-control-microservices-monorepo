@@ -6,7 +6,7 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { isUUID } from 'class-validator';
 import { EnvAccessStatusDto } from './dto/status-env_access.dto';
-import { Access, EnvAccess } from '@prisma/client';
+import { environment_user_access_control, environment_user } from '@prisma/client';
 
 @Injectable()
 export class EnvAccessService {
@@ -162,14 +162,15 @@ export class EnvAccessService {
       );
     }
 
-    let envAccess: EnvAccess;
+    let envAccess: environment_user;
     try {
-      envAccess = await this.prisma.envAccess.create({
+      envAccess = await this.prisma.environment_user.create({
         data: {
-          userId: createEnvAccessDto.userId,
-          environmentId: createEnvAccessDto.environmentId,
-          startPeriod,
-          endPeriod,
+          user_id: createEnvAccessDto.userId,
+          environment_id: createEnvAccessDto.environmentId,
+          start_period: startPeriod,
+          end_period: endPeriod,
+          created_by: '1554e723-21c0-4fb7-ab23-ca3f57addc7a',
         },
       });
     } catch (error) {
@@ -262,7 +263,7 @@ export class EnvAccessService {
       }
     }
 
-    const accesses: Access[] = [];
+    const accesses: environment_user_access_control[] = [];
     for (const access of createEnvAccessDto.access) {
       const startTime = new Date(
         new Date().toDateString() + ' ' + access.startTime
@@ -289,7 +290,7 @@ export class EnvAccessService {
         });
         
         try {
-          await this.prisma.envAccess.delete({
+          await this.prisma.environment_user.delete({
             where: {
               id: envAccess.id,
             },
@@ -328,18 +329,18 @@ export class EnvAccessService {
       try {
         for (const day of access.days) {
           accesses.push(
-            await this.prisma.access.create({
+            await this.prisma.environment_user_access_control.create({
               data: {
                 day,
-                startTime,
-                endTime,
-                envAccessId: envAccess.id, 
+                start_time: startTime,
+                end_time: endTime,
+                environment_user_id: envAccess.id, 
               }
             })
           );
         }
       } catch (error) {
-        await this.prisma.envAccess.delete({
+        await this.prisma.environment_user_access_control.delete({
           where: {
             id: envAccess.id,
           },
@@ -494,46 +495,46 @@ export class EnvAccessService {
       }
 
       // buscar conflito de horário e período
-      const envAccesses = await this.prisma.envAccess.findMany({
+      const envAccesses = await this.prisma.environment_user.findMany({
         where: {
-          userId: createEnvAccessDto.userId,
+          user_id: createEnvAccessDto.userId,
           active: true,
-          startPeriod: {
+          start_period: {
             lte: startPeriod,
           },
-          endPeriod: {
+          end_period: {
             gte: endPeriod,
           },
           NOT: {
-            environmentId: createEnvAccessDto.environmentId,
+            environment_id: createEnvAccessDto.environmentId,
           },
-          Access: {
+          environment_user_access_control: {
             some: {
               day: {
                 in: access.days,
               },
               OR: [
                 {
-                  startTime: {
+                  start_time: {
                     lte: startTime,
                   },
-                  endTime: {
+                  end_time: {
                     gte: startTime,
                   },
                 },
                 {
-                  startTime: {
+                  start_time: {
                     lte: endTime,
                   },
-                  endTime: {
+                  end_time: {
                     gte: endTime,
                   },
                 },
                 {
-                  startTime: {
+                  start_time: {
                     gte: startTime,
                   },
-                  endTime: {
+                  end_time: {
                     lte: endTime,
                   },
                 },
@@ -542,13 +543,13 @@ export class EnvAccessService {
           },
         },
         select: {
-          startPeriod: true,
-          endPeriod: true,
-          Access: {
+          start_period: true,
+          end_period: true,
+          environment_user_access_control: {
             select: {
               day: true,
-              startTime: true,
-              endTime: true,
+              start_time: true,
+              end_time: true,
             }
           }
         }
@@ -561,7 +562,7 @@ export class EnvAccessService {
   }
 
   async findAll(skip?: number, take?: number) {
-    return await this.prisma.envAccess.findMany({
+    return await this.prisma.environment_user.findMany({
       where: {
         active: true,
       },
@@ -594,10 +595,10 @@ export class EnvAccessService {
       );
     }
 
-    const envManager = await this.prisma.envManager.findFirst({
+    const envManager = await this.prisma.environment_manager.findFirst({
       where: { 
-        userId, 
-        environmentId,
+        user_id: userId, 
+        environment_id: environmentId,
         active: true,
       }
     });
@@ -631,10 +632,10 @@ export class EnvAccessService {
       );
     }
 
-    const envManager = await this.prisma.envManager.findFirst({
+    const envManager = await this.prisma.environment_manager.findFirst({
       where: { 
-        userId, 
-        environmentId
+        user_id: userId, 
+        environment_id: environmentId
       }
     });
 
@@ -679,24 +680,24 @@ export class EnvAccessService {
     }
     
     const now = new Date();
-    const access = await this.prisma.envAccess.findFirst({
+    const access = await this.prisma.environment_user.findFirst({
       where: {
-        userId,
-        environmentId,
+        user_id: userId,
+        environment_id: environmentId,
         active: true,
-        startPeriod: {
+        start_period: {
           lte: now,
         },
-        endPeriod: {
+        end_period: {
           gte: now,
         },
-        Access: {
+        environment_user_access_control: {
           some: {
             day: now.getDay(),
-            startTime: {
+            start_time: {
               lte: now,
             },
-            endTime: {
+            end_time: {
               gte: now,
             },
           }
@@ -734,7 +735,7 @@ export class EnvAccessService {
     }
 
     try {
-      return await this.prisma.envAccess.findFirstOrThrow({
+      return await this.prisma.environment_user.findFirstOrThrow({
         where: {
           id,
           active: true,
@@ -813,16 +814,16 @@ export class EnvAccessService {
       );
     }
 
-    return await this.prisma.envAccess.findMany({
+    return await this.prisma.environment_user.findMany({
       where: {
-        userId,
+        user_id: userId,
         active: true,
       },
     });
   }
 
   async findAllInactives() {
-    return await this.prisma.envAccess.findMany({
+    return await this.prisma.environment_user.findMany({
       where: {
         active: false,
       },
@@ -854,9 +855,9 @@ export class EnvAccessService {
     }
 
     try {
-      return await this.prisma.envAccess.findMany({
+      return await this.prisma.environment_user.findMany({
         where: {
-          environmentId,
+          environment_id: environmentId,
           active: true,
         },
       });
@@ -910,7 +911,7 @@ export class EnvAccessService {
       );
     }
 
-    const envAccess = await this.prisma.envAccess.findUnique({
+    const envAccess = await this.prisma.environment_user.findUnique({
       where: {
         id,
       },
@@ -940,7 +941,7 @@ export class EnvAccessService {
     }
 
     try {
-      const envAccess = await this.prisma.envAccess.update({
+      const envAccess = await this.prisma.environment_user.update({
         where: {
           id,
         },
@@ -1038,7 +1039,7 @@ export class EnvAccessService {
       );
     }
 
-    const envAccess = await this.prisma.envAccess.findFirst({
+    const envAccess = await this.prisma.environment_user.findFirst({
       where: {
         id, active: true,
       },
@@ -1099,13 +1100,13 @@ export class EnvAccessService {
     }
 
     try {
-      await this.prisma.envAccess.update({
+      await this.prisma.environment_user.update({
         where: {
           id,
         },
         data: {
-          startPeriod,
-          endPeriod,
+          start_period: startPeriod,
+          end_period: endPeriod,
         },
       });
     } catch (error) {
@@ -1180,7 +1181,7 @@ export class EnvAccessService {
     ) {
       try {
         for (const accessId of updateEnvAccessDto.accessesToRemove) {
-          await this.prisma.access.delete({
+          await this.prisma.environment_user_access_control.delete({
             where: {
               id: accessId,
             },
@@ -1271,12 +1272,12 @@ export class EnvAccessService {
 
           for (const day of access.days) {
             accesses.push(
-              await this.prisma.access.create({
+              await this.prisma.environment_user_access_control.create({
                 data: {
                   day,
-                  startTime,
-                  endTime,
-                  envAccessId: envAccess.id, 
+                  start_time: startTime,
+                  end_time: endTime,
+                  environment_user_id: envAccess.id, 
                 }
               })
             );
@@ -1373,7 +1374,7 @@ export class EnvAccessService {
       );
     }
 
-    const envAccess = await this.prisma.envAccess.findFirst({
+    const envAccess = await this.prisma.environment_user.findFirst({
       where: {
         id, active: true,
       },
@@ -1402,7 +1403,7 @@ export class EnvAccessService {
     }
 
     try {
-      const envAccess = await this.prisma.envAccess.delete({
+      const envAccess = await this.prisma.environment_user.delete({
         where: {
           id,
           active: true,

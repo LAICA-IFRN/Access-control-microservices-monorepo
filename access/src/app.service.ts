@@ -7,11 +7,11 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AppService {
+  private readonly getEsp32Url = `${process.env.MICROCONTROLLERS_SERVICE_URL}/esp32/mac`
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly errorLogger = new Logger()
   
   constructor(
-    private readonly getEsp32Url = `${process.env.MICROCONTROLLERS_SERVICE_URL}/esp32/mac`,
-    private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`,
-    private readonly errorLogger = new Logger(),
     private readonly httpService: HttpService,
   ) {}
 
@@ -23,6 +23,8 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.status === 404) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
@@ -179,6 +181,8 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.status === 404) {
             throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
           } else if (error.response.status === 400) {
@@ -259,6 +263,8 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.status === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {
@@ -299,6 +305,8 @@ export class AppService {
     const userEncodedPhoto = await lastValueFrom(
       this.httpService.get(getUserPhotoUrl).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.status === 404) {
             throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
           } else if (error.response.status === 400) {

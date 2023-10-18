@@ -1,12 +1,19 @@
-import { Controller, Get } from '@nestjs/common';
+import { Body, Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
+import { TokenizeDto } from './dto/tokenize.dto';
+import { AuthorizationDto } from './dto/authorization.dto';
 
 @Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  @Get()
-  getHello(): string {
-    return this.appService.getHello();
+  @Post('tokenize')
+  tokenize(@Body() tokenizeDto: TokenizeDto) {
+    return this.appService.tokenize(tokenizeDto);
+  }
+
+  @Get('authorize')
+  authorize(@Body() authorizationDto: AuthorizationDto) {
+    return this.appService.authorize(authorizationDto)
   }
 }

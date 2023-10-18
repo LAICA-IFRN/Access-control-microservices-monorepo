@@ -22,6 +22,7 @@ model document_type {
 model user_role {
   id         String   @id @default(uuid())
   active     Boolean  @default(true)
+  created_by String
   created_at DateTime @default(now())
   role_id    Int
   role       role     @relation(fields: [role_id], references: [id])

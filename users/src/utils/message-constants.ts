@@ -32,5 +32,6 @@ export class MessageConstants {
     USER_NOT_FOUND_OR_TOKEN_REVOKED: 'Usuário não encontrado ou token revogado',
     USER_NOT_FOUND_OR_TOKEN_USED: 'Usuário não encontrado ou token já utilizado',
     USER_NOT_FOUND_OR_TOKEN_EXPIRED_OR_REVOKED: 'Usuário não encontrado ou token expirado ou revogado',
-    USER_NOT_FOUND_OR_TOKEN_EXPIRED_OR_REVOKED_OR_USED: 'Usuário não encontrado ou token expirado ou revogado ou já utilizado
+    USER_NOT_FOUND_OR_TOKEN_EXPIRED_OR_REVOKED_OR_USED: 'Usuário não encontrado ou token expirado ou revogado ou já utilizado'
+  }
 }

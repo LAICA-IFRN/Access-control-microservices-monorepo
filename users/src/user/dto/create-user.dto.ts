@@ -20,21 +20,18 @@ export class CreateUserDto {
   @ApiProperty({ required: false})
   name?: string
 
-  @IsNumberString()
-  @Length(7, 14)
-  @IsOptional()
-  @ApiProperty({ required: false})
-  registration?: string
-
   @IsOptional()
   @IsCPFOrCNPJ()
   @IsOptional()
   @ApiProperty({ required: false})
   document: string
 
-  documentType: 'CPF' | 'CNPJ' | 'Registration'
+  @ApiProperty()
+  @IsIn(['CPF', 'CNPJ', 'REGISTRATION'])
+  documentType: 'CPF' | 'CNPJ' | 'REGISTRATION'
 
   @IsBase64()
+  @ApiProperty()
   encodedImage: string
 
   @IsEmail()

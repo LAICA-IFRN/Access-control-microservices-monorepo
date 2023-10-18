@@ -1,7 +1,7 @@
-import { Document, User } from "@prisma/client";
+import { user } from "@prisma/client";
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UserEntity implements User {
+export class UserEntity implements user {
   @ApiProperty()
   id: string;
 
@@ -9,7 +9,10 @@ export class UserEntity implements User {
   name: string;
 
   @ApiProperty()
-  document: Document;
+  document: string;
+
+  @ApiProperty()
+  document_type_id: number;
 
   @ApiProperty({ required: false, nullable: true })
   email: string | null;
@@ -21,8 +24,11 @@ export class UserEntity implements User {
   active: boolean;
 
   @ApiProperty()
-  createdAt: Date;
+  created_at: Date;
 
   @ApiProperty()
-  updatedAt: Date;
+  updated_at: Date;
+
+  @ApiProperty()
+  created_by: string;
 }

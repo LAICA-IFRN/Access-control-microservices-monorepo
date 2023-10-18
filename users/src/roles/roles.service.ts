@@ -1,7 +1,7 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { User, UserRoles } from '@prisma/client';
+import { user, user_role } from '@prisma/client';
 import { isUUID } from 'class-validator';
 import { DeleteRoleDto } from './dto/delete-role.dto';
 import { RoleStatusDto } from './dto/status-role.dto';
@@ -40,7 +40,7 @@ export class RolesService {
     }
 
     const { rolesToAdd } = createRoleDto;
-    const roles: UserRoles[] = []
+    const roles: user_role[] = []
 
     const hasAdminRole = await this.checkRole(userId, ['ADMIN'])
     const containsAdminRoleToAdd = rolesToAdd.includes('ADMIN')
@@ -76,13 +76,13 @@ export class RolesService {
       if (rolesToAdd && rolesToAdd.length > 0) {
         for (const role of rolesToAdd) {
           roles.push(
-            await this.prisma.userRoles.create({
+            await this.prisma.user_role.create({
               data: {
-                User: { connect: { id: userId } },
-                Role: { connect: { name: role } }
+                user: { connect: { id: userId } },
+                role: { connect: { name: role } }
               },
               include: {
-                Role: true
+                role: true
               }
             })
           )
@@ -176,10 +176,10 @@ export class RolesService {
     }
 
     if (containsAdminRoleToAdd) {
-      await this.prisma.userRoles.updateMany({
+      await this.prisma.user_role.updateMany({
         where: {
-          userId: userId,
-          roleId: {
+          user_id: userId,
+          role_id: {
             not: 1
           }
         },
@@ -213,15 +213,15 @@ export class RolesService {
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
-    let user: User & { UserRoles: UserRoles[] }
+    let user: user & { user_role: user_role[] }
 
     try {
       user = await this.prisma.user.findFirstOrThrow({
         where: { id, active: true },
         include: {
-          UserRoles: {
+          user_role: {
             include: {
-              Role: true
+              role: true
             }
           }
         }
@@ -251,7 +251,7 @@ export class RolesService {
       }
     }
 
-    return user.UserRoles;
+    return user.user_role;
   }
 
   async checkRole(id: string, roles: string[]) {
@@ -275,16 +275,16 @@ export class RolesService {
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
-    let user: User & { UserRoles: UserRoles[] }
+    let user: user & { user_role: user_role[] }
 
     try {
       user = await this.prisma.user.findFirstOrThrow({
         where: { id },
         include: {
-          UserRoles: {
+          user_role: {
             where: { active: true },
             include: {
-              Role: true
+              role: true
             }
           }
         }
@@ -314,7 +314,7 @@ export class RolesService {
       }
     }
 
-    const userRoles: any = user.UserRoles
+    const userRoles: any = user.user_role
     const hasRole = userRoles.some((userRole: any) => roles.includes(userRole.Role.name))
 
     return hasRole
@@ -345,10 +345,10 @@ export class RolesService {
     try {
       const user = await this.prisma.user.findFirstOrThrow({ where: { id: userId } })
 
-      return await this.prisma.userRoles.update({
+      return await this.prisma.user_role.update({
         where: { 
           id: roleId, 
-          userId: user.id 
+          user_id: user.id 
         },
         data: { active: roleStatusDto.status }
       })
@@ -402,7 +402,7 @@ export class RolesService {
     }
     
     const { rolesToDelete } = deleteRoleDto;
-    const roles: UserRoles[] = []
+    const roles: user_role[] = []
 
     const hasAdminRole = await this.checkRole(userId, ['ADMIN'])
     if (hasAdminRole) {
@@ -434,13 +434,13 @@ export class RolesService {
         include: {
           _count: {
             select: {
-              UserRoles: true
+              user_role: true
             }
           }
         }
       })
 
-      if (user._count.UserRoles === 1) {
+      if (user._count.user_role === 1) {
         throw new HttpException(
           'User cannot be without roles',
           HttpStatus.BAD_REQUEST
@@ -452,11 +452,11 @@ export class RolesService {
           let currentRole = await this.prisma.role.findFirst({ where: { name: role } })
 
           roles.push(
-            await this.prisma.userRoles.delete({
+            await this.prisma.user_role.delete({
               where: {
-                UserRoles_userId_roleId_unique: {
-                  userId: user.id,
-                  roleId: currentRole.id
+                user_role_user_id_role_id_unique: {
+                  user_id: user.id,
+                  role_id: currentRole.id
                 }
               }
             })

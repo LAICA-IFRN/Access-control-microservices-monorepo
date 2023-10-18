@@ -7,8 +7,14 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AppService {
-  private readonly getEsp32Url = `${process.env.MICROCONTROLLERS_SERVICE_URL}/esp32/mac`
-  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly createAccessLog = process.env.CREATE_ACCESS_LOG_URL
+  private readonly searchEsp32Url = process.env.SEARCH_ESP32_URL
+  private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
+  private readonly searchUserUrl = process.env.SEARCH_USER_URL
+  private readonly searchUserAccessUrl = process.env.SEARCH_USER_ENV_ACCESS
+  private readonly searchUserImageUrl = process.env.SEARCH_USER_IMAGE_URL
+  private readonly verifyUserRoleUrl = process.env.VERIFY_USER_ROLE_URL
+  private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
   
   constructor(
@@ -17,17 +23,19 @@ export class AppService {
 
   async access(accessDto: AccessDto) {
     const esp32: any = await lastValueFrom(
-      this.httpService.get(this.getEsp32Url, {
+      this.httpService.get(this.searchEsp32Url, {
         data: {
           mac: accessDto.mac,
         }
       }).pipe(
         catchError((error) => {
+          console.log('get esp32');
+          
           console.log(error);
           
           if (error.response.status === 404) {
             lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
+              this.httpService.post(this.createAccessLog, {
                 topic: 'Acesso',
                 type: 'Error',
                 message: 'Falha ao tentar acesso: Esp32 não encontrado',
@@ -43,7 +51,7 @@ export class AppService {
             throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
           } else if (error.response.status === 400) {
             lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
+              this.httpService.post(this.createAccessLog, {
                 topic: 'Acesso',
                 type: 'Error',
                 message: 'Falha ao tentar acesso: Mac inválido',
@@ -59,7 +67,7 @@ export class AppService {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {
             lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
+              this.httpService.post(this.createAccessLog, {
                 topic: 'Acesso',
                 type: 'Error',
                 message: 'Falha ao tentar acesso: Erro interno, verificar logs de erro do serviço',
@@ -88,14 +96,13 @@ export class AppService {
     } else if (mobile) {
       return this.proccessAccessWhenMobile(environmentId, mobile)
     } else {
-      return await this.proccessAccessWhenUserAndPassword(environmentId, user, password, encoded)
+      return await this.proccessAccessWhenDocumentAndPassword(environmentId, user, password, encoded)
     }
   }
 
   async proccessAccessWhenRFID(environmentId: string, rfid: string, captureEncodedImage: string) {
-    const getRfidUrl = `${process.env.DEVICES_SERVICE_URL}/rfid/tag?tag=${rfid}`
     const response = await lastValueFrom(
-      this.httpService.get(getRfidUrl).pipe(
+      this.httpService.get(this.searchRFIDUrl).pipe(
         catchError((error) => {
           throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
         }
@@ -117,12 +124,11 @@ export class AppService {
     console.log('MOBILE')
   }
 
-  async proccessAccessWhenUserAndPassword(
+  async proccessAccessWhenDocumentAndPassword(
     environmentId: string, user: string, password: string, captureEncodedImage: string
   ) {
-    const getUserUrl = `${process.env.USERS_SERVICE_URL}}/access`
     const response = await lastValueFrom(
-      this.httpService.get(getUserUrl, {
+      this.httpService.get(this.searchUserUrl, {
         data: {
           user,
           password
@@ -136,7 +142,7 @@ export class AppService {
 
     if (response.result === 404) {
       await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
+        this.httpService.post(this.createAccessLog, {
           topic: 'Acesso',
           type: 'Info',
           message: 'Acesso à ambiente negado: Usuário não encontrado',
@@ -152,7 +158,7 @@ export class AppService {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     } else if (response.result === 401) {
       await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
+        this.httpService.post(this.createAccessLog, {
           topic: 'Acesso',
           type: 'Info',
           message: 'Acesso à ambiente negado: Senha inválida',
@@ -172,15 +178,15 @@ export class AppService {
   }
 
   async validateUserAccess(environmentId: string, userId: string, captureEncodedImage: string) {
-    const verifyUserRoleUrl = `${process.env.USERS_SERVICE_URL}/roles/verify`
     const isFrequenter = await lastValueFrom(
-      this.httpService.get(verifyUserRoleUrl, {
+      this.httpService.get(this.verifyUserRoleUrl, {
         data: {
           userId,
           roles: ['FREQUENTER']
         }
       }).pipe(
         catchError((error) => {
+          console.log('get frequenter');
           console.log(error);
           
           if (error.response.status === 404) {
@@ -196,7 +202,7 @@ export class AppService {
     .then((response) => response.data)
     .catch((error) => {
       lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
+        this.httpService.post(this.createAccessLog, {
           topic: 'Acesso',
           type: 'Error',
           message: 'Falha ao tentar acesso: Erro interno, verificar logs de erro do serviço',
@@ -214,9 +220,8 @@ export class AppService {
 
     let accessResponse = { access: false }
     if (isFrequenter) {
-      const getUserAccessUrl = `${process.env.ENVIRONMENTS_SERVICE_URL}/env-access/access`
       accessResponse = await lastValueFrom(
-        this.httpService.get(getUserAccessUrl, {
+        this.httpService.get(this.searchUserAccessUrl, {
           data: {
             userId: userId,
             environmentId: environmentId
@@ -233,9 +238,9 @@ export class AppService {
       })
     }
 
-    if (accessResponse.access == false) {
+    if (isFrequenter && accessResponse.access == false) {
       await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
+        this.httpService.post(this.createAccessLog, {
           topic: 'Acesso',
           type: 'Info',
           message: 'Acesso à ambiente negado: Acesso não permitido',
@@ -251,18 +256,18 @@ export class AppService {
       throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
     }
 
-    const userImagePath = await this.saveUserPhoto(userId)
+    const userImagePath = await this.saveUserImage(userId)
     const captureImagePath = await this.saveCapturePhoto(captureEncodedImage)
 
-    const facialRecognitionVerifyUrl = `${process.env.FACIAL_RECOGNITION_SERVICE_URL}/verify/user`
     const facialRecognition = await lastValueFrom(
-      this.httpService.get(facialRecognitionVerifyUrl, {
+      this.httpService.get(this.facialRecognitionUrl, {
         data: {
           capturedImagePath: captureImagePath,
           userImagePath: userImagePath
         }
       }).pipe(
         catchError((error) => {
+          console.log('facial recognition');
           console.log(error);
           
           if (error.response.status === 400) {
@@ -278,9 +283,12 @@ export class AppService {
       this.errorLogger.error('Falha ao realizar análise facial', error);
     })
 
+    console.log(facialRecognition);
+    
+
     if (facialRecognition.result === false) {
       await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
+        this.httpService.post(this.createAccessLog, {
           topic: 'Acesso',
           type: 'Info',
           message: 'Acesso à ambiente negado: Análise facial não aprovada',
@@ -300,11 +308,12 @@ export class AppService {
     return { access: facialRecognition.result }
   }
 
-  async saveUserPhoto(userId: string) {
-    const getUserPhotoUrl = `${process.env.USERS_SERVICE_URL}/${userId}/photo`
+  async saveUserImage(userId: string) {
+    const getUserImage = `${this.searchUserImageUrl}/${userId}/image`
     const userEncodedPhoto = await lastValueFrom(
-      this.httpService.get(getUserPhotoUrl).pipe(
+      this.httpService.get(getUserImage).pipe(
         catchError((error) => {
+          console.log('get user image');
           console.log(error);
           
           if (error.response.status === 404) {
@@ -346,7 +355,7 @@ export class AppService {
     fs.writeFile(imagePath, imageBuffer, (err) => {
       if (err) {
         lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
+          this.httpService.post(this.createAccessLog, {
             topic: 'Acesso',
             type: 'Error',
             message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',
@@ -382,7 +391,7 @@ export class AppService {
     fs.writeFile(imagePath, imageBuffer, (err) => {
       if (err) {
         lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
+          this.httpService.post(this.createAccessLog, {
             topic: 'Acesso',
             type: 'Error',
             message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',

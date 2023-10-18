@@ -10,7 +10,7 @@ async function bootstrap() {
     logger: WinstonModule.createLogger({
       transports: [
         new transports.File({
-          filename: 'src/errors/%DATE%.log',
+          filename: 'src/errors/json.log',
           format: format.combine(format.timestamp(), format.json()),
           zippedArchive: false,
           maxFiles: 30,
@@ -27,8 +27,7 @@ async function bootstrap() {
           ),
         })
       ]
-    }),
-    cors: true
+    })
   });
 
   app.useGlobalPipes(new ValidationPipe({
@@ -45,7 +44,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('service/audit/api', app, document);
 
   app.enableCors({
     origin: [

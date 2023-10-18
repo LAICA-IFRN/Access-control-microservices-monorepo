@@ -1,10 +1,12 @@
 from flask import Flask, request, abort
+from flask_cors import CORS
 import face_recognition
 import os
 
 app = Flask(__name__)
+CORS(app)
 
-@app.route("/verify/user", methods=['GET'])
+@app.route("/service/facial-recognition/verify/user", methods=['GET'])
 def endpoint():
   print(request.json)
   captured_image_path = request.json.get('capturedImagePath', None)

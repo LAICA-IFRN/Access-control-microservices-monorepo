@@ -44,7 +44,7 @@ async function bootstrap() {
   .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('service/microcontrollers/api', app, document);
 
   app.enableCors({
     origin: [

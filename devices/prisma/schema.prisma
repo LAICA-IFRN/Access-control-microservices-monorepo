@@ -7,27 +7,46 @@ datasource db {
   url      = "file:./users.db" //env("DATABASE_URL")
 }
 
-model TagRFID {
-  id        Int      @id @default(autoincrement())
-  tag       String   @unique
-  userId    String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  // @@map("tags_rfid")
-
-  //@@unique([tag, userId])
+model microcontroller_type {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  microcontroller microcontroller[]
 }
 
-model Mobile {
-  id        Int      @id @default(autoincrement())
-  userId    String   @unique
-  number    String   @unique
-  mac       String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  // @@map("mobiles")
+model microcontroller {
+  id                      Int                  @id @default(autoincrement())
+  mac                     String               @unique
+  ip                      String               @unique
+  environment_id          String?
+  active                  Boolean              @default(false)
+  microcontroller_type    microcontroller_type @relation(fields: [microcontroller_type_id], references: [id])
+  microcontroller_type_id Int
+  created_at              DateTime             @default(now())
+  updated_at              DateTime             @updatedAt
 
-  //@@unique([mac, userId])
+  @@unique([mac, ip])
+}
+
+model tag_rfid {
+  id         Int      @id @default(autoincrement())
+  tag        String   @unique
+  user_id    String   @unique
+  created_by String
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([tag, user_id])
+}
+
+model mobile {
+  id         Int      @id @default(autoincrement())
+  user_id    String   @unique
+  number     String   @unique
+  mac        String   @unique
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([mac, user_id])
 }

@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { TagRFID } from "@prisma/client";
+import { tag_rfid } from "@prisma/client";
 
-export class RfidEntity implements TagRFID {
+export class RfidEntity implements tag_rfid {
   
   @ApiProperty()
   id: number;
@@ -10,14 +10,17 @@ export class RfidEntity implements TagRFID {
   tag: string;
   
   @ApiProperty()
-  userId: string;
+  user_id: string;
   
   @ApiProperty()
   active: boolean;
+
+  @ApiProperty()
+  created_by: string;
   
   @ApiProperty()
-  createdAt: Date;
+  created_at: Date;
   
   @ApiProperty()
-  updatedAt: Date;
+  updated_at: Date;
 }

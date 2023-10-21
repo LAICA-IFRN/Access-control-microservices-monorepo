@@ -1,24 +1,25 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateRfidDto } from './dto/create-rfid.dto';
 import { UpdateStatusRfidDto } from './dto/update-status-rfid.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+
 
 @Injectable()
 export class RfidService {
   private readonly usersServiceUrl = `${process.env.USERS_SERVICE_URL}`
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly errorLogger = new Logger()
-
+  
   constructor(
     private readonly prismaService: PrismaService,
     private readonly httpService: HttpService,
   ) {}
 
   async create(createRfidDto: CreateRfidDto) {
-    console.log('create service');
-    
     const findUserEndpoint = `${this.usersServiceUrl}/${createRfidDto.userId}`
     const findUser = await lastValueFrom(
       this.httpService.get(findUserEndpoint)
@@ -102,13 +103,15 @@ export class RfidService {
           }
         })
       )
-    )
-
-    console.log(findUser);
+    ).then((response) => response.data)
 
     try {
-      const rfid = await this.prismaService.tagRFID.create({
-        data: createRfidDto,
+      const rfid = await this.prismaService.tag_rfid.create({
+        data: {
+          tag: createRfidDto.tag,
+          user_id: findUser.id,
+          created_by: createRfidDto.createdBy
+        },
       })
 
       await lastValueFrom(
@@ -119,7 +122,7 @@ export class RfidService {
           meta: {
             device: 'RFID',
             tag: rfid.id,
-            userId: rfid.userId
+            userId: rfid.user_id
           }
         })
       )
@@ -194,15 +197,29 @@ export class RfidService {
       throw new HttpException('Invalid skip or take', HttpStatus.BAD_REQUEST)
     }
 
-    const tags = await this.prismaService.tagRFID.findMany({
-      where: {
-        active: true
-      },
-      skip,
-      take,
-    })
+    const [tags, count] = await this.prismaService.$transaction([
+      this.prismaService.tag_rfid.findMany({
+        where: {
+          active: true
+        },
+        skip,
+        take
+      }),
+      
+      this.prismaService.tag_rfid.count({
+        where: {
+          active: true
+        }
+      })
+    ])
 
-    return tags
+    const pages = Math.ceil(count / take)
+
+    return {
+      tags,
+      count,
+      pages
+    }
   }
 
   async findOne(id: number) {
@@ -227,7 +244,7 @@ export class RfidService {
     }
 
     try {
-      return await this.prismaService.tagRFID.findFirstOrThrow({
+      return await this.prismaService.tag_rfid.findFirstOrThrow({
         where: {
           id, active: true
         }
@@ -272,7 +289,7 @@ export class RfidService {
   }
 
   async findOneByTag(tag: string) { // para uso do serviço de acesso
-    const rfid = await this.prismaService.tagRFID.findFirst({
+    const rfid = await this.prismaService.tag_rfid.findFirst({
       where: {
         tag, active: true
       }
@@ -281,7 +298,7 @@ export class RfidService {
     const response = { result: null }
 
     if (rfid) {
-      response.result = rfid.userId
+      response.result = rfid.user_id
     }
 
     return response
@@ -289,9 +306,9 @@ export class RfidService {
 
   async updateStatus(updateStatusRfidDto: UpdateStatusRfidDto) {
     try {
-      const rfid = await this.prismaService.tagRFID.update({
+      const rfid = await this.prismaService.tag_rfid.update({
         where: {
-          id: updateStatusRfidDto.rfid
+          id: updateStatusRfidDto.tagId
         },
         data: {
           active: updateStatusRfidDto.status
@@ -306,7 +323,7 @@ export class RfidService {
           meta: {
             device: 'RFID',
             tag: rfid.id,
-            userId: rfid.userId
+            userId: rfid.user_id
           }
         })
       )
@@ -324,7 +341,7 @@ export class RfidService {
             message: 'Falha atualizar status da Tag RFID: registro não encontrado',
             meta: {
               device: 'RFID',
-              id: updateStatusRfidDto.rfid
+              tagId: updateStatusRfidDto.tagId
             }
           })
         )
@@ -341,7 +358,7 @@ export class RfidService {
             message: 'Falha atualizar status da Tag RFID: erro interno, verificar logs de erro do serviço',
             meta: {
               device: 'RFID',
-              id: updateStatusRfidDto.rfid
+              tagId: updateStatusRfidDto.tagId
             }
           })
         )
@@ -354,7 +371,7 @@ export class RfidService {
     }
   }
 
-  async remove(id: number) {
+  async remove(id: number, deletedBy: string) {
     if (isNaN(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -376,7 +393,7 @@ export class RfidService {
     }
 
     try {
-      const rfid = await this.prismaService.tagRFID.delete({
+      const rfid = await this.prismaService.tag_rfid.delete({
         where: {
           id
         }
@@ -390,7 +407,8 @@ export class RfidService {
           meta: {
             device: 'RFID',
             tag: rfid.id,
-            userId: rfid.userId
+            userId: rfid.user_id,
+            deletedBy
           }
         })
       )

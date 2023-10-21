@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsNumber, IsUUID } from "class-validator";
+import { IsBoolean, IsNumber } from "class-validator";
 
 export class UpdateStatusRfidDto {
   
@@ -9,5 +9,5 @@ export class UpdateStatusRfidDto {
 
   @ApiProperty()
   @IsNumber()
-  rfid: number;
+  tagId: number;
 }

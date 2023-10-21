@@ -1,7 +1,7 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { Esp32Service } from './esp32.service';
-import { CreateEsp32Dto } from './dto/create-esp32.dto';
-import { UpdateEsp32Dto } from './dto/update-esp32.dto';
+import { CreateEsp32Dto } from './dto/create-microcontroller.dto';
+import { UpdateEsp32Dto } from './dto/update-microcontroller.dto';
 import { UpdateStatusEspDto } from './dto/update-status-esp.dto';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Esp32Entity } from './entities/esp32.entity';

@@ -11,10 +11,10 @@ async function bootstrap() {
     .setVersion('0.1')
     .build();
 
-  app.setGlobalPrefix('gateway');
-
+  app.setGlobalPrefix('access-control/gateway');
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('gateway/api', app, document);
+  app.setGlobalPrefix('')
 
   await app.listen(8000);
 }

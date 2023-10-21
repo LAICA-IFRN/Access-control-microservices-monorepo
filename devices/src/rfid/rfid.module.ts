@@ -5,7 +5,10 @@ import { HttpModule } from '@nestjs/axios';
 import { PrismaModule } from 'src/prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule, HttpModule],
+  imports: [
+    PrismaModule, 
+    HttpModule,
+  ],
   controllers: [RfidController],
   providers: [RfidService],
 })

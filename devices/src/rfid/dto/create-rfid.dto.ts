@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsString, IsUUID } from "class-validator";
 
 export class CreateRfidDto {
   
@@ -8,6 +8,10 @@ export class CreateRfidDto {
   tag: string;
   
   @ApiProperty()
-  @IsString()
+  @IsUUID()
   userId: string;
+
+  @ApiProperty()
+  @IsUUID()
+  createdBy: string;
 }

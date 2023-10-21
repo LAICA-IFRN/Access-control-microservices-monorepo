@@ -22,8 +22,6 @@ export class RfidController {
 
   @Get('tag')
   findOneByTag(@Query('tag') tag: string) {
-    console.log('findOneByTag');
-    
     return this.rfidService.findOneByTag(tag);
   }
 
@@ -38,8 +36,8 @@ export class RfidController {
     return this.rfidService.updateStatus(updateStatusRfidDto);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.rfidService.remove(+id);
+  @Delete(':id/action-by/:userId')
+  remove(@Param('id') id: number, @Param('userId') userId: string) {
+    return this.rfidService.remove(+id, userId);
   }
 }

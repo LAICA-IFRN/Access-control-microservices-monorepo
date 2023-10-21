@@ -1,6 +1,6 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { CreateEsp32Dto } from './dto/create-esp32.dto';
-import { UpdateEsp32Dto } from './dto/update-esp32.dto';
+import { CreateEsp32Dto } from './dto/create-microcontroller.dto';
+import { UpdateEsp32Dto } from './dto/update-microcontroller.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { isUUID } from 'class-validator';
 import { catchError, lastValueFrom } from 'rxjs';

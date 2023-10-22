@@ -10,35 +10,42 @@ import { FindToAccess } from './dto/find-to-access.dto';
 import { ValidateToToken } from './dto/validate-to-token.dto';
 import { AuditLogService } from 'src/providers/audit-log/audit-log.service';
 import { AuditConstants } from 'src/providers/audit-log/audit-contants';
+import { EmailService } from 'src/providers/mail/mail-provider.service';
+import { CreateUserByInvitationDto } from './dto/create-user-by-invitaion.dto';
+import { catchError, lastValueFrom } from 'rxjs';
+import { DocumentTypesConstants, RolesConstants } from 'src/utils/database-constants';
 
 @Injectable()
 export class UserService {
   private readonly createMobileDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/mobile`
   private readonly createRFIDDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/rfid`
+  private readonly generateSuapTokenUrl = process.env.GENERATE_SUAP_TOKEN_URL
+  private readonly getSuapUserDataUrl = process.env.GET_SUAP_USER_DATA_URL
   private readonly errorLogger = new Logger()
+  private readonly roundsOfHashing = 10
   
   constructor(
-    private readonly prisma: PrismaService,
+    private readonly prismaService: PrismaService,
     private readonly httpService: HttpService,
-    private readonly auditLogService: AuditLogService
+    private readonly auditLogService: AuditLogService,
+    private readonly emailService: EmailService
   ) {}
 
   async create(createUserDto: CreateUserDto, userId: string) {
     if (
-      createUserDto.roles.includes('ADMIN')
+      createUserDto.roles.includes(RolesConstants.ADMIN)
       && createUserDto.roles.length > 1
     ) {
       this.auditLogService.create(AuditConstants.createUserBadRequest({target: createUserDto, statusCode: 400}));
       throw new HttpException('Admin user cannot have other roles', HttpStatus.BAD_REQUEST);
     }
 
-    const roundsOfHashing = 10;
-    const hashedPassword = await bcrypt.hash(createUserDto.password, roundsOfHashing);
+    const hashedPassword = await bcrypt.hash(createUserDto.password, this.roundsOfHashing);
 
     let createdUser: user;
   
     try {
-      createdUser = await this.prisma.user.create(this.factoryCreateUser(createUserDto, hashedPassword, userId));
+      createdUser = await this.prismaService.user.create(this.factoryCreateUser(createUserDto, hashedPassword, userId));
     } catch (error) {
       if (error.code === 'P2002') {
         this.auditLogService.create(AuditConstants.createUserConflict({target: error.meta.target, statusCode: 409}));
@@ -51,7 +58,7 @@ export class UserService {
 
     let roles: any
     for (const role of createUserDto.roles) {
-      roles = await this.prisma.user_role.create({
+      roles = await this.prismaService.user_role.create({
         data: {
           user: { connect: { id: createdUser.id } },
           role: { connect: { name: role } },
@@ -69,10 +76,28 @@ export class UserService {
 
     this.auditLogService.create(AuditConstants.createUserOk({userId: createdUser.id, author: userId, statusCode: 201}));
 
-    // if (createUserDto.mac) {} // TODO: enviar msg para o serviço responsável
-    // if (createUserDto.tag) {} // TODO: enviar msg para o serviço responsável
-  
-    return createdUser;
+    let mobileDevice: any
+    if (createUserDto.mac) {}
+
+    let tag: any
+    if (createUserDto.tag) {
+      try {
+        tag = await lastValueFrom(
+          this.httpService.post(this.createRFIDDeviceUrl, {
+            tag: createUserDto.tag,
+            user_id: createdUser.id
+          })
+        ).then((response) => response.data);
+      } catch (error) {
+        this.errorLogger.error('Falha ao criar tag', error);
+      }
+    }
+    
+    return {
+      createdUser,
+      mobileDevice,
+      tag,
+    };
   }
 
   private factoryCreateUser(createUserDto: CreateUserDto, hashedPassword: string, userId: string): any {
@@ -94,6 +119,95 @@ export class UserService {
     };
   }
 
+  async sendInviteEmail(email: string) {
+    try {
+      await this.emailService.sendMail(email);
+
+      this.auditLogService.create(AuditConstants.sendInviteEmailOk({email, statusCode: 200}))
+
+      return { message: 'E-mail sent successfully' };
+    } catch (error) {
+      this.errorLogger.error('Falha ao enviar e-mail', error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  async createUserByInvitation(createUserByInvitationDto: CreateUserByInvitationDto) {
+    const accessToken = await lastValueFrom(
+      this.httpService.post(this.generateSuapTokenUrl, {
+        username: createUserByInvitationDto.registration,
+        password: createUserByInvitationDto.password
+      }).pipe(
+        catchError((error) => {
+          if (error.response.status === 401) {
+            this.auditLogService.create(AuditConstants.createUserByInvitationUnauthorizedCredencials({statusCode: 401}))
+            throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
+          } else {
+            this.errorLogger.error('Falha ao gerar token para criar usuário', error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        })
+      )
+    ).then((response) => response.data);
+    
+    const userData = await lastValueFrom(
+      this.httpService.get(this.getSuapUserDataUrl, {
+        headers: {
+          Authorization: `Bearer ${accessToken.access}`
+        }
+      }).pipe(
+        catchError((error) => {
+          if (error.response.status === 401) {
+            this.auditLogService.create(AuditConstants.createUserByInvitationUnauthorizedToken({statusCode: 401}))
+            throw new HttpException('Token is invalid or expired', HttpStatus.UNAUTHORIZED);
+          } else {
+            this.errorLogger.error('Falha ao buscar dados do usuário', error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        })
+      )
+    ).then((response) => response.data);
+
+    const { nome_usual, email, matricula } = userData;
+
+    try {
+      const hashedPassword = await bcrypt.hash(createUserByInvitationDto.password, this.roundsOfHashing);
+
+      const createdUser = await this.prismaService.user.create({
+        data: {
+          name: nome_usual,
+          email,
+          password: hashedPassword,
+          active: true,
+          user_image: {
+            create: {
+              encoded: createUserByInvitationDto.encodedUserImage
+            }
+          },
+          document_type: { connect: { name: DocumentTypesConstants.REGISTRATION } },
+          document: matricula,
+          user_role: {
+            create: {
+              role: { connect: { name: RolesConstants.FREQUENTER } }
+            }
+          }
+        }
+      });
+
+      this.auditLogService.create(AuditConstants.createUserOk({userId: createdUser.id, statusCode: 201}))
+
+      return createdUser;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        this.auditLogService.create(AuditConstants.createUserConflict({target: error.meta.target, statusCode: 409}))
+        throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
+      } else {
+        this.auditLogService.create(AuditConstants.createUserError({context: error, statusCode: 422}))
+        throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    }
+  }
+
   async findUserImage(userId: string) {
     if (!isUUID(userId)) {
       this.auditLogService.create(AuditConstants.findUserImageBadRequest({userId, statusCode: 400}))
@@ -101,7 +215,7 @@ export class UserService {
     }
 
     try {
-      const userImage = await this.prisma.user_image.findFirst({
+      const userImage = await this.prismaService.user_image.findFirst({
         where: { user_id: userId }
       });
 
@@ -124,7 +238,7 @@ export class UserService {
     }
 
     try {
-      return await this.prisma.user.findFirstOrThrow({
+      return await this.prismaService.user.findFirstOrThrow({
         where: { id: userId, active: true },
         include: {
           user_role: {
@@ -146,7 +260,7 @@ export class UserService {
   }
 
   async findOneToAccess(findToAccess: FindToAccess) {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prismaService.user.findFirst({
       where: {
         document: findToAccess.user,
         active: true
@@ -171,7 +285,7 @@ export class UserService {
   }
 
   async validateToToken(validateToToken: ValidateToToken) {
-    const user = await this.prisma.user.findFirst({
+    const user = await this.prismaService.user.findFirst({
       where: {
         document: validateToToken.document,
         active: true
@@ -195,12 +309,12 @@ export class UserService {
 
   async findAllFrequenters() {
     try {
-      return await this.prisma.user.findMany({
+      return await this.prismaService.user.findMany({
         where: {
           user_role: {
             some: {
               role: {
-                name: 'FREQUENTER'
+                name: RolesConstants.FREQUENTER
               },
               active: true
             }
@@ -216,12 +330,12 @@ export class UserService {
 
   async findAllAdmins() {
     try {
-      return await this.prisma.user.findMany({
+      return await this.prismaService.user.findMany({
         where: {
           user_role: {
             some: {
               role: {
-                name: 'ADMIN'
+                name: RolesConstants.ADMIN
               },
               active: true
             }
@@ -237,12 +351,12 @@ export class UserService {
 
   async findAllEnvironmentManager() {
     try {
-      return await this.prisma.user.findMany({
+      return await this.prismaService.user.findMany({
         where: {
           user_role: {
             some: {
               role: {
-                name: 'ENVIRONMENT_MANAGER'
+                name: RolesConstants.ENVIRONMENT_MANAGER
               },
               active: true
             }
@@ -258,7 +372,7 @@ export class UserService {
 
   async findAllInactive() {
     try {
-      return await this.prisma.user.findMany({
+      return await this.prismaService.user.findMany({
         where: {
           active: false
         },
@@ -283,7 +397,7 @@ export class UserService {
     }
 
     try {
-      const user = await this.prisma.user.update({
+      const user = await this.prismaService.user.update({
         where: { id },
         data: { 
           active: status, 
@@ -325,7 +439,7 @@ export class UserService {
     }
 
     try {
-      const user = await this.prisma.user.update({
+      const user = await this.prismaService.user.update({
         data: {
           name: updateUserDataDto.name,
           email: updateUserDataDto.email,

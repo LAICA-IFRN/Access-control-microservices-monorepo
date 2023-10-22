@@ -1,6 +1,33 @@
 import { AuditLog } from "./audit-log.service";
 
 export class AuditConstants {
+  public static sendInviteEmailOk(metaData: object): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: 'E-mail de convite enviado com sucesso',
+      meta: metaData
+    };
+  }
+
+  public static createUserByInvitationUnauthorizedCredencials(metaData: object): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Error",
+      message: 'Falha ao gerar token para cadastrar usuário: credenciais inválidas',
+      meta: metaData
+    };
+  }
+
+  public static createUserByInvitationUnauthorizedToken(metaData: object): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Error",
+      message: 'Falha ao buscar dados para cadastrar usuário: token inválido ou expirado',
+      meta: metaData
+    };
+  }
+
   public static createUserConflict(metaData: object): AuditLog {
     return {
       topic: "Usuários",

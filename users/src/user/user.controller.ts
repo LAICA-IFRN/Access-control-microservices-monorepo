@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Req, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ApiBadRequestResponse, 
@@ -26,6 +26,7 @@ import { BadRequestResponseEntity,
 } from './entities/swagger-responses.entity';
 import { FindToAccess } from './dto/find-to-access.dto';
 import { ValidateToToken } from './dto/validate-to-token.dto';
+import { CreateUserByInvitationDto } from './dto/create-user-by-invitaion.dto';
 
 @Controller()
 @ApiTags('Users')
@@ -39,6 +40,17 @@ export class UserController {
   @Post()
   create(@Body() body: CreateUserDto) {
     return this.userService.create(body, '');
+  }
+
+  @Post('frequenter/invited')
+  createUserByInvitation(@Body() createUserByInvitationDto: CreateUserByInvitationDto) {
+    return this.userService.createUserByInvitation(createUserByInvitationDto);
+  }
+
+  @ApiOperation({ description: 'Endpoint para envio de email de convite' })
+  @Post('invite')
+  sendInviteEmail(@Query('email') email: string) {
+    return this.userService.sendInviteEmail(email);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })
@@ -89,8 +101,6 @@ export class UserController {
   
   @Get(':id/image')
   findUserImage(@Param('id') id: string) {
-    console.log('findUserImage');
-    
     return this.userService.findUserImage(id);
   }
 

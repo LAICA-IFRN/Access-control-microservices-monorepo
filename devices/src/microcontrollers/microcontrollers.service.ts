@@ -9,7 +9,7 @@ import { isUUID } from 'class-validator';
 import { UpdateMicrocontrollerDto } from './dto/update-microcontroller.dto';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { SetMicrocontrollerInfoDto } from './dto/set-microcontroller-info.dto';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class MicrocontrollersService {
@@ -19,6 +19,7 @@ export class MicrocontrollersService {
   constructor (
     private readonly prismaService: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly httpService: HttpService,
     @Inject(CACHE_MANAGER) private cacheService: Cache,
   ) {}
 
@@ -43,6 +44,9 @@ export class MicrocontrollersService {
       if (error.code === 'P2002') {
         this.auditLogService.create(AuditConstants.createMicrocontrollerConflict(createMicrocontrollerDto));
         throw new HttpException('Conflito com registro existente', HttpStatus.CONFLICT);
+      } else if (error.code === 'P2025') {
+        this.auditLogService.create(AuditConstants.createMicrocontrollerNotFound(createMicrocontrollerDto));
+        throw new HttpException('Tipo de microcontrolador não encontrado', HttpStatus.NOT_FOUND);
       } else {
         this.auditLogService.create(AuditConstants.createMicrocontrollerError(createMicrocontrollerDto));
         this.errorLogger.error('Erro inesperado ao criar microcontrolador', error);
@@ -53,17 +57,34 @@ export class MicrocontrollersService {
 
   async setMicrocontrollerInfo (id: number, healthCode: number, doorStatus?: boolean) {
     const microcontroller = await this.prismaService.microcontroller.findFirst({
-      where: { id }
+      where: { id },
+      include: {
+        microcontroller_type: {
+          select: {
+            name: true
+          }
+        }
+      }
     });
 
     if (microcontroller) {
       const key = id.toString();
-      const value = { healthCode, doorStatus }
+      const value = { healthCode, doorStatus };
       await this.cacheService.set(key, value);
     }
 
-    // TODO: verificar se o microcontrolador é do tipo esp8266, se for,
-    //       verificar se tem job para acionamento remoto e retornar
+    console.log(microcontroller);
+    
+
+    if (microcontroller.microcontroller_type.name === 'ESP8266') {
+      const remoteAccess = await lastValueFrom(
+        this.httpService.get(`${this.environmentsServiceUrl}/remote-access?esp8266Id=${id}`)
+      ).then(response => response.data);
+  
+      return remoteAccess;
+    } else {
+      return true;
+    }
   }
 
   async getMicrocontrollerInfo (id: number) {

@@ -1,24 +1,27 @@
-import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
 import { CreateEnvironmentDto } from './dto/create-environment.dto';
 import { UpdateEnvironmentDto } from './dto/update-environment.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { isUUID } from 'class-validator';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
+import { Cache } from 'cache-manager';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 @Injectable()
 export class EnvironmentService {
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly verifyRoleEndpoint = `${process.env.USERS_SERVICE_URL}/roles/verify`
+  private readonly getEsp8266Endpoint = process.env.DEVICES_SERVICE_URL
   private readonly errorLogger = new Logger()
   
   constructor(
     private httpService: HttpService,
     private prisma: PrismaService,
+    @Inject(CACHE_MANAGER) private cacheService: Cache,
   ) {} 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-
     const isAdmin = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -197,6 +200,118 @@ export class EnvironmentService {
         );
       }
     }
+  }
+
+  async requestRemoteAccess(environmentId: string, esp8266Id: number, userId: string) {
+    if (!isUUID(environmentId)) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Ambiente",
+          type: "Error",
+          message: 'Falha ao solicitar acesso remoto: id de ambiente inválido',
+          meta: {
+            environmentId,
+            userId,
+            statusCode: 400
+          }
+        })
+      )
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
+
+      throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
+    }
+
+    const environment = await this.prisma.environment.findFirst({
+      where: {
+        id: environmentId,
+        active: true
+      }
+    })
+
+    if (!environment) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Ambiente",
+          type: "Error", 
+          message: 'Falha ao solicitar acesso remoto: ambiente não encontrado',
+          meta: {
+            environmentId,
+            userId,
+            statusCode: 404
+          }
+        })
+      )
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
+
+      throw new HttpException('Environment not found', HttpStatus.NOT_FOUND);
+    }
+
+    const esp8266 = await lastValueFrom(
+      this.httpService.get(`${this.getEsp8266Endpoint}/microcontrollers/${esp8266Id}`).pipe(
+        catchError((error) => {
+          if (error.response.status === 'ECONNREFUSED') {
+            this.errorLogger.error('Falha ao se conectar com o serviço de dispositivos (500)', error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+          } else if (error.response.data.statusCode === 400) {
+            lastValueFrom(
+              this.httpService.post(this.createAuditLogUrl, {
+                topic: "Ambiente",
+                type: "Error",
+                message: 'Falha ao solicitar acesso remoto: id de dispositivo inválido',
+                meta: {
+                  environmentId,
+                  userId,
+                  statusCode: 400
+                }
+              })
+            )
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
+
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else if (error.response.data.statusCode === 404) {
+            lastValueFrom(
+              this.httpService.post(this.createAuditLogUrl, {
+                topic: "Ambiente",
+                type: "Error",
+                message: 'Falha ao solicitar acesso remoto: dispositivo não encontrado',
+                meta: {
+                  environmentId,
+                  userId,
+                  statusCode: 404
+                }
+              })
+            )
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
+
+            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
+          } else {
+            this.errorLogger.error('Falha do sistema (500)', error);
+            throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        }),
+      ),
+    ).then((response) => response.data);
+
+    const key = esp8266.id.toString();
+    const value = true;
+    await this.cacheService.set(key, value);
+
+    return value;
+  }
+
+  async findRemoteAccess(esp8266Id: number) {
+    const key = esp8266Id.toString();
+    const value = await this.cacheService.get(key);
+    await this.cacheService.set(key, false);
+    return value;
   }
 
   async findAll(skip: number, take: number) {

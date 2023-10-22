@@ -19,6 +19,15 @@ export class AuditConstants {
     };
   }
 
+  public static createMicrocontrollerNotFound(metaData: any): AuditLog {
+    return {
+      topic: "Dispositivos",
+      type: "Error",
+      message: 'Falha na criação de microcontrolador, chave estrangeira não encontrada.',
+      meta: metaData
+    };
+  }
+
   public static createMicrocontrollerError(metaData: any): AuditLog {
     return {
       topic: "Dispositivos",

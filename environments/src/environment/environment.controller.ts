@@ -24,6 +24,20 @@ export class EnvironmentController {
     return this.environmentService.create(createEnvironmentDto);
   }
 
+  @Post('remote-access')
+  requestRemoteAccess(
+    @Query('environmentId') environmentId: string, 
+    @Query('esp8266Id') esp8266Id: number,
+    @Query('userId') userId: string,
+  ) {
+    return this.environmentService.requestRemoteAccess(environmentId, +esp8266Id, userId);
+  }
+
+  @Get('remote-access')
+  findRemoteAccess(@Query('esp8266Id') esp8266Id: number) {
+    return this.environmentService.findRemoteAccess(esp8266Id);
+  }
+
   @ApiOperation({ description: 'Endpoint para listagem de ambientes' })
   @ApiResponse({ type: EnvironmentEntity, isArray: true })
   @ApiBadRequestResponse({ type: FindAllBadRequestResponseEntity })

@@ -30,6 +30,72 @@ export class UserService {
     return data;
   }
 
+  async createByInvitation(body: any) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.userRoutes.createByInvitation(), body).pipe(
+        catchError((error) => {
+          console.log(error);
+          
+          if (error.response.data.statusCode === 400) {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else if (error.response.data.statusCode === 409) {
+            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
+          } else if (error.response.data.statusCode === 403) {
+            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+          } else {
+            throw new HttpException('Unable to create user', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        })
+      )
+    );  
+
+    return data;
+  }
+
+  async sendInviteEmail(email: string) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.userRoutes.sendInviteEmail(email)).pipe(
+        catchError((error) => {
+          console.log(error);
+          
+          if (error.response.data.statusCode === 400) {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else if (error.response.data.statusCode === 409) {
+            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
+          } else if (error.response.data.statusCode === 403) {
+            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+          } else {
+            throw new HttpException('Unable to send invite email', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        })
+      )
+    );  
+
+    return data;
+  }
+
+  async findUserImage(id: string) {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.userRoutes.findUserImage(id)).pipe(
+        catchError((error) => {
+          console.log(error);
+          
+          if (error.response.data.statusCode === 400) {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else if (error.response.data.statusCode === 409) {
+            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
+          } else if (error.response.data.statusCode === 403) {
+            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+          } else {
+            throw new HttpException('Unable to fetch user image', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        })
+      )
+    );  
+
+    return data;
+  }
+
   async findOne(id: string) {
     const { data } = await lastValueFrom(
       this.httpService.get(this.userRoutes.findOne(id)).pipe(

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
@@ -13,6 +13,27 @@ export class UserController {
   @Post()
   create(@Body() body: any) {
     return this.userService.create(body);
+  }
+
+  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  // @UseGuards(RolesGuard)
+  @Post('frequenter/invited')
+  createByInvitation(@Body() body: any) {
+    return this.userService.createByInvitation(body);
+  }
+
+  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  // @UseGuards(RolesGuard)
+  @Post('invite')
+  sendInviteEmail(@Query('email') email: string) {
+    return this.userService.sendInviteEmail(email);
+  }
+
+  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  // @UseGuards(RolesGuard)
+  @Get(':id/image')
+  findUserImage(@Param('id') id: string) {
+    return this.userService.findUserImage(id);
   }
 
   // @Roles(RolesConstants.ADMIN)

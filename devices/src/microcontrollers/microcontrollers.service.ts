@@ -41,6 +41,8 @@ export class MicrocontrollersService {
 
       return microcontroller.id;
     } catch (error) {
+      console.log(error);
+      
       if (error.code === 'P2002') {
         this.auditLogService.create(AuditConstants.createMicrocontrollerConflict(createMicrocontrollerDto));
         throw new HttpException('Conflito com registro existente', HttpStatus.CONFLICT);
@@ -135,8 +137,6 @@ export class MicrocontrollersService {
       }
     }
   }
-
-
 
   async findAll(skip: number, take: number) {
     if (isNaN(skip) || isNaN(take)) {

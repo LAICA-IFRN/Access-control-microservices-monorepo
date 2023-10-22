@@ -10,6 +10,18 @@ export class UserRoutes {
     return `${this.baseUrl}`;
   }
 
+  createByInvitation(): string {
+    return `${this.baseUrl}/frequenter/invited`;
+  }
+
+  sendInviteEmail(email: string): string {
+    return `${this.baseUrl}/invite?email=${email}`;
+  }
+
+  findUserImage(id: string): string {
+    return `${this.baseUrl}/${id}/image`;
+  }
+
   findOne(id: string): string {
     return `${this.baseUrl}/${id}`;
   }

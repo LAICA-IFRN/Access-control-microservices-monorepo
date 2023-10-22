@@ -12,6 +12,14 @@ export class EnvRoutes {
     return `${this.envBaseUrl}`;
   }
 
+  requestRemoteAccess(environmentId: string, esp8266Id: number, userId: string): string {
+    return `${this.envBaseUrl}/remote-access?environmentId=${environmentId}&esp8266Id=${esp8266Id}&userId=${userId}`;
+  }
+
+  findRemoteAccess(esp8266Id: number): string {
+    return `${this.envBaseUrl}/remote-access?esp8266Id=${esp8266Id}`;
+  }
+
   findOne(id: string): string {
     return `${this.envBaseUrl}/${id}`;
   }

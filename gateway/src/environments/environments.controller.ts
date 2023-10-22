@@ -16,6 +16,24 @@ export class EnvironmentsController {
     return this.environmentsService.create(createEnvironmentDto);
   }
 
+  // @Roles(RolesConstants.ADMIN)
+  // @UseGuards(RolesGuard)
+  @Post('remote-access')
+  requestRemoteAccess(
+    @Query('environmentId') environmentId: string, 
+    @Query('esp8266Id') esp8266Id: number,
+    @Query('userId') userId: string,
+  ) {
+    return this.environmentsService.requestRemoteAccess(environmentId, +esp8266Id, userId);
+  }
+
+  // @Roles(RolesConstants.ADMIN)
+  // @UseGuards(RolesGuard)
+  @Get('remote-access')
+  findRemoteAccess(@Query('esp8266Id') esp8266Id: number) {
+    return this.environmentsService.findRemoteAccess(esp8266Id);
+  }
+
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Get('env')

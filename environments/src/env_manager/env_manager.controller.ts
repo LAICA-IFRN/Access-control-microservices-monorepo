@@ -19,8 +19,6 @@ export class EnvManagerController {
   @ApiNotFoundResponse({ type: swagger.CreateNotFoundResponseEntity })
   @Post()
   create(@Body() createEnvManagerDto: CreateEnvManagerDto) {
-    console.log('man create');
-    
     return this.envManagerService.create(createEnvManagerDto);
   }
 
@@ -29,7 +27,6 @@ export class EnvManagerController {
   @ApiBadRequestResponse({ type: swagger.FindAllBadRequestResponseEntity })
   @Get()
   findAll() {
-    console.log('man findAll');
     return this.envManagerService.findAll();
   }
 
@@ -38,7 +35,6 @@ export class EnvManagerController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('user/:userId/env/:envId/verify')
   verifyManagerByUser(@Param('userId') userId: string, @Param('envId') envId: string) {
-    console.log('man verifyManagerByUser');
     return this.envManagerService.verifyManagerByUser(userId, envId);
   }
 
@@ -49,7 +45,6 @@ export class EnvManagerController {
   @ApiNotFoundResponse({ type: swagger.EnvManagerNotFoundResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
-    console.log('man findOne');
     return this.envManagerService.findOne(id);
   }
 
@@ -60,7 +55,6 @@ export class EnvManagerController {
   })
   @Get('user/:id')
   findAllByUserId(@Param('id') id: string) {
-    console.log('man findAllByUserId');
     return this.envManagerService.findAllByUserId(id);
   }
 
@@ -69,7 +63,6 @@ export class EnvManagerController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('environment/:id')
   findAllByEnvironmentId(@Param('id') id: string) {
-    console.log('man findAllByEnvironmentId');
     return this.envManagerService.findAllByEnvironmentId(id);
   }
 
@@ -83,7 +76,6 @@ export class EnvManagerController {
     @Param('id') id: string,
     @Body() envManagerStatusDto: EnvManagerStatusDto
   ) {
-    console.log('man updateStatus');
     return this.envManagerService.updateStatus(id, envManagerStatusDto);
   }
 }

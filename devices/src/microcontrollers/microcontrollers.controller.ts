@@ -46,10 +46,12 @@ export class MicrocontrollersController {
 
   @Get('inactives')
   async findAllInactives(
-    @Query('skip') skip: number,
-    @Query('take') take: number,
+    @Query('skip') skip: string,
+    @Query('take') take: string,
   ) {
-    return this.microcontrollersService.findAllInactives(+skip, +take);
+    console.log('skip', skip);
+    
+    return this.microcontrollersService.findAllInactives(parseInt(skip), parseInt(take));
   }
 
   @Get('mac')

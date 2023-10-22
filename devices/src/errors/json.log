@@ -5,3 +5,23 @@
 {"context":"ExceptionsHandler","level":"error","message":"connect ECONNREFUSED 127.0.0.1:6002","stack":["Error: connect ECONNREFUSED 127.0.0.1:6002\n    at Function.AxiosError.from (/home/kias/Dev/laica/Access-control-microservices-monorepo/devices/node_modules/axios/lib/core/AxiosError.js:89:14)\n    at RedirectableRequest.handleRequestError (/home/kias/Dev/laica/Access-control-microservices-monorepo/devices/node_modules/axios/lib/adapters/http.js:593:25)\n    at RedirectableRequest.emit (node:events:514:28)\n    at ClientRequest.eventHandlers.<computed> (/home/kias/Dev/laica/Access-control-microservices-monorepo/devices/node_modules/follow-redirects/index.js:14:24)\n    at ClientRequest.emit (node:events:514:28)\n    at Socket.socketErrorListener (node:_http_client:501:9)\n    at Socket.emit (node:events:514:28)\n    at emitErrorNT (node:internal/streams/destroy:151:8)\n    at emitErrorCloseNT (node:internal/streams/destroy:116:3)\n    at processTicksAndRejections (node:internal/process/task_queues:82:21)"],"timestamp":"2023-10-22T14:31:23.115Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T14:41:55.120Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T14:42:53.513Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T18:53:57.150Z"}
+{"level":"error","message":"Erro inesperado ao criar microcontrolador","stack":[{"clientVersion":"5.2.0","name":"PrismaClientUnknownRequestError"}],"timestamp":"2023-10-22T18:53:57.153Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T18:53:57.296Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T18:55:43.913Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T18:56:51.583Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T18:58:11.338Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T18:58:19.426Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T18:58:27.462Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:02:20.211Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:02:25.542Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:02:28.331Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:02:41.607Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:04:41.442Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:04:44.297Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:04:45.384Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:04:46.110Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:06:45.810Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:07:29.495Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:09:24.580Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-22T19:11:32.011Z"}

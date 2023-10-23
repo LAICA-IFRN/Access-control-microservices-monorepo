@@ -52,9 +52,9 @@ export class UserService {
     return data;
   }
 
-  async sendInviteEmail(email: string) {
+  async sendInviteEmail(email: string, path: string) {
     const { data } = await lastValueFrom(
-      this.httpService.post(this.userRoutes.sendInviteEmail(email)).pipe(
+      this.httpService.post(this.userRoutes.sendInviteEmail(email, path)).pipe(
         catchError((error) => {
           console.log(error);
           

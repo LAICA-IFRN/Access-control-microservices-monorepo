@@ -14,8 +14,8 @@ export class UserRoutes {
     return `${this.baseUrl}/frequenter/invited`;
   }
 
-  sendInviteEmail(email: string): string {
-    return `${this.baseUrl}/invite?email=${email}`;
+  sendInviteEmail(email: string, path: string): string {
+    return `${this.baseUrl}/invite?email=${email}&path=${path}`;
   }
 
   findUserImage(id: string): string {

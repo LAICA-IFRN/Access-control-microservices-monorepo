@@ -49,8 +49,8 @@ export class UserController {
 
   @ApiOperation({ description: 'Endpoint para envio de email de convite' })
   @Post('invite')
-  sendInviteEmail(@Query('email') email: string) {
-    return this.userService.sendInviteEmail(email);
+  sendInviteEmail(@Query('email') email: string, @Query('path') path: string) {
+    return this.userService.sendInviteEmail(email, path);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })

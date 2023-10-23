@@ -10,7 +10,7 @@ import { FindToAccess } from './dto/find-to-access.dto';
 import { ValidateToToken } from './dto/validate-to-token.dto';
 import { AuditLogService } from 'src/providers/audit-log/audit-log.service';
 import { AuditConstants } from 'src/providers/audit-log/audit-contants';
-import { EmailService } from 'src/providers/mail/mail-provider.service';
+import { EmailService } from 'src/providers/mail-sender/mail-provider.service';
 import { CreateUserByInvitationDto } from './dto/create-user-by-invitaion.dto';
 import { catchError, lastValueFrom } from 'rxjs';
 import { DocumentTypesConstants, RolesConstants } from 'src/utils/database-constants';
@@ -119,9 +119,9 @@ export class UserService {
     };
   }
 
-  async sendInviteEmail(email: string) {
+  async sendInviteEmail(email: string, path: string) {
     try {
-      await this.emailService.sendMail(email);
+      await this.emailService.sendMail(email, path);
 
       this.auditLogService.create(AuditConstants.sendInviteEmailOk({email, statusCode: 200}))
 

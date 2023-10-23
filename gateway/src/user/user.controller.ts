@@ -25,8 +25,8 @@ export class UserController {
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Post('invite')
-  sendInviteEmail(@Query('email') email: string) {
-    return this.userService.sendInviteEmail(email);
+  sendInviteEmail(@Query('email') email: string, @Query('path') path: string) {
+    return this.userService.sendInviteEmail(email, path);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)

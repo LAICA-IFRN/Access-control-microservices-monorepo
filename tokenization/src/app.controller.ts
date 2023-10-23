@@ -1,19 +1,33 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { AppService } from './app.service';
-import { TokenizeDto } from './dto/tokenize.dto';
-import { AuthorizationDto } from './dto/authorization.dto';
+import { TokenizeUserDto } from './dto/tokenize-user.dto';
+import { AuthorizationUserDto } from './dto/authorization-user.dto';
+import { AuthorizationMobileDto } from './dto/authorization-mobile.dto';
+import { TokenizeMobileDto } from './dto/tokenize-mobile.dto';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) { }
 
-  @Post('tokenize')
-  tokenize(@Body() tokenizeDto: TokenizeDto) {
-    return this.appService.tokenize(tokenizeDto);
+  @Post('tokenize/user')
+  tokenizeUser(@Body() tokenizeUserDto: TokenizeUserDto) {
+    return this.appService.tokenizeUser(tokenizeUserDto);
   }
 
-  @Get('authorize')
-  authorize(@Body() authorizationDto: AuthorizationDto) {
-    return this.appService.authorize(authorizationDto)
+  @Post('tokenize/mobile')
+  tokenizeMobile(@Body() tokenizeMobileDto: TokenizeMobileDto) {
+    console.log(tokenizeMobileDto);
+
+    return this.appService.tokenizeMobile(tokenizeMobileDto);
+  }
+
+  @Get('authorize/user')
+  authorizeUser(@Body() authorizationDto: AuthorizationMobileDto) {
+    return this.appService.authorizeUser(authorizationDto)
+  }
+
+  @Get('authorize/mobile')
+  authorizeMobile(@Query() authorizationDto: AuthorizationMobileDto) {
+    return this.appService.authorizeMobile(authorizationDto)
   }
 }

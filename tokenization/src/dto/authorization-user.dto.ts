@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { ArrayNotEmpty, IsArray, IsIn, IsJWT } from "class-validator";
 
-export class AuthorizationDto {
+export class AuthorizationUserDto {
   @ApiProperty()
   @IsJWT()
   token: string;

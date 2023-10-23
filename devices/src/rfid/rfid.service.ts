@@ -1,11 +1,9 @@
-import { HttpException, HttpStatus, Inject, Injectable, Logger } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateRfidDto } from './dto/create-rfid.dto';
 import { UpdateStatusRfidDto } from './dto/update-status-rfid.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
-import { Cache } from 'cache-manager';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
 
 
 @Injectable()
@@ -13,96 +11,96 @@ export class RfidService {
   private readonly usersServiceUrl = `${process.env.USERS_SERVICE_URL}`
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly errorLogger = new Logger()
-  
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly httpService: HttpService,
-  ) {}
+  ) { }
 
   async create(createRfidDto: CreateRfidDto) {
     const findUserEndpoint = `${this.usersServiceUrl}/${createRfidDto.userId}`
     const findUser = await lastValueFrom(
       this.httpService.get(findUserEndpoint)
-      .pipe(
-        catchError((error) => {
-          console.log(error);
-          
-          if (error.code === 'ECONNREFUSED') {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Dispositivos',
-                type: 'Error',
-                message: 'Falha ao criar Tag RFID: serviço de usuários indisponível',
-                meta: {
-                  device: 'RFID',
-                  userId: createRfidDto.userId,
-                }
-              })
-            )
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error)
-            })
-          }
+        .pipe(
+          catchError((error) => {
+            console.log(error);
 
-          if (error.response?.status === 404) {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Dispositivos',
-                type: 'Error',
-                message: 'Falha ao criar Tag RFID: usuário não encontrado',
-                meta: {
-                  device: 'RFID',
-                  userId: createRfidDto.userId,
-                }
-              })
-            )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error)
-            })
+            if (error.code === 'ECONNREFUSED') {
+              lastValueFrom(
+                this.httpService.post(this.createAuditLogUrl, {
+                  topic: 'Dispositivos',
+                  type: 'Error',
+                  message: 'Falha ao criar Tag RFID: serviço de usuários indisponível',
+                  meta: {
+                    device: 'RFID',
+                    userId: createRfidDto.userId,
+                  }
+                })
+              )
+                .catch((error) => {
+                  this.errorLogger.error('Falha ao enviar log', error)
+                })
+            }
 
-            throw new HttpException('User not found', HttpStatus.NOT_FOUND)
-          } else if (error.response?.status === 400) {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Dispositivos',
-                type: 'Error',
-                message: 'Falha ao criar Tag RFID: ID de usuário inválido',
-                meta: {
-                  device: 'RFID',
-                  userId: createRfidDto.userId,
-                }
-              })
-            )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error)
-            })
+            if (error.response?.status === 404) {
+              lastValueFrom(
+                this.httpService.post(this.createAuditLogUrl, {
+                  topic: 'Dispositivos',
+                  type: 'Error',
+                  message: 'Falha ao criar Tag RFID: usuário não encontrado',
+                  meta: {
+                    device: 'RFID',
+                    userId: createRfidDto.userId,
+                  }
+                })
+              )
+                .then((response) => response.data)
+                .catch((error) => {
+                  this.errorLogger.error('Falha ao enviar log', error)
+                })
 
-            throw new HttpException('Invalid user ID', HttpStatus.BAD_REQUEST)
-          } else {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Dispositivos',
-                type: 'Error',
-                message: 'Falha ao criar Tag RFID: erro interno, verificar logs de erro do serviço',
-                meta: {
-                  device: 'RFID',
-                  userId: createRfidDto.userId,
-                }
-              })
-            )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error)
-            })
+              throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+            } else if (error.response?.status === 400) {
+              lastValueFrom(
+                this.httpService.post(this.createAuditLogUrl, {
+                  topic: 'Dispositivos',
+                  type: 'Error',
+                  message: 'Falha ao criar Tag RFID: ID de usuário inválido',
+                  meta: {
+                    device: 'RFID',
+                    userId: createRfidDto.userId,
+                  }
+                })
+              )
+                .then((response) => response.data)
+                .catch((error) => {
+                  this.errorLogger.error('Falha ao enviar log', error)
+                })
 
-            this.errorLogger.error('Falha ao buscar usuário na criação de tag rfid', error)
+              throw new HttpException('Invalid user ID', HttpStatus.BAD_REQUEST)
+            } else {
+              lastValueFrom(
+                this.httpService.post(this.createAuditLogUrl, {
+                  topic: 'Dispositivos',
+                  type: 'Error',
+                  message: 'Falha ao criar Tag RFID: erro interno, verificar logs de erro do serviço',
+                  meta: {
+                    device: 'RFID',
+                    userId: createRfidDto.userId,
+                  }
+                })
+              )
+                .then((response) => response.data)
+                .catch((error) => {
+                  this.errorLogger.error('Falha ao enviar log', error)
+                })
 
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR)
-          }
-        })
-      )
+              this.errorLogger.error('Falha ao buscar usuário na criação de tag rfid', error)
+
+              throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR)
+            }
+          })
+        )
     ).then((response) => response.data)
 
     try {
@@ -126,15 +124,15 @@ export class RfidService {
           }
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error)
-      })
-      
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error)
+        })
+
       return rfid
     } catch (error) {
       console.log('try\n', error);
-      
+
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -147,10 +145,10 @@ export class RfidService {
             }
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT)
       } else {
@@ -165,10 +163,10 @@ export class RfidService {
             }
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
       }
@@ -189,10 +187,10 @@ export class RfidService {
           }
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error)
-      })
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error)
+        })
 
       throw new HttpException('Invalid skip or take', HttpStatus.BAD_REQUEST)
     }
@@ -205,7 +203,7 @@ export class RfidService {
         skip,
         take
       }),
-      
+
       this.prismaService.tag_rfid.count({
         where: {
           active: true
@@ -235,10 +233,10 @@ export class RfidService {
           }
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error)
-      })
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error)
+        })
 
       throw new HttpException('Invalid id', HttpStatus.BAD_REQUEST)
     }
@@ -262,9 +260,9 @@ export class RfidService {
             }
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException('Tag not found', HttpStatus.NOT_FOUND)
       } else {
@@ -279,9 +277,9 @@ export class RfidService {
             }
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
       }
@@ -327,9 +325,9 @@ export class RfidService {
           }
         })
       )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error)
-      })
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error)
+        })
 
       return rfid
     } catch (error) {
@@ -345,9 +343,9 @@ export class RfidService {
             }
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException('Tag not found', HttpStatus.NOT_FOUND)
       } else {
@@ -362,9 +360,9 @@ export class RfidService {
             }
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
       }
@@ -384,10 +382,10 @@ export class RfidService {
           }
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error)
-      })
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error)
+        })
 
       throw new HttpException('Invalid id', HttpStatus.BAD_REQUEST)
     }
@@ -412,9 +410,9 @@ export class RfidService {
           }
         })
       )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error)
-      })
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error)
+        })
 
       return rfid
     } catch (error) {
@@ -430,9 +428,9 @@ export class RfidService {
             }
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException('Tag not found', HttpStatus.NOT_FOUND)
       } else {
@@ -447,9 +445,9 @@ export class RfidService {
             }
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
 
         throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
       }

@@ -4,6 +4,7 @@ import { RfidModule } from './rfid/rfid.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { MicrocontrollersModule } from './microcontrollers/microcontrollers.module';
 import { HttpModule } from '@nestjs/axios';
+import { MobileModule } from './mobile/mobile.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { HttpModule } from '@nestjs/axios';
       ttl: 0,
       max: 100000,
     }),
+    MobileModule,
   ],
   controllers: [],
   providers: [],

@@ -7,14 +7,14 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AppService {
-  private readonly createAccessLog = 'http://localhost:6004/service/logs/access' //process.env.CREATE_ACCESS_LOG_URL
-  private readonly searchEsp32Url = 'http://localhost:6005/service/devices/microcontrollers/mac' //process.env.SEARCH_ESP32_URL
-  private readonly searchRFIDUrl = 'http://localhost:6005/service/devices/rfid/tag?tag=' //process.env.SEARCH_RFID_URL
-  private readonly searchUserUrl = 'http://localhost:6001/service/users/access' //process.env.SEARCH_USER_URL
-  private readonly searchUserAccessUrl = 'http://localhost:6002/service/environments/env-access/access' //process.env.SEARCH_USER_ENV_ACCESS
-  private readonly searchUserImageUrl = 'http://localhost:6001/service/users' //process.env.SEARCH_USER_IMAGE_URL
-  private readonly verifyUserRoleUrl = 'http://localhost:6001/service/users/roles/verify' //process.env.VERIFY_USER_ROLE_URL
-  private readonly facialRecognitionUrl = 'http://10.25.1.225:6008/service/facial-recognition/verify/user' //process.env.FACIAL_RECOGNITION_URL
+  private readonly createAccessLog = process.env.CREATE_ACCESS_LOG_URL
+  private readonly searchEsp32Url = process.env.SEARCH_ESP32_URL
+  private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
+  private readonly searchUserUrl = process.env.SEARCH_USER_URL
+  private readonly searchUserAccessUrl = process.env.SEARCH_USER_ENV_ACCESS
+  private readonly searchUserImageUrl = process.env.SEARCH_USER_IMAGE_URL
+  private readonly verifyUserRoleUrl = process.env.VERIFY_USER_ROLE_URL
+  private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
   
   constructor(

@@ -7,14 +7,14 @@ import { randomUUID } from 'crypto';
 
 @Injectable()
 export class AppService {
-  private readonly createAccessLog = process.env.CREATE_ACCESS_LOG_URL
-  private readonly searchEsp32Url = process.env.SEARCH_ESP32_URL
-  private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
-  private readonly searchUserUrl = process.env.SEARCH_USER_URL
-  private readonly searchUserAccessUrl = process.env.SEARCH_USER_ENV_ACCESS
-  private readonly searchUserImageUrl = process.env.SEARCH_USER_IMAGE_URL
-  private readonly verifyUserRoleUrl = process.env.VERIFY_USER_ROLE_URL
-  private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
+  private readonly createAccessLog = 'http://localhost:6004/service/logs/access' //process.env.CREATE_ACCESS_LOG_URL
+  private readonly searchEsp32Url = 'http://localhost:6005/service/devices/microcontrollers/mac' //process.env.SEARCH_ESP32_URL
+  private readonly searchRFIDUrl = 'http://localhost:6005/service/devices/rfid/tag?tag=' //process.env.SEARCH_RFID_URL
+  private readonly searchUserUrl = 'http://localhost:6001/service/users/access' //process.env.SEARCH_USER_URL
+  private readonly searchUserAccessUrl = 'http://localhost:6002/service/environments/env-access/access' //process.env.SEARCH_USER_ENV_ACCESS
+  private readonly searchUserImageUrl = 'http://localhost:6001/service/users' //process.env.SEARCH_USER_IMAGE_URL
+  private readonly verifyUserRoleUrl = 'http://localhost:6001/service/users/roles/verify' //process.env.VERIFY_USER_ROLE_URL
+  private readonly facialRecognitionUrl = 'http://10.25.1.225:6008/service/facial-recognition/verify/user' //process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
   
   constructor(
@@ -102,7 +102,7 @@ export class AppService {
 
   async proccessAccessWhenRFID(environmentId: string, rfid: string, captureEncodedImage: string) {
     const response = await lastValueFrom(
-      this.httpService.get(this.searchRFIDUrl).pipe(
+      this.httpService.get(this.searchRFIDUrl + rfid).pipe(
         catchError((error) => {
           throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
         }
@@ -112,6 +112,9 @@ export class AppService {
     .catch((error) => {
       this.errorLogger.error('falha ao buscar tag', error);
     });
+
+    console.log(response);
+    
     
     if (!response.result) {
       throw new HttpException('RFID not found', HttpStatus.NOT_FOUND);
@@ -220,6 +223,8 @@ export class AppService {
 
     let accessResponse = { access: false }
     if (isFrequenter) {
+      console.log(userId, environmentId);
+      
       accessResponse = await lastValueFrom(
         this.httpService.get(this.searchUserAccessUrl, {
           data: {
@@ -239,6 +244,7 @@ export class AppService {
     }
 
     if (isFrequenter && accessResponse.access == false) {
+      console.log('frequenter false');
       await lastValueFrom(
         this.httpService.post(this.createAccessLog, {
           topic: 'Acesso',
@@ -287,6 +293,8 @@ export class AppService {
     
 
     if (facialRecognition.result === false) {
+      console.log('facial recognition false');
+      
       await lastValueFrom(
         this.httpService.post(this.createAccessLog, {
           topic: 'Acesso',

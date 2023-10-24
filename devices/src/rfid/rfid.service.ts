@@ -293,6 +293,9 @@ export class RfidService {
       }
     })
 
+    console.log(rfid);
+    
+
     const response = { result: null }
 
     if (rfid) {

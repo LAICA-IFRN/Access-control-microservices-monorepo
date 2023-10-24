@@ -57,7 +57,7 @@ async function createAdmins() {
 
   await prisma.user_role.create({
     data: {
-      user_id: '1554e723-21c0-4fb7-ab23-ca3f57addc7a',
+      user_id: '49918e91-e6f4-42ad-ad54-513ca5eaf466',
       role_id: 1,
     },
   });
@@ -88,7 +88,7 @@ async function createUsers() {
 
   await prisma.user_role.create({
     data: {
-      user_id: '4ed781bf-e0c2-4ccd-9e3c-9be61a92541b',
+      user_id: 'c066fb59-a4ff-4dfd-b009-dd0a7a56d1ea',
       role_id: 2,
     },
   });

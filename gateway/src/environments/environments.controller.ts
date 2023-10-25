@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Re
 import { EnvironmentsService } from './environments.service';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
-import { RolesConstants } from 'src/utils/roles-constants';
+import { RolesConstants } from 'src/utils/constants';
 
 @Controller('environments')
 export class EnvironmentsController {

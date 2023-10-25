@@ -2,7 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Query } f
 import { UserService } from './user.service';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
-import { RolesConstants } from 'src/utils/roles-constants';
+import { RolesConstants } from 'src/utils/constants';
 
 @Controller('users')
 export class UserController {

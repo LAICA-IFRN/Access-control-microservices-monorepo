@@ -6,8 +6,8 @@ import { LoginMobileDto } from './dto/login-mobile.dto';
 
 @Injectable()
 export class AuthService {
-  private readonly tokenizeUserUrl = process.env.TOKENIZATION_SERVICE_URL + '/tokenize/user';
-  private readonly tokenizeMobileUrl = process.env.TOKENIZATION_SERVICE_URL + '/tokenize/mobile';
+  private readonly tokenizeUserUrl = process.env.USER_TOKENIZE_URL;
+  private readonly tokenizeMobileUrl = process.env.MOBILE_TOKENIZE_URL;
 
   constructor(
     private readonly httpService: HttpService,
@@ -33,12 +33,16 @@ export class AuthService {
     const response = await lastValueFrom(
       this.httpService.post(this.tokenizeMobileUrl, loginMobileDto).pipe(
         catchError((error) => {
+          console.log(error);
+          
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     )
       .then((response) => response.data)
       .catch((error) => {
+        console.log(error);
+        
         throw new HttpException(error.response, error.response.data.statusCode);
       })
 

@@ -344,6 +344,6 @@ export class AppService {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED)
     }
 
-    return { userId: decodeToken.sub }
+    return { isAuthorized: true, userId: decodeToken.sub }
   }
 }

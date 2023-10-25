@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, HttpException, Injectable, Logger } from
 import { Reflector } from '@nestjs/core';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
+import { AuthorizationTypeConstants } from 'src/utils/constants';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -14,6 +15,7 @@ export class RolesGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.get<string[]>('roles', context.getHandler());
+    const authorizationType = this.reflector.get<string>('authorization-type', context.getHandler());
 
     if (!roles) {
       return true;
@@ -21,35 +23,63 @@ export class RolesGuard implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
     const token = request.headers['authorization'];
+    let response: any;
     
-    const verifyAuthorizationUrl = process.env.TOKENIZATION_SERVICE_URL + '/authorize';
-    const response = await lastValueFrom(
-      this.httpService.get(verifyAuthorizationUrl, {
-        data: {
-          token,
-          roles
-        }
-      }).pipe(
-        catchError((error) => {
-          throw new HttpException(
-            error.response,
-            error.status,
-          );
-        })
+    if (authorizationType === AuthorizationTypeConstants.USER) {
+      response = await lastValueFrom(
+        this.httpService.get(process.env.VERIFY_USER_AUTHORIZATION_URL, {
+          data: {
+            token,
+            roles
+          }
+        }).pipe(
+          catchError((error) => {
+            throw new HttpException(
+              error.response,
+              error.status,
+            );
+          })
+        )
       )
-    )
-    .then((response) => response.data.isAuthorized)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao verificar autorização', error);
+      .then((response) => response.data.isAuthorized)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao verificar autorização', error);
+  
+        throw new HttpException(
+          error.response.data.message,
+          error.response.data.statusCode,
+        );
+      });
+    }
 
-      throw new HttpException(
-        error.response.data.message,
-        error.response.data.statusCode,
-      );
-    });
+    if (authorizationType === AuthorizationTypeConstants.MOBILE) {
+      response = await lastValueFrom(
+        this.httpService.get(process.env.VERIFY_MOBILE_AUTHORIZATION_URL, {
+          data: {
+            token
+          }
+        }).pipe(
+          catchError((error) => {
+            throw new HttpException(
+              error.response,
+              error.status,
+            );
+          })
+        )
+      )
+      .then((response) => response.data.isAuthorized)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao verificar autorização', error);
+  
+        throw new HttpException(
+          error.response.data.message,
+          error.response.data.statusCode,
+        );
+      });
+    }
 
     request['userId'] = response.userId
 
-    return response;
+    return response.isAuthorized;
   }
 }

@@ -2,7 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Re
 import { DevicesService } from './devices.service';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RolesGuard } from 'src/guards/roles.guard';
-import { RolesConstants } from 'src/utils/roles-constants';
+import { AuthorizationTypeConstants, RolesConstants } from 'src/utils/constants';
+import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
 
 @Controller('devices')
 export class DevicesController {
@@ -133,6 +134,7 @@ export class DevicesController {
   }
 
   @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER, RolesConstants.FREQUENTER)
+  @AuthorizationType(AuthorizationTypeConstants.MOBILE)
   @UseGuards(RolesGuard)
   @Get('mobile')
   getMobileEnvironments(@Query('mac') mac: string, @Req() request: Request) {

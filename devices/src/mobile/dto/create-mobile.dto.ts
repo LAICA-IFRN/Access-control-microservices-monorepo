@@ -1,5 +1,8 @@
+import { IsString } from "class-validator";
+
 export class CreateMobileDto {
-    userId: string;
+    @IsString()
     mac: string;
+    @IsString()
     number: string;
 }

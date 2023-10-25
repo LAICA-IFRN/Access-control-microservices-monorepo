@@ -1,10 +1,11 @@
 import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import * as jwt from 'jsonwebtoken';
-import { TokenizeUserDto } from './dto/tokenize-user.dto';
 import { catchError, lastValueFrom } from 'rxjs';
-import { AuthorizationDto } from './dto/authorization-user.dto';
+import { TokenizeUserDto } from './dto/tokenize-user.dto';
 import { TokenizeMobileDto } from './dto/tokenize-mobile.dto';
+import { AuthorizationUserDto } from './dto/authorization-user.dto';
+import { AuthorizationMobileDto } from './dto/authorization-mobile.dto';
 
 @Injectable()
 export class AppService {
@@ -238,7 +239,7 @@ export class AppService {
         message: 'Aparelho de usuário validado com sucesso',
         meta: {
           document: tokenizeMobileDto.document,
-          mac: tokenizeMobileDto.mac,
+          //mac: tokenizeMobileDto.mac,
         }
       })
     ).catch((error) => {
@@ -250,8 +251,8 @@ export class AppService {
     }
   }
 
-  async authorizeUser(authorizationDto: AuthorizationDto) {
-    const decodedToken = jwt.verify(authorizationDto.token, this.jwtUserSecret)
+  async authorizeUser(authorizationUserDto: AuthorizationUserDto) {
+    const decodedToken = jwt.verify(authorizationUserDto.token, this.jwtUserSecret)
 
     if (!decodedToken) {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED)
@@ -263,7 +264,7 @@ export class AppService {
         {
           data: {
             userId: decodedToken.sub,
-            roles: authorizationDto.roles,
+            roles: authorizationUserDto.roles,
           },
         },
       ).pipe(
@@ -278,7 +279,7 @@ export class AppService {
                 message: 'Falha ao autorizar usuário: serviço indisponível',
                 meta: {
                   userId: decodedToken.sub,
-                  roles: authorizationDto.roles,
+                  roles: authorizationUserDto.roles,
                 }
               })
             )
@@ -295,7 +296,7 @@ export class AppService {
                 message: 'Falha ao autorizar usuário: usuário não encontrado',
                 meta: {
                   userId: decodedToken.sub,
-                  roles: authorizationDto.roles,
+                  roles: authorizationUserDto.roles,
                 }
               })
             )
@@ -313,7 +314,7 @@ export class AppService {
                 message: 'Falha ao autorizar usuário: erro interno, verificar logs de erro do serviço',
                 meta: {
                   userId: decodedToken.sub,
-                  roles: authorizationDto.roles,
+                  roles: authorizationUserDto.roles,
                 }
               })
             )
@@ -336,8 +337,8 @@ export class AppService {
     return { isAuthorized, userId: decodedToken.sub }
   }
 
-  async authorizeMobile(authorizationDto: AuthorizationDto) {
-    const decodeToken = jwt.verify(authorizationDto.token, this.jwtMobileSecret);
+  async authorizeMobile(authorizationMobileDto: AuthorizationMobileDto) {
+    const decodeToken = jwt.verify(authorizationMobileDto.token, this.jwtMobileSecret);
 
     if (!decodeToken) {
       throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED)

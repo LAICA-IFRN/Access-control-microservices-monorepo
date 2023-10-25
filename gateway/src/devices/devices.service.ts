@@ -390,4 +390,28 @@ export class DevicesService {
 
     return data;
   }
+
+  async createMobile(body: any, userId: string) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.deviceRoutes.createMobile(userId), body).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    )
+
+    return data;
+  }
+
+  async getMobileEnvironments(mac: string, userId: string) {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.deviceRoutes.getMobileEnvironments(mac, userId)).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    )
+
+    return data;
+  }
 }

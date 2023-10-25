@@ -11,7 +11,7 @@ export class TokenizeMobileDto {
   @IsString()
   password: string;
 
-  @ApiProperty()
-  @IsMACAddress()
-  mac: string;
+  // @ApiProperty()
+  // @IsMACAddress()
+  // mac: string;
 }

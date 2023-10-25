@@ -4,6 +4,7 @@ import { Injectable } from "@nestjs/common";
 export class DeviceRoutes {
   private readonly deviceRfidUrl = process.env.DEVICES_SERVICE_URL + '/rfid'
   private readonly deviceMicrocontrollerUrl = process.env.DEVICES_SERVICE_URL + '/microcontrollers'
+  private readonly deviceMobileUrl = process.env.DEVICES_SERVICE_URL + '/mobile'
 
   constructor () {}
 
@@ -68,5 +69,13 @@ export class DeviceRoutes {
 
   removeRfid(id: string): string {
     return `${this.deviceRfidUrl}/${id}`;
+  }
+
+  createMobile(userId: string): string {
+    return `${this.deviceMobileUrl}?userId=${userId}`;
+  }
+
+  getMobileEnvironments(mac: string, userId: string): string {
+    return `${this.deviceMobileUrl}/environments?mac=${mac}&userId=${userId}`;
   }
 }

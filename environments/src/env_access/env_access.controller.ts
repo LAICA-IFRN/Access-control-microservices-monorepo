@@ -38,6 +38,13 @@ export class EnvAccessController {
     return this.envAccessService.findAll();
   }
 
+  @ApiOperation({ description: 'Endpoint para listar todos os acessos ao ambiente de um usuário'})
+  @ApiOkResponse({ type: EnvAccessEntity, isArray: true })
+  @Get('user/:id')
+  getEnvironmentUserAccess(@Param('id') id: string) {
+    return this.envAccessService.getEnvironmentUserAccess(id);
+  }
+
   @ApiOperation({ description: 'Endpoint para verificar se um usuário possui acesso a um ambiente'})
   @ApiOkResponse({ type: swagger.VerifyAccessResponseEntity })
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })

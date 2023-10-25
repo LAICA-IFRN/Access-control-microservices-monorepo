@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Req } from '@nestjs/common';
 import { DevicesService } from './devices.service';
 import { Roles } from 'src/decorators/roles.decorator';
 import { RolesGuard } from 'src/guards/roles.guard';
@@ -124,5 +124,19 @@ export class DevicesController {
       id,
       updateMicrocontrollerStatusDto,
     );
+  }
+
+  @Post('mobile')
+  createMobile(@Body() createMobileDto: any, @Req() request: Request) {
+    const userId = request['userId'];
+    return this.devicesService.createMobile(createMobileDto, userId);
+  }
+
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER, RolesConstants.FREQUENTER)
+  @UseGuards(RolesGuard)
+  @Get('mobile')
+  getMobileEnvironments(@Query('mac') mac: string, @Req() request: Request) {
+    const userId = request['userId'];
+    return this.devicesService.getMobileEnvironments(mac, userId);
   }
 }

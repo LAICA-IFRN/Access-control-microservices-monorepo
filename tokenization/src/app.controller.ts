@@ -22,12 +22,12 @@ export class AppController {
   }
 
   @Get('authorize/user')
-  authorizeUser(@Body() authorizationDto: AuthorizationMobileDto) {
-    return this.appService.authorizeUser(authorizationDto)
+  authorizeUser(@Body() authorizationUserDto: AuthorizationUserDto) {
+    return this.appService.authorizeUser(authorizationUserDto)
   }
 
   @Get('authorize/mobile')
-  authorizeMobile(@Query() authorizationDto: AuthorizationMobileDto) {
-    return this.appService.authorizeMobile(authorizationDto)
+  authorizeMobile(@Query() authorizationMobileDto: AuthorizationMobileDto) {
+    return this.appService.authorizeMobile(authorizationMobileDto)
   }
 }

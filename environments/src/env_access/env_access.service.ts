@@ -571,6 +571,41 @@ export class EnvAccessService {
     });
   }
 
+  async getEnvironmentUserAccess(userId: string) {
+    try {
+      return await this.prisma.environment_user.findMany({
+        where: {
+          user_id: userId,
+        },
+        select: {
+          start_period: true,
+          end_period: true,
+          active: true,
+          environment_user_access_control: {
+            select: {
+              day: true,
+              start_time: true,
+              end_time: true,
+              no_access_restrict: true
+            }
+          }
+        },
+      })
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new HttpException(
+          'Environment user not found',
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        throw new HttpException(
+          "Can't find environment user",
+          HttpStatus.UNPROCESSABLE_ENTITY
+        );
+      }
+    }
+  }
+
   async hasEnvManagerOnEnv(userId: string, environmentId: string) {
     if (!isUUID(userId) || !isUUID(environmentId)) {
       await lastValueFrom(

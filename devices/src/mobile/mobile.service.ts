@@ -39,10 +39,10 @@ export class MobileService {
     return mobile.id;
   }
 
-  async getEnvironments(mac: string, userId: string) {
+  async getEnvironments(id: number, userId: string) {
     const mobile = await this.prismaService.mobile.findFirst({
       where: {
-        mac,
+        id,
         user_id: userId,
         active: true,
       }
@@ -53,8 +53,10 @@ export class MobileService {
     }
 
     const environments = await lastValueFrom(
-      this.httpService.get(this.environmentsServiceUrl + 'user/' + userId).pipe(
+      this.httpService.get(this.environmentsServiceUrl + '/env-access/user/' + userId).pipe(
         catchError((error) => {
+          console.log(error);
+          
           this.errorLogger.error(error);
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })

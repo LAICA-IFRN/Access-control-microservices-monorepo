@@ -75,7 +75,7 @@ export class DeviceRoutes {
     return `${this.deviceMobileUrl}?userId=${userId}`;
   }
 
-  getMobileEnvironments(mac: string, userId: string): string {
-    return `${this.deviceMobileUrl}/environments?mac=${mac}&userId=${userId}`;
+  getMobileEnvironments(id: string, userId: string): string {
+    return `${this.deviceMobileUrl}?id=${id}&userId=${userId}`; // /?id=
   }
 }

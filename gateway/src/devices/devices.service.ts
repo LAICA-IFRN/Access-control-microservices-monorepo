@@ -403,9 +403,9 @@ export class DevicesService {
     return data;
   }
 
-  async getMobileEnvironments(mac: string, userId: string) {
+  async getMobileEnvironments(deviceId: string, userId: string) {
     const { data } = await lastValueFrom(
-      this.httpService.get(this.deviceRoutes.getMobileEnvironments(mac, userId)).pipe(
+      this.httpService.get(this.deviceRoutes.getMobileEnvironments(deviceId, userId)).pipe(
         catchError((error) => {
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })

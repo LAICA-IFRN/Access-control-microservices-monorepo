@@ -3,6 +3,7 @@ import { Reflector } from '@nestjs/core';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { AuthorizationTypeConstants } from 'src/utils/constants';
+import { Request } from 'express';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -10,7 +11,7 @@ export class RolesGuard implements CanActivate {
 
   constructor (
     private readonly reflector: Reflector, 
-    private readonly httpService: HttpService
+    private readonly httpService: HttpService,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -21,8 +22,10 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context.switchToHttp().getRequest();
-    const token = request.headers['authorization'];
+    const request: Request = context.switchToHttp().getRequest();
+    const [prefix, value] = request.headers.authorization?.split(' ') ?? [];
+    const token = prefix === 'Bearer' ? value : undefined;
+
     let response: any;
     
     if (authorizationType === AuthorizationTypeConstants.USER) {
@@ -41,7 +44,7 @@ export class RolesGuard implements CanActivate {
           })
         )
       )
-      .then((response) => response.data.isAuthorized)
+      .then((response) => response.data)
       .catch((error) => {
         this.errorLogger.error('Falha ao verificar autorização', error);
   
@@ -67,7 +70,7 @@ export class RolesGuard implements CanActivate {
           })
         )
       )
-      .then((response) => response.data.isAuthorized)
+      .then((response) => response.data)
       .catch((error) => {
         this.errorLogger.error('Falha ao verificar autorização', error);
   

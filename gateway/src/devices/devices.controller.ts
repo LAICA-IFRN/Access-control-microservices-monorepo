@@ -127,6 +127,9 @@ export class DevicesController {
     );
   }
 
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER, RolesConstants.FREQUENTER)
+  @AuthorizationType(AuthorizationTypeConstants.MOBILE)
+  @UseGuards(RolesGuard)
   @Post('mobile')
   createMobile(@Body() createMobileDto: any, @Req() request: Request) {
     const userId = request['userId'];
@@ -137,8 +140,8 @@ export class DevicesController {
   @AuthorizationType(AuthorizationTypeConstants.MOBILE)
   @UseGuards(RolesGuard)
   @Get('mobile')
-  getMobileEnvironments(@Query('mac') mac: string, @Req() request: Request) {
+  getMobileEnvironments(@Query('id') id: string, @Req() request: Request) {
     const userId = request['userId'];
-    return this.devicesService.getMobileEnvironments(mac, userId);
+    return this.devicesService.getMobileEnvironments(id, userId);
   }
 }

@@ -27,7 +27,7 @@ export class AppController {
   }
 
   @Get('authorize/mobile')
-  authorizeMobile(@Query() authorizationMobileDto: AuthorizationMobileDto) {
+  authorizeMobile(@Body() authorizationMobileDto: AuthorizationMobileDto) {
     return this.appService.authorizeMobile(authorizationMobileDto)
   }
 }

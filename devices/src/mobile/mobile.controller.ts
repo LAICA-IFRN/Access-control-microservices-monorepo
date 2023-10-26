@@ -12,8 +12,8 @@ export class MobileController {
     return this.mobileService.create(createMobileDto, userId);
   }
   
-  @Get('environments')
-  getEnvironments(@Query('mac') mac: string, @Query('userId') userId: string) {
-    return this.mobileService.getEnvironments(mac, userId);
+  @Get()
+  getEnvironments(@Query('id') id: number, @Query('userId') userId: string) {
+    return this.mobileService.getEnvironments(+id, userId);
   }
 }

@@ -133,6 +133,8 @@ export class DevicesController {
   @Post('mobile')
   createMobile(@Body() createMobileDto: any, @Req() request: Request) {
     const userId = request['userId'];
+    const a = 5;
+    const b = 10;
     return this.devicesService.createMobile(createMobileDto, userId);
   }
 

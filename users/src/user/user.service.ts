@@ -211,82 +211,31 @@ export class UserService {
   }
 
   async findAll(findAllDto: FindAllDto) {
-    const skip = findAllDto.previous * findAllDto.pageSize;
-    const take = findAllDto.pageSize;
-    const order = findAllDto.ordering === 'asc' ? 'asc' : 'desc';
+    const previousLenght = findAllDto.previous * findAllDto.pageSize;
+    const nextLenght = findAllDto.pageSize;
+    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
+    const filter = findAllDto.where ? findAllDto.where : {};
 
     try {
       let data: userFieldsToSelect[];
-      const orderBy = findAllDto.orderBy
 
-      switch (orderBy) {
-        case 'name':
-          data = await this.prismaService.user.findMany({
-            skip,
-            take,
-            orderBy: {
-              name: order
-            },
-            where: {
-              active: { equals: findAllDto.filter.status },
-              name: { contains: findAllDto.filter.name },
-            },
-            select: {
-              id: true,
-              name: true,
-              active: true,
-              document_type_id: true,
-              created_at: true,
-              updated_at: true,
-            }
-          });
-        case 'created_at':
-          data = await this.prismaService.user.findMany({
-            skip,
-            take,
-            orderBy: {
-              created_at: order
-            },
-            where: {
-              active: { equals: findAllDto.filter.status },
-              name: { contains: findAllDto.filter.name },
-            },
-            select: {
-              id: true,
-              name: true,
-              active: true,
-              document_type_id: true,
-              created_at: true,
-              updated_at: true,
-            }
-          });
-        default:
-          data = await this.prismaService.user.findMany({
-            skip,
-            take,
-            orderBy: {
-              created_at: order
-            },
-            where: {
-              active: { equals: findAllDto.filter.status },
-              name: { contains: findAllDto.filter.name },
-            },
-            select: {
-              id: true,
-              name: true,
-              active: true,
-              document_type_id: true,
-              created_at: true,
-              updated_at: true,
-            }
-          });
-      }
+      data = await this.prismaService.user.findMany({
+        skip: previousLenght,
+        take: nextLenght,
+        orderBy: order,
+        where: filter,
+        select: {
+          id: true,
+          name: true,
+          active: true,
+          document_type_id: true,
+          created_at: true,
+          updated_at: true,
+        }
+      });
 
       const total = await this.prismaService.user.count({
-        where: {
-          active: { equals: findAllDto.filter.status },
-          name: { contains: findAllDto.filter.name },
-        }
+        where: filter,
       });
 
       return {
@@ -297,6 +246,7 @@ export class UserService {
         data
       };
     } catch (error) {
+      console.log(error);
       this.auditLogService.create(AuditConstants.findAllError({target: 'users', statusCode: 500}))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }

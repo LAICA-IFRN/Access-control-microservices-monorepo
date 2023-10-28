@@ -18,7 +18,7 @@ export class UserRoutes {
     return `${this.baseUrl}/invite?email=${email}&path=${path}`;
   }
 
-  findAll(): string {
+  findAllPaginated(): string {
     return `${this.baseUrl}/paginate`;
   }
 

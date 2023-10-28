@@ -20,15 +20,9 @@ export class FindAllDto {
   @IsObject()
   @IsOptional()
   @ApiProperty()
-  filter?: any;
+  where?: any;
 
-  @IsIn(['name', 'created_at'])
   @IsOptional()
   @ApiProperty()
-  orderBy?: string; 
-
-  @IsIn(['asc', 'desc'])
-  @IsOptional()
-  @ApiProperty()
-  ordering?: string;
+  orderBy?: any;
 }

@@ -27,6 +27,7 @@ import { BadRequestResponseEntity,
 import { FindToAccess } from './dto/find-to-access.dto';
 import { ValidateToToken } from './dto/validate-to-token.dto';
 import { CreateUserByInvitationDto } from './dto/create-user-by-invitaion.dto';
+import { FindAllDto } from './dto/find-all.dto';
 
 @Controller()
 @ApiTags('Users')
@@ -51,6 +52,11 @@ export class UserController {
   @Post('invite')
   sendInviteEmail(@Query('email') email: string, @Query('path') path: string) {
     return this.userService.sendInviteEmail(email, path);
+  }
+
+  @Post('paginate')
+  findAll(@Body() body: FindAllDto) {
+    return this.userService.findAll(body);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })

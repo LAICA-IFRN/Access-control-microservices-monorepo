@@ -74,6 +74,24 @@ export class UserService {
     return data;
   }
 
+  findAll(body: any) {
+    return this.httpService.post(this.userRoutes.findAll(), body).pipe(
+      catchError((error) => {
+        console.log(error);
+        
+        if (error.response.data.statusCode === 400) {
+          throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+        } else if (error.response.data.statusCode === 409) {
+          throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
+        } else if (error.response.data.statusCode === 403) {
+          throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+        } else {
+          throw new HttpException('Unable to fetch users', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+      })
+    );
+  }
+
   async findUserImage(id: string) {
     const { data } = await lastValueFrom(
       this.httpService.get(this.userRoutes.findUserImage(id)).pipe(

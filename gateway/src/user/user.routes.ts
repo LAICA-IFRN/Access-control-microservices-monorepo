@@ -18,6 +18,10 @@ export class UserRoutes {
     return `${this.baseUrl}/invite?email=${email}&path=${path}`;
   }
 
+  findAll(): string {
+    return `${this.baseUrl}/paginate`;
+  }
+
   findUserImage(id: string): string {
     return `${this.baseUrl}/${id}/image`;
   }

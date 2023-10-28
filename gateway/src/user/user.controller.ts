@@ -29,6 +29,11 @@ export class UserController {
     return this.userService.sendInviteEmail(email, path);
   }
 
+  @Post('paginate')
+  findAll(@Body() body: any) {
+    return this.userService.findAll(body);
+  }
+
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Get(':id/image')

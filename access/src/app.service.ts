@@ -4,7 +4,7 @@ import { AccessDto } from './dto/access.dto';
 import { catchError, lastValueFrom } from 'rxjs';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
-import { AccessLogService } from './providers/audit-log/audit-log.service';
+import { AccessByType, AccessLogService } from './providers/audit-log/audit-log.service';
 import { AccessLogConstants } from './providers/audit-log/audit-contants';
 import { RoleEntity } from './utils/role.type';
 
@@ -15,8 +15,6 @@ export class AppService {
   private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
   private readonly searchUserUrl = process.env.SEARCH_USER_URL
   private readonly searchUserAccessUrl = process.env.SEARCH_USER_ENV_ACCESS
-  // private readonly searchUserImageUrl = process.env.SEARCH_USER_IMAGE_URL
-  // private readonly verifyUserRoleUrl = process.env.VERIFY_USER_ROLE_URL
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
   
@@ -72,7 +70,7 @@ export class AppService {
     if (rfid) {
       return this.proccessAccessWhenRFID(environmentId, rfid, encoded)
     } else if (mobile) {
-      return this.proccessAccessWhenMobile(environmentId, mobile)
+      return this.proccessAccessWhenMobile(environmentId, mobile, encoded)
     } else {
       return await this.proccessAccessWhenDocumentAndPassword(environmentId, document, pin, encoded)
     }
@@ -108,10 +106,10 @@ export class AppService {
       }
     });
 
-    return await this.validateUserAccess(environmentId, response.result, captureEncodedImage)
+    return await this.validateUser(environmentId, response.result, captureEncodedImage, 'rfid')
   }
 
-  async proccessAccessWhenMobile(environmentId: string, mobile: string) {
+  async proccessAccessWhenMobile(environmentId: string, mobile: string, captureEncodedImage: string) {
     console.log('MOBILE')
   }
 
@@ -163,12 +161,12 @@ export class AppService {
       throw new HttpException('Invalid user pin', HttpStatus.UNAUTHORIZED);
     }
 
-    return await this.validateUserAccess(environmentId, response.result, captureEncodedImage)
+    return await this.validateUser(environmentId, response.result, captureEncodedImage, 'pin')
   }
 
-  async validateUserAccess(environmentId: string, userId: string, captureEncodedImage: string) {
+  async validateUser(environmentId: string, userId: string, captureEncodedImage: string, accessType: AccessByType) {
     const getUserRolesUrl = `${process.env.SERVICE_USERS_URL}/${userId}/roles`;
-    const isFrequenter: RoleEntity[] = await lastValueFrom(
+    const userRoles: RoleEntity[] = await lastValueFrom(
       this.httpService.get(getUserRolesUrl).pipe(
         catchError((error) => {
           if (error.response.status === 404) {
@@ -183,28 +181,33 @@ export class AppService {
     )
     .then((response) => response.data)
     .catch((error) => {
-      lastValueFrom(
-        this.httpService.post(this.createAccessLog, {
-          topic: 'Acesso',
-          type: 'Error',
-          message: 'Falha ao tentar acesso: Erro interno, verificar logs de erro do serviço',
-          meta: {
-            userId
-          }
-        })
-      )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
-
+      this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
       this.errorLogger.error('Falha ao buscar acesso de usuário', error);
     })
 
+    const roles = userRoles.map((role) => role.role.name);
     let accessResponse = { access: false }
-    if (isFrequenter) {
-      console.log(userId, environmentId);
+
+    if (roles.includes('ADMIN')) {
+      accessResponse = await this.validateUserFacial(userId, environmentId, captureEncodedImage, accessType);
+
+      if (accessResponse.access === false) {
+        this.accessLogService.create(
+          AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(
+            accessType,
+            userId,
+            environmentId,
+            {
+              captureEncodedImage
+            }
+          )
+        )
+        throw new HttpException('Falha na análise facial', HttpStatus.UNAUTHORIZED);
+      }
       
-      accessResponse = await lastValueFrom(
+      // TODO: mds ajeita essa merda
+    } else if (roles.includes('FREQUENTER')) {
+      const hasEnvAccess = await lastValueFrom(
         this.httpService.get(this.searchUserAccessUrl, {
           data: {
             userId: userId,
@@ -220,29 +223,30 @@ export class AppService {
       .catch((error) => {
         this.errorLogger.error('Falha ao buscar acesso de usuário', error);
       })
-    }
 
-    if (isFrequenter && accessResponse.access == false) {
-      console.log('frequenter false');
-      await lastValueFrom(
-        this.httpService.post(this.createAccessLog, {
-          topic: 'Acesso',
-          type: 'Info',
-          message: 'Acesso à ambiente negado: Acesso não permitido',
-          meta: {
+      if (hasEnvAccess.result === false) {
+        this.accessLogService.create(
+          AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
+            accessType,
+            userId,
             environmentId,
-            userId
-          }
-        })
-      ).catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      })
-
-      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+            {
+              captureEncodedImage
+            }
+          )
+        )
+        throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+      } else {
+        accessResponse = await this.validateUserFacial(userId, environmentId, captureEncodedImage, accessType);
+      }
     }
 
+    return await this.validateUserFacial(userId, environmentId, captureEncodedImage,  accessType);
+  }
+
+  async validateUserFacial(userId: string, environmentId: string, captureEncodedImage: string, accessType: AccessByType) {
     const userImagePath = await this.saveUserImage(userId)
-    const captureImagePath = await this.saveCapturePhoto(captureEncodedImage)
+    const captureImagePath = await this.saveAccessImage(captureEncodedImage)
 
     const facialRecognition = await lastValueFrom(
       this.httpService.get(this.facialRecognitionUrl, {
@@ -252,9 +256,6 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
-          console.log('facial recognition');
-          console.log(error);
-          
           if (error.response.status === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {
@@ -268,102 +269,79 @@ export class AppService {
       this.errorLogger.error('Falha ao realizar análise facial', error);
     })
 
-    console.log(facialRecognition);
-    
-
     if (facialRecognition.result === false) {
-      console.log('facial recognition false');
-      
-      await lastValueFrom(
-        this.httpService.post(this.createAccessLog, {
-          topic: 'Acesso',
-          type: 'Info',
-          message: 'Acesso à ambiente negado: Análise facial não aprovada',
-          meta: {
-            environmentId,
-            userId,
+      this.accessLogService.create(
+        AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(
+          accessType,
+          userId,
+          environmentId,
+          {
             captureEncodedImage
           }
-        })
-      ).catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      })
-
-      throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
+        )
+      )
+      throw new HttpException('Falha na análise facial', HttpStatus.UNAUTHORIZED);
     }
 
     return { access: facialRecognition.result }
   }
 
   async saveUserImage(userId: string) {
-    // const getUserImage = `${this.searchUserImageUrl}/${userId}/image`
-    // const userEncodedPhoto = await lastValueFrom(
-    //   this.httpService.get(getUserImage).pipe(
-    //     catchError((error) => {
-    //       console.log('get user image');
-    //       console.log(error);
-          
-    //       if (error.response.status === 404) {
-    //         throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-    //       } else if (error.response.status === 400) {
-    //         throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-    //       } else {
-    //         throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-    //       }
-    //     })
-    //   ).pipe(
-    //     catchError((error) => {
-    //       if (error.response.status === 404) {
-    //         throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-    //       } else if (error.response.status === 400) {
-    //         throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-    //       } else {
-    //         throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-    //       }
-    //     })
-    //   )
-    // )
-    // .then((response) => response.data)
-    // .catch((error) => {
-    //   this.errorLogger.error('Falha ao buscar foto do usuário', error);
-    // })
+    const getUserImage = `${this.searchUserUrl}/${userId}/image`
+    const userEncodedPhoto = await lastValueFrom(
+      this.httpService.get(getUserImage).pipe(
+        catchError((error) => {
+          if (error.response.status === 404) {
+            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
+          } else if (error.response.status === 400) {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else {
+            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+          }
+        })
+      )
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar foto do usuário', error);
+    })
 
-    // const userImage = userEncodedPhoto.startsWith('data:image/') 
-    // ? userEncodedPhoto
-    // : `data:image/jpg;base64,${userEncodedPhoto}`;
+    const userImage = userEncodedPhoto.startsWith('data:image/') 
+    ? userEncodedPhoto
+    : `data:image/jpg;base64,${userEncodedPhoto}`;
 
-    // const matches = userImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
-    // const imageExtension = matches[1];
-    // const imageBuffer = Buffer.from(matches[2], 'base64');
+    const matches = userImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+    const imageExtension = matches[1];
+    const imageBuffer = Buffer.from(matches[2], 'base64');
 
-    // const imageName = `${userId}.${imageExtension}`;
-    // const imagePath = `temp/${imageName}`;
+    const imageName = `${userId}.${imageExtension}`;
+    const imagePath = `temp/${imageName}`;
 
-    // fs.writeFile(imagePath, imageBuffer, (err) => {
-    //   if (err) {
-    //     lastValueFrom(
-    //       this.httpService.post(this.createAccessLog, {
-    //         topic: 'Acesso',
-    //         type: 'Error',
-    //         message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',
-    //         meta: {
-    //           encodedImage: userEncodedPhoto
-    //         }
-    //       })
-    //     ).catch((error) => {
-    //       this.errorLogger.error('Falha ao enviar log', error);
-    //     })
+    fs.writeFile(imagePath, imageBuffer, (err) => {
+      if (err) {
+        lastValueFrom(
+          this.httpService.post(this.createAccessLog, {
+            topic: 'Acesso',
+            type: 'Error',
+            message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',
+            meta: {
+              encodedImage: userEncodedPhoto
+            }
+          })
+        ).catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        })
 
-    //     this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
+        this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
         
-    //     throw err;
-    //   }
-    // });
+        throw err;
+      }
+    });
 
-    // return `access/temp/${imageName}`;
+    return `access/temp/${imageName}`;
   }
 
-  async saveCapturePhoto(captureEncodedImage: string) {
+  async saveAccessImage(captureEncodedImage: string) {
     const captureImage = captureEncodedImage.startsWith('data:image/') 
     ? captureEncodedImage
     : `data:image/jpg;base64,${captureEncodedImage}`;

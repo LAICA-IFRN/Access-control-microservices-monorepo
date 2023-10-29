@@ -28,6 +28,7 @@ import { FindToAccess } from './dto/find-to-access.dto';
 import { ValidateToToken } from './dto/validate-to-token.dto';
 import { CreateUserByInvitationDto } from './dto/create-user-by-invitaion.dto';
 import { FindAllDto } from './dto/find-all.dto';
+import { InviteEmail } from './dto/invite-email.dto';
 
 @Controller()
 @ApiTags('Users')
@@ -50,8 +51,8 @@ export class UserController {
 
   @ApiOperation({ description: 'Endpoint para envio de email de convite' })
   @Post('invite')
-  sendInviteEmail(@Query('email') email: string, @Query('path') path: string) {
-    return this.userService.sendInviteEmail(email, path);
+  sendInviteEmail(@Body() body: InviteEmail) {
+    return this.userService.sendInviteEmail(body);
   }
 
   @Get('document-types')

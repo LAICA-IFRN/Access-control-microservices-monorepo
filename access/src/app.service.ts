@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import { randomUUID } from 'crypto';
 import { AccessLogService } from './providers/audit-log/audit-log.service';
 import { AccessLogConstants } from './providers/audit-log/audit-contants';
+import { RoleEntity } from './utils/role.type';
 
 @Injectable()
 export class AppService {
@@ -14,8 +15,8 @@ export class AppService {
   private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
   private readonly searchUserUrl = process.env.SEARCH_USER_URL
   private readonly searchUserAccessUrl = process.env.SEARCH_USER_ENV_ACCESS
-  private readonly searchUserImageUrl = process.env.SEARCH_USER_IMAGE_URL
-  private readonly verifyUserRoleUrl = process.env.VERIFY_USER_ROLE_URL
+  // private readonly searchUserImageUrl = process.env.SEARCH_USER_IMAGE_URL
+  // private readonly verifyUserRoleUrl = process.env.VERIFY_USER_ROLE_URL
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
   
@@ -66,14 +67,14 @@ export class AppService {
     )
     
     const { environmentId } = esp32.data
-    const { pin, rfid, mobile, encoded } = accessDto
+    const { document, pin, rfid, mobile, encoded } = accessDto
 
     if (rfid) {
       return this.proccessAccessWhenRFID(environmentId, rfid, encoded)
     } else if (mobile) {
       return this.proccessAccessWhenMobile(environmentId, mobile)
     } else {
-      return await this.proccessAccessWhenDocumentAndPassword(environmentId, pin, encoded)
+      return await this.proccessAccessWhenDocumentAndPassword(environmentId, document, pin, encoded)
     }
   }
 
@@ -115,99 +116,61 @@ export class AppService {
   }
 
   async proccessAccessWhenDocumentAndPassword(
-    environmentId: string, pin: string, captureEncodedImage: string
+    environmentId: string, document: string, pin: string, captureEncodedImage: string
   ) {
     const response = await lastValueFrom(
       this.httpService.get(this.searchUserUrl, {
         data: {
+          document,
           pin
         }
       })
     )
     .then((response) => response.data)
     .catch((error) => {
-      if (error.response.status === 404) {
-        this.accessLogService.create(
-          AccessLogConstants.accessDeniedWhenUserPinNotFound(
-            'pin',
-            null,
-            environmentId,
-            {
-              pin,
-              captureEncodedImage
-            }
-          )
-        )
-        throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-      } else if (error.response.status === 401) {
-        this.accessLogService.create(
-          AccessLogConstants.accessDeniedWhenUserPinIsNotValid(
-            'pin',
-            null,
-            environmentId,
-            {
-              pin,
-              captureEncodedImage
-            }
-          )
-        )
-        throw new HttpException(error.response.data.message, HttpStatus.UNAUTHORIZED);
-      } else {
-        this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
-        this.errorLogger.error('Falha do sistema', error);
-        throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
-      }
+      this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
+      this.errorLogger.error('Falha do sistema', error);
+      throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
     });
 
     if (response.result === 404) {
-      await lastValueFrom(
-        this.httpService.post(this.createAccessLog, {
-          topic: 'Acesso',
-          type: 'Info',
-          message: 'Acesso à ambiente negado: Usuário não encontrado',
-          meta: {
-            environmentId,
-            pin
+      this.accessLogService.create(
+        AccessLogConstants.accessDeniedWhenUserDocumentNotFound(
+          'pin',
+          null,
+          environmentId,
+          {
+            document,
+            pin,
+            captureEncodedImage
           }
-        })
-      ).catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      })
-
+        )
+      )
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     } else if (response.result === 401) {
-      await lastValueFrom(
-        this.httpService.post(this.createAccessLog, {
-          topic: 'Acesso',
-          type: 'Info',
-          message: 'Acesso à ambiente negado: Senha inválida',
-          meta: {
-            environmentId,
-            pin
+      this.accessLogService.create(
+        AccessLogConstants.accessDeniedWhenUserPinIsNotValid(
+          'pin',
+          null,
+          environmentId,
+          {
+            document,
+            pin,
+            captureEncodedImage
           }
-        })
-      ).catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      })
-      
-      throw new HttpException('Invalid user password', HttpStatus.UNAUTHORIZED);
+        )
+      )
+      throw new HttpException('Invalid user pin', HttpStatus.UNAUTHORIZED);
     }
 
     return await this.validateUserAccess(environmentId, response.result, captureEncodedImage)
   }
 
   async validateUserAccess(environmentId: string, userId: string, captureEncodedImage: string) {
-    const isFrequenter = await lastValueFrom(
-      this.httpService.get(this.verifyUserRoleUrl, {
-        data: {
-          userId,
-          roles: ['FREQUENTER']
-        }
-      }).pipe(
+    const getUserRolesUrl = `${process.env.SERVICE_USERS_URL}/${userId}/roles`;
+    const isFrequenter: RoleEntity[] = await lastValueFrom(
+      this.httpService.get(getUserRolesUrl).pipe(
         catchError((error) => {
-          console.log('get frequenter');
-          console.log(error);
-          
           if (error.response.status === 404) {
             throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
           } else if (error.response.status === 400) {
@@ -333,71 +296,71 @@ export class AppService {
   }
 
   async saveUserImage(userId: string) {
-    const getUserImage = `${this.searchUserImageUrl}/${userId}/image`
-    const userEncodedPhoto = await lastValueFrom(
-      this.httpService.get(getUserImage).pipe(
-        catchError((error) => {
-          console.log('get user image');
-          console.log(error);
+    // const getUserImage = `${this.searchUserImageUrl}/${userId}/image`
+    // const userEncodedPhoto = await lastValueFrom(
+    //   this.httpService.get(getUserImage).pipe(
+    //     catchError((error) => {
+    //       console.log('get user image');
+    //       console.log(error);
           
-          if (error.response.status === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.status === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          }
-        })
-      ).pipe(
-        catchError((error) => {
-          if (error.response.status === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.status === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          }
-        })
-      )
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar foto do usuário', error);
-    })
+    //       if (error.response.status === 404) {
+    //         throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
+    //       } else if (error.response.status === 400) {
+    //         throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+    //       } else {
+    //         throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+    //       }
+    //     })
+    //   ).pipe(
+    //     catchError((error) => {
+    //       if (error.response.status === 404) {
+    //         throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
+    //       } else if (error.response.status === 400) {
+    //         throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+    //       } else {
+    //         throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+    //       }
+    //     })
+    //   )
+    // )
+    // .then((response) => response.data)
+    // .catch((error) => {
+    //   this.errorLogger.error('Falha ao buscar foto do usuário', error);
+    // })
 
-    const userImage = userEncodedPhoto.startsWith('data:image/') 
-    ? userEncodedPhoto
-    : `data:image/jpg;base64,${userEncodedPhoto}`;
+    // const userImage = userEncodedPhoto.startsWith('data:image/') 
+    // ? userEncodedPhoto
+    // : `data:image/jpg;base64,${userEncodedPhoto}`;
 
-    const matches = userImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
-    const imageExtension = matches[1];
-    const imageBuffer = Buffer.from(matches[2], 'base64');
+    // const matches = userImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+    // const imageExtension = matches[1];
+    // const imageBuffer = Buffer.from(matches[2], 'base64');
 
-    const imageName = `${userId}.${imageExtension}`;
-    const imagePath = `temp/${imageName}`;
+    // const imageName = `${userId}.${imageExtension}`;
+    // const imagePath = `temp/${imageName}`;
 
-    fs.writeFile(imagePath, imageBuffer, (err) => {
-      if (err) {
-        lastValueFrom(
-          this.httpService.post(this.createAccessLog, {
-            topic: 'Acesso',
-            type: 'Error',
-            message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',
-            meta: {
-              encodedImage: userEncodedPhoto
-            }
-          })
-        ).catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        })
+    // fs.writeFile(imagePath, imageBuffer, (err) => {
+    //   if (err) {
+    //     lastValueFrom(
+    //       this.httpService.post(this.createAccessLog, {
+    //         topic: 'Acesso',
+    //         type: 'Error',
+    //         message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',
+    //         meta: {
+    //           encodedImage: userEncodedPhoto
+    //         }
+    //       })
+    //     ).catch((error) => {
+    //       this.errorLogger.error('Falha ao enviar log', error);
+    //     })
 
-        this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
+    //     this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
         
-        throw err;
-      }
-    });
+    //     throw err;
+    //   }
+    // });
 
-    return `access/temp/${imageName}`;
+    // return `access/temp/${imageName}`;
   }
 
   async saveCapturePhoto(captureEncodedImage: string) {

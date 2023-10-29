@@ -12,6 +12,9 @@ export class UserEntity implements user {
   document: string;
 
   @ApiProperty()
+  pin: string;
+
+  @ApiProperty()
   document_type_id: number;
 
   @ApiProperty({ required: false, nullable: true })

@@ -16,6 +16,7 @@ import { catchError, lastValueFrom } from 'rxjs';
 import { DocumentTypesConstants, RolesConstants } from 'src/utils/database-constants';
 import { FindAllDto } from './dto/find-all.dto';
 import { userFieldsToSelect } from 'src/utils/types';
+import { InviteEmail } from './dto/invite-email.dto';
 
 @Injectable()
 export class UserService {
@@ -121,7 +122,8 @@ export class UserService {
     };
   }
 
-  async sendInviteEmail(email: string, path: string) {
+  async sendInviteEmail(inviteEmail: InviteEmail) {
+    const { email, path } = inviteEmail;
     try {
       await this.emailService.sendMail(email, path);
 
@@ -321,14 +323,14 @@ export class UserService {
     });
     
     if (!user) {
-      this.auditLogService.create(AuditConstants.findOneNotFound({document: findToAccess.user, statusCode: 404}))
+      //this.auditLogService.create(AuditConstants.findOneNotFound({document: findToAccess.user, statusCode: 404}))
       return { result: 404 }
     }
 
-    const passwordMatch = await bcrypt.compare(findToAccess.password, user.password);
+    const pinMatch = findToAccess.pin === user.pin;
 
-    if (!passwordMatch) {
-      this.auditLogService.create(AuditConstants.findOneToAccessUnauthorizhed({userId: user.id, statusCode: 401}))
+    if (!pinMatch) {
+      //this.auditLogService.create(AuditConstants.findOneToAccessUnauthorizhed({userId: user.id, statusCode: 401}))
       return { result: 401 };
     }
 

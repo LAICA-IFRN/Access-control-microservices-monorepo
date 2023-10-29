@@ -10,5 +10,5 @@ export class FindToAccess {
     @IsString()
     @IsOptional()
     @ApiProperty({ required: false})
-    password?: string
+    pin?: string
 }

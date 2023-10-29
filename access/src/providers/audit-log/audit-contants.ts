@@ -1,7 +1,7 @@
 import { AccessByType, AccessLog } from "./audit-log.service";
 
 export class AccessLogConstants {
-  public static accessDeniedWhenUserPinNotFound(
+  public static accessDeniedWhenUserDocumentNotFound(
     access_by?: AccessByType,
     userId?: string, 
     environmentId?: string,
@@ -9,7 +9,7 @@ export class AccessLogConstants {
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Pin de usuário não encontrado',
+      message: 'Documento de usuário não encontrado',
       user_id: userId,
       environment_id: environmentId,
       access_by: access_by,
@@ -185,7 +185,7 @@ export class AccessLogConstants {
   ): AccessLog {
     return {
       type: "Info",
-      message: 'Acesso validado por PIN do usuário',
+      message: 'Acesso validado por documento e PIN do usuário',
       user_id: userId,
       environment_id: environmentId,
       access_by: access_by,

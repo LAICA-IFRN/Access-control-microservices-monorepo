@@ -1,13 +1,12 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { Log } from "@prisma/client";
+import { log } from "@prisma/client";
 
-export class LogEntity implements Log {
-  
+export class LogEntity implements log {
   @ApiProperty()
   id: number;
   
   @ApiProperty({ default: new Date() })
-  createdAt: Date;
+  created_at: Date;
   
   @ApiProperty()
   type: string;

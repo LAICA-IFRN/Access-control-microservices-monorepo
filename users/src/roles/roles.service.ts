@@ -192,6 +192,15 @@ export class RolesService {
     return roles;
   }
 
+  async findRoles() {
+    try {
+      return await this.prisma.role.findMany();
+    } catch (error) {
+      //this.auditLogService.create(AuditConstants.findDocumentTypesError({statusCode: 500}))
+      throw new HttpException("Can't get role types", HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+  }
+
   async findAll(id: string) {
     if (!isUUID(id)) {
       await lastValueFrom(

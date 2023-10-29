@@ -7,11 +7,22 @@ datasource db {
   url      = "file:./users.db" //env("DATABASE_URL")
 }
 
-model Log {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  type      String // error, info, warn
-  topic     String // environment, user, etc
-  message   String
-  meta      String?
+model log {
+  id         Int      @id @default(autoincrement())
+  created_at DateTime @default(now())
+  type       String
+  topic      String
+  message    String
+  meta       String?
+}
+
+model access {
+  id             Int      @id @default(autoincrement())
+  created_at     DateTime @default(now())
+  message        String
+  type           String // info, error, warning
+  user_id        String?
+  environment_id String?
+  access_by      String? // rfid, pin, app, remote
+  meta           String?
 }

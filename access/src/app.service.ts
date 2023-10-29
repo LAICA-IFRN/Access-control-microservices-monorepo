@@ -4,6 +4,8 @@ import { AccessDto } from './dto/access.dto';
 import { catchError, lastValueFrom } from 'rxjs';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
+import { AccessLogService } from './providers/audit-log/audit-log.service';
+import { AccessLogConstants } from './providers/audit-log/audit-contants';
 
 @Injectable()
 export class AppService {
@@ -19,6 +21,7 @@ export class AppService {
   
   constructor(
     private readonly httpService: HttpService,
+    private readonly accessLogService: AccessLogService
   ) {}
 
   async access(accessDto: AccessDto) {
@@ -29,74 +32,48 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
-          console.log('get esp32');
-          
-          console.log(error);
-          
           if (error.response.status === 404) {
-            lastValueFrom(
-              this.httpService.post(this.createAccessLog, {
-                topic: 'Acesso',
-                type: 'Error',
-                message: 'Falha ao tentar acesso: Esp32 não encontrado',
-                meta: {
+            this.accessLogService.create(
+              AccessLogConstants.accessDeniedWhenEsp32NotFound(
+                null,
+                null,
+                null,
+                {
                   mac: accessDto.mac
                 }
-              })
+              )
             )
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error);
-            });
-
             throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
           } else if (error.response.status === 400) {
-            lastValueFrom(
-              this.httpService.post(this.createAccessLog, {
-                topic: 'Acesso',
-                type: 'Error',
-                message: 'Falha ao tentar acesso: Mac inválido',
-                meta: {
+            this.accessLogService.create(
+              AccessLogConstants.accessDeniedWhenEsp32MacAddressIsNotValid(
+                null,
+                null,
+                null,
+                {
                   mac: accessDto.mac
                 }
-              })
+              )
             )
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error);
-            });
-
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {
-            lastValueFrom(
-              this.httpService.post(this.createAccessLog, {
-                topic: 'Acesso',
-                type: 'Error',
-                message: 'Falha ao tentar acesso: Erro interno, verificar logs de erro do serviço',
-                meta: {
-                  mac: accessDto.mac
-                }
-              })
-            )
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error);
-            });
-
+            this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
             this.errorLogger.error('Falha do sistema', error);
-
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
+            throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
           }
         })
       )
     )
     
     const { environmentId } = esp32.data
-    const { user, password, rfid, mobile, encoded } = accessDto
+    const { pin, rfid, mobile, encoded } = accessDto
 
     if (rfid) {
       return this.proccessAccessWhenRFID(environmentId, rfid, encoded)
     } else if (mobile) {
       return this.proccessAccessWhenMobile(environmentId, mobile)
     } else {
-      return await this.proccessAccessWhenDocumentAndPassword(environmentId, user, password, encoded)
+      return await this.proccessAccessWhenDocumentAndPassword(environmentId, pin, encoded)
     }
   }
 
@@ -110,15 +87,25 @@ export class AppService {
     )
     .then((response) => response.data)
     .catch((error) => {
-      this.errorLogger.error('falha ao buscar tag', error);
+      if (error.response.status === 404) {
+        this.accessLogService.create(
+          AccessLogConstants.accessDeniedWhenTagRFIDNotFound(
+            'rfid',
+            null,
+            environmentId,
+            {
+              tag: rfid,
+              captureEncodedImage
+            }
+          )
+        )
+        throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
+      } else {
+        this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
+        this.errorLogger.error('Falha do sistema', error);
+        throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
+      }
     });
-
-    console.log(response);
-    
-    
-    if (!response.result) {
-      throw new HttpException('RFID not found', HttpStatus.NOT_FOUND);
-    }
 
     return await this.validateUserAccess(environmentId, response.result, captureEncodedImage)
   }
@@ -128,19 +115,48 @@ export class AppService {
   }
 
   async proccessAccessWhenDocumentAndPassword(
-    environmentId: string, user: string, password: string, captureEncodedImage: string
+    environmentId: string, pin: string, captureEncodedImage: string
   ) {
     const response = await lastValueFrom(
       this.httpService.get(this.searchUserUrl, {
         data: {
-          user,
-          password
+          pin
         }
       })
     )
     .then((response) => response.data)
     .catch((error) => {
-      this.errorLogger.error('Falha ao enviar log', error);
+      if (error.response.status === 404) {
+        this.accessLogService.create(
+          AccessLogConstants.accessDeniedWhenUserPinNotFound(
+            'pin',
+            null,
+            environmentId,
+            {
+              pin,
+              captureEncodedImage
+            }
+          )
+        )
+        throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
+      } else if (error.response.status === 401) {
+        this.accessLogService.create(
+          AccessLogConstants.accessDeniedWhenUserPinIsNotValid(
+            'pin',
+            null,
+            environmentId,
+            {
+              pin,
+              captureEncodedImage
+            }
+          )
+        )
+        throw new HttpException(error.response.data.message, HttpStatus.UNAUTHORIZED);
+      } else {
+        this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
+        this.errorLogger.error('Falha do sistema', error);
+        throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
+      }
     });
 
     if (response.result === 404) {
@@ -151,7 +167,7 @@ export class AppService {
           message: 'Acesso à ambiente negado: Usuário não encontrado',
           meta: {
             environmentId,
-            user
+            pin
           }
         })
       ).catch((error) => {
@@ -167,7 +183,7 @@ export class AppService {
           message: 'Acesso à ambiente negado: Senha inválida',
           meta: {
             environmentId,
-            user
+            pin
           }
         })
       ).catch((error) => {

@@ -74,6 +74,24 @@ export class UserService {
     return data;
   }
 
+  async findDocumentTypes() {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.userRoutes.findDocumentTypes()).pipe(
+        catchError((error) => {
+          console.log(error);
+          
+          if (error.response.data.statusCode === 400) {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else {
+            throw new HttpException('Unable to fetch document types', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        })
+      )
+    );  
+
+    return data;
+  }
+
   async findAll(body: any) {
     console.log(body);
     const { data } = await lastValueFrom(
@@ -255,6 +273,24 @@ export class UserService {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {
             throw new HttpException('Unable to add role', HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        })
+      )
+    );
+
+    return data;
+  }
+
+  async findRolesTypes() {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.userRoutes.findRolesTypes()).pipe(
+        catchError((error) => {
+          console.log(error);
+
+          if (error.response.data.statusCode === 400) {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else {
+            throw new HttpException('Unable to fetch roles types', HttpStatus.INTERNAL_SERVER_ERROR);
           }
         })
       )

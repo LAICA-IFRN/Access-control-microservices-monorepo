@@ -18,12 +18,12 @@ export class AccessDto {
     @ApiProperty()
     @IsOptional()
     @IsString()
-    user?: string
-    
+    document?: string
+
     @ApiProperty()
     @IsOptional()
     @IsString()
-    password?: string
+    pin?: string
     
     @ApiProperty()
     @IsOptional()

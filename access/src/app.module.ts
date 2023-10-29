@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
+import { AccessLogService } from './providers/audit-log/audit-log.service';
 
 @Module({
   imports: [
@@ -10,6 +11,6 @@ import { ConfigModule } from '@nestjs/config';
     ConfigModule.forRoot()
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, AccessLogService],
 })
 export class AppModule {}

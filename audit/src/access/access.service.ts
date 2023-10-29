@@ -1,29 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CreateLogDto } from './dto/create-log.dto';
+import { CreateAccessDto } from './dto/create-access.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { FindAllDto } from 'src/utils/find-all.dto';
-import { log } from '@prisma/client';
+import { FindAllDto } from '../utils/find-all.dto';
+import { access } from '@prisma/client';
 
 @Injectable()
-export class LogsService {
+export class AccessService {
   errorLogger = new Logger()
 
   constructor(private readonly prismaService: PrismaService) {}
 
-  async create(createLogDto: CreateLogDto) {
-    const meta = JSON.stringify(createLogDto.meta)
-    
+  async create(createAccessDto: CreateAccessDto) {
+    const meta = JSON.stringify(createAccessDto.meta);
+
     try {
-      const log = await this.prismaService.log.create({
+      return await this.prismaService.access.create({
         data: {
-          type: createLogDto.type,
-          message: createLogDto.message,
-          topic: createLogDto.topic,
+          type: createAccessDto.type,
+          message: createAccessDto.message,
+          user_id: createAccessDto.user_id,
+          environment_id: createAccessDto.environment_id,
+          access_by: createAccessDto.access_by,
           meta
         }
       });
-
-      return log;
     } catch (error) {
       this.errorLogger.error('Falha ao criar log', error.meta);
     }
@@ -36,16 +36,16 @@ export class LogsService {
     const filter = findAllDto.where ? findAllDto.where : {};
 
     try {
-      let data: log[];
+      let data: access[];
 
-      data = await this.prismaService.log.findMany({
+      data = await this.prismaService.access.findMany({
         skip: previousLenght,
         take: nextLenght,
         orderBy: order,
         where: filter,
       });
 
-      const total = await this.prismaService.log.count({
+      const total = await this.prismaService.access.count({
         where: filter,
       });
 

@@ -22,6 +22,10 @@ export class UserRoutes {
     return `${this.baseUrl}/paginate`;
   }
 
+  findDocumentTypes(): string {
+    return `${this.baseUrl}/document-types`;
+  }
+
   findUserImage(id: string): string {
     return `${this.baseUrl}/${id}/image`;
   }
@@ -56,6 +60,10 @@ export class UserRoutes {
 
   createRole(id: string): string {
     return `${this.baseUrl}/${id}/roles`;
+  }
+
+  findRolesTypes(): string {
+    return `${this.baseUrl}/role/types`;
   }
 
   findAllRolesFromUser(id: string): string {

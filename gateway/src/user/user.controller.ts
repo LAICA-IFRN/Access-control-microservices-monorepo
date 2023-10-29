@@ -35,6 +35,11 @@ export class UserController {
     return this.userService.findAll(body);
   }
 
+  @Get('document-types')
+  findDocumentTypes() {
+    return this.userService.findDocumentTypes();
+  }
+
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Get(':id/image')
@@ -96,6 +101,11 @@ export class UserController {
   @Post(':id/roles')
   createRole(@Param('id') id: string, @Body() body: any) {
     return this.userService.createRole(id, body);
+  }
+
+  @Get('role/types')
+  findRolesTypes() {
+    return this.userService.findRolesTypes();
   }
 
   // @Roles(RolesConstants.ADMIN)

@@ -54,6 +54,11 @@ export class UserController {
     return this.userService.sendInviteEmail(email, path);
   }
 
+  @Get('document-types')
+  findDocumentTypes() {
+    return this.userService.findDocumentTypes();
+  }
+
   @Post('paginate')
   findAll(@Body() body: FindAllDto) {
     return this.userService.findAll(body);

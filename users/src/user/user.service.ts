@@ -210,6 +210,15 @@ export class UserService {
     }
   }
 
+  async findDocumentTypes() {
+    try {
+      return await this.prismaService.document_type.findMany();
+    } catch (error) {
+      //this.auditLogService.create(AuditConstants.findDocumentTypesError({statusCode: 500}))
+      throw new HttpException("Can't get document types", HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+  }
+
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;

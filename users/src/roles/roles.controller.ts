@@ -34,6 +34,11 @@ export class RolesController {
     return this.rolesService.checkRole(userId, roles);
   }
 
+  @Get('role/types')
+  findRolesTypes() {
+    return this.rolesService.findRoles();
+  }
+
   @ApiOperation({ description: 'Endpoint para buscar os papéis de um usuário' })
   @ApiOkResponse({ type: RoleEntity, isArray: true })
   @Get(':id/roles')
@@ -51,8 +56,6 @@ export class RolesController {
     @Param('roleId') roleId: string,
     @Body() roleStatusDto: RoleStatusDto
   ) {
-    console.log('changeStatus service');
-    
     return this.rolesService.changeStatus(id, roleId, roleStatusDto);
   }
 

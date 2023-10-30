@@ -14,6 +14,7 @@ export class AppService {
   private readonly searchEsp32Url = process.env.SEARCH_ESP32_URL
   private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
   private readonly searchUserUrl = process.env.SEARCH_USER_URL
+  private readonly searchMobileUrl = process.env.SEARCH_MOBILE_URL
   private readonly searchUserAccessUrl = process.env.SEARCH_USER_ENV_ACCESS
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
@@ -24,227 +25,153 @@ export class AppService {
   ) {}
 
   async access(accessDto: AccessDto) {
+    const esp32 = await this.getEsp32(accessDto.mac);
+
+    if (!esp32) {
+      throw new HttpException('Esp32 not found', HttpStatus.NOT_FOUND);
+    }
+
+    const { environmentId } = esp32;
+
+    const userId = await this.getUserId(accessDto);
+
+    if (!userId) {
+      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
+    }
+
+    const userAccess = await this.getEnvironmentAccess(userId, environmentId);
+
+    return userAccess
+  }
+
+  async getUserId(accessDto: AccessDto) {
+    let userId: any;
+
+    if (accessDto.rfid) {
+      userId = await this.getUserIdByRFID(accessDto.rfid);
+    } else if (accessDto.mobile) {
+      userId = await this.getUserIdByMobile(accessDto.mobile);
+    } else {
+      userId = await this.getUserIdByDocumentAndPin(accessDto.document, accessDto.pin);
+    }
+
+    return userId;
+  }
+
+  async getEsp32(mac: string) {
     const esp32: any = await lastValueFrom(
       this.httpService.get(this.searchEsp32Url, {
+        data: { mac }
+      }).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+    
+    return esp32;
+  }
+
+  async getUserIdByRFID(tag: string) {
+    const data: any = await lastValueFrom(
+      this.httpService.get(this.searchRFIDUrl + tag).pipe(
+        catchError((error) => {
+          console.log(error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    if (!data.userId) {
+      throw new HttpException('Tag RFID não encontrada', HttpStatus.NOT_FOUND);
+    }
+
+    return data.userId;
+  }
+
+  async getUserIdByMobile(mac: string) {
+    const data: any = await lastValueFrom(
+      this.httpService.get(this.searchMobileUrl + mac).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    if (!data.userId) {
+      // this.accessLogService.create(
+      //   AccessLogConstants.accessDeniedWhenDeviceMobileNotFound(
+      //     'app',
+      //     null,
+      //     null,
+      //     {
+      //       mac
+      //     }
+      //   )
+      // )
+      throw new HttpException('Aparelho não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    return data.userId;
+  }
+
+  async getUserIdByDocumentAndPin(document: string, pin: string) {
+    const data: { result: any } = await lastValueFrom(
+      this.httpService.get(this.searchUserUrl, {
+        data: { document, pin }
+      }).pipe(
+        catchError((error) => {
+          console.log(error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    if (data.result === 404) {
+      // this.accessLogService.create(
+      //   AccessLogConstants.accessDeniedWhenUserDocumentNotFound(
+      //     'pin',
+      //     null,
+      //     null,
+      //     {
+      //       document,
+      //       pin
+      //     }
+      //   )
+      // )
+
+      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    if (data.result === 401) {
+      throw new HttpException('PIN inválido', HttpStatus.UNAUTHORIZED);
+    }
+
+    return data.result;
+  }
+  
+  async getEnvironmentAccess(userId: string, environmentId: string) {
+    const data: any = await lastValueFrom(
+      this.httpService.get(this.searchUserAccessUrl, {
         data: {
-          mac: accessDto.mac,
+          userId,
+          environmentId
         }
       }).pipe(
         catchError((error) => {
-          if (error.response.status === 404) {
-            this.accessLogService.create(
-              AccessLogConstants.accessDeniedWhenEsp32NotFound(
-                null,
-                null,
-                null,
-                {
-                  mac: accessDto.mac
-                }
-              )
-            )
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.status === 400) {
-            this.accessLogService.create(
-              AccessLogConstants.accessDeniedWhenEsp32MacAddressIsNotValid(
-                null,
-                null,
-                null,
-                {
-                  mac: accessDto.mac
-                }
-              )
-            )
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
-            this.errorLogger.error('Falha do sistema', error);
-            throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
-          }
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
-    )
-    
-    const { environmentId } = esp32.data
-    const { document, pin, rfid, mobile, encoded } = accessDto
+    ).then((response) => response.data)
 
-    if (rfid) {
-      return this.proccessAccessWhenRFID(environmentId, rfid, encoded)
-    } else if (mobile) {
-      return this.proccessAccessWhenMobile(environmentId, mobile, encoded)
-    } else {
-      return await this.proccessAccessWhenDocumentAndPassword(environmentId, document, pin, encoded)
-    }
-  }
-
-  async proccessAccessWhenRFID(environmentId: string, rfid: string, captureEncodedImage: string) {
-    const response = await lastValueFrom(
-      this.httpService.get(this.searchRFIDUrl + rfid).pipe(
-        catchError((error) => {
-          throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-        }
-      ))
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      if (error.response.status === 404) {
-        this.accessLogService.create(
-          AccessLogConstants.accessDeniedWhenTagRFIDNotFound(
-            'rfid',
-            null,
-            environmentId,
-            {
-              tag: rfid,
-              captureEncodedImage
-            }
-          )
-        )
-        throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-      } else {
-        this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
-        this.errorLogger.error('Falha do sistema', error);
-        throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
-      }
-    });
-
-    return await this.validateUser(environmentId, response.result, captureEncodedImage, 'rfid')
-  }
-
-  async proccessAccessWhenMobile(environmentId: string, mobile: string, captureEncodedImage: string) {
-    console.log('MOBILE')
-  }
-
-  async proccessAccessWhenDocumentAndPassword(
-    environmentId: string, document: string, pin: string, captureEncodedImage: string
-  ) {
-    const response = await lastValueFrom(
-      this.httpService.get(this.searchUserUrl, {
-        data: {
-          document,
-          pin
-        }
-      })
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
-      this.errorLogger.error('Falha do sistema', error);
-      throw new HttpException(error.response.data.message, HttpStatus.UNPROCESSABLE_ENTITY);
-    });
-
-    if (response.result === 404) {
-      this.accessLogService.create(
-        AccessLogConstants.accessDeniedWhenUserDocumentNotFound(
-          'pin',
-          null,
-          environmentId,
-          {
-            document,
-            pin,
-            captureEncodedImage
-          }
-        )
-      )
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
-    } else if (response.result === 401) {
-      this.accessLogService.create(
-        AccessLogConstants.accessDeniedWhenUserPinIsNotValid(
-          'pin',
-          null,
-          environmentId,
-          {
-            document,
-            pin,
-            captureEncodedImage
-          }
-        )
-      )
-      throw new HttpException('Invalid user pin', HttpStatus.UNAUTHORIZED);
+    if (!data.access) {
+      throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.FORBIDDEN);
     }
 
-    return await this.validateUser(environmentId, response.result, captureEncodedImage, 'pin')
+    return data;
   }
 
-  async validateUser(environmentId: string, userId: string, captureEncodedImage: string, accessType: AccessByType) {
-    const getUserRolesUrl = `${process.env.SERVICE_USERS_URL}/${userId}/roles`;
-    const userRoles: RoleEntity[] = await lastValueFrom(
-      this.httpService.get(getUserRolesUrl).pipe(
-        catchError((error) => {
-          if (error.response.status === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.status === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          }
-        })
-      )
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.accessLogService.create(AccessLogConstants.failedToProcessAccessRequest())
-      this.errorLogger.error('Falha ao buscar acesso de usuário', error);
-    })
-
-    const roles = userRoles.map((role) => role.role.name);
-    let accessResponse = { access: false }
-
-    if (roles.includes('ADMIN')) {
-      accessResponse = await this.validateUserFacial(userId, environmentId, captureEncodedImage, accessType);
-
-      if (accessResponse.access === false) {
-        this.accessLogService.create(
-          AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(
-            accessType,
-            userId,
-            environmentId,
-            {
-              captureEncodedImage
-            }
-          )
-        )
-        throw new HttpException('Falha na análise facial', HttpStatus.UNAUTHORIZED);
-      }
-      
-      // TODO: mds ajeita essa merda
-    } else if (roles.includes('FREQUENTER')) {
-      const hasEnvAccess = await lastValueFrom(
-        this.httpService.get(this.searchUserAccessUrl, {
-          data: {
-            userId: userId,
-            environmentId: environmentId
-          }
-        }).pipe(
-          catchError((error) => {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          })
-        )
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar acesso de usuário', error);
-      })
-
-      if (hasEnvAccess.result === false) {
-        this.accessLogService.create(
-          AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
-            accessType,
-            userId,
-            environmentId,
-            {
-              captureEncodedImage
-            }
-          )
-        )
-        throw new HttpException('Access denied', HttpStatus.FORBIDDEN);
-      } else {
-        accessResponse = await this.validateUserFacial(userId, environmentId, captureEncodedImage, accessType);
-      }
-    }
-
-    return await this.validateUserFacial(userId, environmentId, captureEncodedImage,  accessType);
-  }
-
-  async validateUserFacial(userId: string, environmentId: string, captureEncodedImage: string, accessType: AccessByType) {
+  async validateUserFacial(userId: string, captureEncodedImage: string) {
     const userImagePath = await this.saveUserImage(userId)
     const captureImagePath = await this.saveAccessImage(captureEncodedImage)
 
@@ -256,56 +183,20 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
-          if (error.response.status === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          }
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao realizar análise facial', error);
-    })
+    ).then((response) => response.data)
 
-    if (facialRecognition.result === false) {
-      this.accessLogService.create(
-        AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(
-          accessType,
-          userId,
-          environmentId,
-          {
-            captureEncodedImage
-          }
-        )
-      )
-      throw new HttpException('Falha na análise facial', HttpStatus.UNAUTHORIZED);
-    }
-
-    return { access: facialRecognition.result }
+    return facialRecognition;
   }
 
   async saveUserImage(userId: string) {
     const getUserImage = `${this.searchUserUrl}/${userId}/image`
-    const userEncodedPhoto = await lastValueFrom(
-      this.httpService.get(getUserImage).pipe(
-        catchError((error) => {
-          if (error.response.status === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.status === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          }
-        })
-      )
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar foto do usuário', error);
-    })
+    const userEncodedPhoto = await lastValueFrom(this.httpService.get(getUserImage))
+      .then((response) => response.data)
 
+    // TODO: testas sem esse processo de validação do prefixo
     const userImage = userEncodedPhoto.startsWith('data:image/') 
     ? userEncodedPhoto
     : `data:image/jpg;base64,${userEncodedPhoto}`;
@@ -319,26 +210,22 @@ export class AppService {
 
     fs.writeFile(imagePath, imageBuffer, (err) => {
       if (err) {
-        lastValueFrom(
-          this.httpService.post(this.createAccessLog, {
-            topic: 'Acesso',
-            type: 'Error',
-            message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',
-            meta: {
+        this.accessLogService.create(
+          AccessLogConstants.failedToWriteUserImageToDisk(
+            null,
+            userId,
+            null,
+            {
               encodedImage: userEncodedPhoto
             }
-          })
-        ).catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        })
+          )
+        )
 
         this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
         
         throw err;
       }
     });
-
-    return `access/temp/${imageName}`;
   }
 
   async saveAccessImage(captureEncodedImage: string) {
@@ -355,18 +242,16 @@ export class AppService {
 
     fs.writeFile(imagePath, imageBuffer, (err) => {
       if (err) {
-        lastValueFrom(
-          this.httpService.post(this.createAccessLog, {
-            topic: 'Acesso',
-            type: 'Error',
-            message: 'Falha na escrita da imagem ao tentar acesso: Erro interno, verificar logs de erro do serviço',
-            meta: {
+        this.accessLogService.create(
+          AccessLogConstants.failedToWriteAccessImageToDisk(
+            null,
+            null,
+            null,
+            {
               encodedImage: captureEncodedImage
             }
-          })
-        ).catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        })
+          )
+        )
 
         this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
 

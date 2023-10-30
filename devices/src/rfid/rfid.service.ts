@@ -287,19 +287,35 @@ export class RfidService {
   }
 
   async findOneByTag(tag: string) { // para uso do serviço de acesso
-    const rfid = await this.prismaService.tag_rfid.findFirst({
-      where: {
-        tag, active: true
+    let response = { userId: null }
+
+    try {
+      const rfid = await this.prismaService.tag_rfid.findFirstOrThrow({
+        where: {
+          tag, active: true
+        }
+      })
+
+      if (rfid) {
+        response.userId = rfid.user_id
       }
-    })
-
-    console.log(rfid);
-    
-
-    const response = { result: null }
-
-    if (rfid) {
-      response.result = rfid.user_id
+    } catch (error) {
+      if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Dispositivos',
+            type: 'Error',
+            message: 'Falha buscar Tag RFID durane acesso: registro não encontrado',
+            meta: {
+              device: 'RFID',
+              tag
+            }
+          })
+        )
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error)
+          })
+      }
     }
 
     return response

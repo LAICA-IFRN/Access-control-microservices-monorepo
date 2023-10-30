@@ -321,22 +321,24 @@ export class UserService {
         active: true
       }
     });
-    
+
+    let result: any;
+
     if (!user) {
       //this.auditLogService.create(AuditConstants.findOneNotFound({document: findToAccess.user, statusCode: 404}))
-      return { result: 404 }
+      result = 404;
     }
 
     const pinMatch = findToAccess.pin === user.pin;
 
     if (!pinMatch) {
       //this.auditLogService.create(AuditConstants.findOneToAccessUnauthorizhed({userId: user.id, statusCode: 401}))
-      return { result: 401 };
+      result = 401;
     }
 
-    return {
-      result: user.id
-    };
+    result = user.id;
+
+    return { result, name: user.name };
   }
 
   async validateToToken(validateToToken: ValidateToToken) {

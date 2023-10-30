@@ -738,10 +738,18 @@ export class EnvAccessService {
           }
         }
       },
+      include: {
+        environment: {
+          select: {
+            name: true,
+          }
+        }
+      }
     });
 
     return {
       access: access ? true : false,
+      name: access?.environment.name,
     };
   }
 

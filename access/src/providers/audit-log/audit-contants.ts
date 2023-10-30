@@ -208,4 +208,36 @@ export class AccessLogConstants {
       meta: meta,
     };
   }
+
+  public static failedToWriteUserImageToDisk(
+    access_by?: AccessByType,
+    userId?: string, 
+    environmentId?: string,
+    meta?: object,
+  ): AccessLog {
+    return {
+      type: "Error",
+      message: 'Falha ao gravar imagem do usuário no disco para reconhecimento facial, detalhes nos logs de erro do serviço',
+      user_id: userId,
+      environment_id: environmentId,
+      access_by: access_by,
+      meta: meta,
+    };
+  }
+
+  public static failedToWriteAccessImageToDisk(
+    access_by?: AccessByType,
+    userId?: string, 
+    environmentId?: string,
+    meta?: object,
+  ): AccessLog { 
+    return {
+      type: "Error",
+      message: 'Falha ao gravar imagem captura do acesso no disco para reconhecimento facial, detalhes nos logs de erro do serviço',
+      user_id: userId,
+      environment_id: environmentId,
+      access_by: access_by,
+      meta: meta,
+    };
+  }
 }

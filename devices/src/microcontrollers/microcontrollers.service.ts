@@ -210,12 +210,16 @@ export class MicrocontrollersService {
         }
       })
 
+      console.log(microcontroller);
+
       return {
         ip: microcontroller.ip,
         mac: microcontroller.mac,
         environmentId: microcontroller.environment_id
       }
     } catch (error) {
+      console.log(error);
+      
       if (error.code === 'P2025') {
         this.auditLogService.create(AuditConstants.findOneMicrotrollerNotFound(findOneByMac));
         throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)

@@ -1,6 +1,24 @@
 import { AccessByType, AccessLog } from "./audit-log.service";
 
 export class AccessLogConstants {
+  public static accessOkWhenUserHasAccess(
+    userName: string,
+    environmentName: string,
+    access_by?: AccessByType,
+    userId?: string, 
+    environmentId?: string,
+    meta?: object,
+  ): AccessLog {
+    return { 
+      type: "Info",
+      message: `${userName} acessou o ambiente ${environmentName} utilizando ${access_by}`,
+      user_id: userId,
+      environment_id: environmentId,
+      access_by: access_by,
+      meta: meta,
+    };
+  }
+
   public static accessDeniedWhenUserDocumentNotFound(
     access_by?: AccessByType,
     userId?: string, 

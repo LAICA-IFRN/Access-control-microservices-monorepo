@@ -4,9 +4,10 @@ import { AccessDto } from './dto/access.dto';
 import { catchError, lastValueFrom } from 'rxjs';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
-import { AccessByType, AccessLogService } from './providers/audit-log/audit-log.service';
+import { AccessLogService } from './providers/audit-log/audit-log.service';
 import { AccessLogConstants } from './providers/audit-log/audit-contants';
 import { RoleEntity } from './utils/role.type';
+import { AccessByType } from './providers/constants';
 
 @Injectable()
 export class AppService {
@@ -33,29 +34,32 @@ export class AppService {
 
     const { environmentId } = esp32;
 
-    const userId = await this.getUserId(accessDto);
+    const userIdAndAccessType = await this.getUserIdAndAccessType(accessDto);
 
-    if (!userId) {
+    if (!userIdAndAccessType.userId) {
       throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
     }
 
-    const userAccess = await this.getEnvironmentAccess(userId, environmentId);
+    const userAccess = await this.getEnvironmentAccess(userIdAndAccessType.userId, environmentId);
 
     return userAccess
   }
 
-  async getUserId(accessDto: AccessDto) {
-    let userId: any;
+  async getUserIdAndAccessType(accessDto: AccessDto) {
+    let response: any = {};
 
     if (accessDto.rfid) {
-      userId = await this.getUserIdByRFID(accessDto.rfid);
+      response.userId = await this.getUserIdByRFID(accessDto.rfid);
+      response.accessBy = AccessByType.rfid;
     } else if (accessDto.mobile) {
-      userId = await this.getUserIdByMobile(accessDto.mobile);
+      response.userId = await this.getUserIdByMobile(accessDto.mobile);
+      response.accessBy = AccessByType.app;
     } else {
-      userId = await this.getUserIdByDocumentAndPin(accessDto.document, accessDto.pin);
+      response.userId = await this.getUserIdByDocumentAndPin(accessDto.document, accessDto.pin);
+      response.accessBy = AccessByType.document;
     }
 
-    return userId;
+    return response;
   }
 
   async getEsp32(mac: string) {

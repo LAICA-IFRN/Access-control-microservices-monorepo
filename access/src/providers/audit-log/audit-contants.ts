@@ -1,4 +1,5 @@
-import { AccessByType, AccessLog } from "./audit-log.service";
+import { AccessByType } from "../constants";
+import { AccessLog } from "./audit-log.service";
 
 export class AccessLogConstants {
   public static accessOkWhenUserHasAccess(
@@ -15,241 +16,148 @@ export class AccessLogConstants {
   }
 
   public static accessDeniedWhenUserDocumentNotFound(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
-    meta?: object,
+    document: string, 
+    environmentName: string,
+    meta: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Documento de usuário não encontrado',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `Tentativa de acesso ao ambiente ${environmentName} com o documento ${document} não cadastrado`,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenEnvironmentAccessNotFound(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    userName: string,
+    environmentName: string,
+    access_by: AccessByType,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Acesso não encontrado',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `${userName} tentou acessar o ambiente ${environmentName} utilizando ${access_by} mas não possui acesso cadastrado`,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenEnvironmentHasRestriction(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    userName: string,
+    environmentName: string,
+    access_by: AccessByType,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Acesso não permitido por restrição de acesso no ambiente',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `${userName} tentou acessar o ambiente ${environmentName} utilizando ${access_by} mas o usuário não está livre da restrição de acesso aplicada`,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenEsp32NotFound(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    access_by: AccessByType,
+    mac: string,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Dispositivo ESP32 não encontrado',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `Houve uma tentativa de acesso utilizando ${access_by} mas o ESP32 de mac ${mac} não foi encontrado`,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenEsp32MacAddressIsNotValid(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    access_by: AccessByType,
+    mac: string,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Endereço MAC do ESP32 não é válido',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `Houve uma tentativa de acesso utilizando ${access_by} mas o ESP32 de mac ${mac} não é válido`,
       meta: meta,
     };
   }
 
   public static failedToProcessAccessRequest(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
       message: 'Falha ao processar requisição de acesso, detalhes nos logs de erro do serviço',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenTagRFIDNotFound(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    environmentName: string,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Tag RFID não encontrada',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
-      meta: meta,
-    };
-  }
-
-  public static accessValidatedByTagRFID(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
-    meta?: object,
-  ): AccessLog {
-    return {
-      type: "Info",
-      message: 'Acesso validado por tag RFID',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `Houve uma tentativa de acesso ao ambiente ${environmentName} utilizando tag RFID mas a tag não foi encontrada`,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenDeviceMobileNotFound(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    mac: string,
+    environmentName: string,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Dispositivo móvel não encontrado',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
-      meta: meta,
-    };
-  }
-
-  public static accessValidatedByDeviceMobile(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
-    meta?: object,
-  ): AccessLog {
-    return {
-      type: "Info",
-      message: 'Acesso validado por dispositivo móvel',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `Houve uma tentativa de acesso ao ambiente ${environmentName} utilizando dispositivo móvel mas o seu mac ${mac} não foi encontrado`,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenUserPinIsNotValid(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    pin: string,
+    userName: string,
+    environmentName: string,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'PIN do usuário não é válido',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
-      meta: meta,
-    };
-  }
-
-  public static accessValidatedByUserPin(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
-    meta?: object,
-  ): AccessLog {
-    return {
-      type: "Info",
-      message: 'Acesso validado por documento e PIN do usuário',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `${userName} tentou acessar o ambiente ${environmentName} utilizando documento e PIN mas o PIN ${pin} não é válido`,
       meta: meta,
     };
   }
 
   public static accessDeniedWhenFacialRecognitionIsNotValid(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    userName: string,
+    environmentName: string,
+    access_by: AccessByType,
     meta?: object,
   ): AccessLog {
     return { 
       type: "Warn",
-      message: 'Reconhecimento facial não é válido',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `${userName} tentou acessar o ambiente ${environmentName} utilizando ${access_by} mas a verificação facial falhou`,
       meta: meta,
     };
   }
 
   public static failedToWriteUserImageToDisk(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    userName: string,
+    environmentName: string,
+    access_by: AccessByType,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: 'Falha ao gravar imagem do usuário no disco para reconhecimento facial, detalhes nos logs de erro do serviço',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `Falha ao gravar imagem captura do usuário ${userName} no disco para reconhecimento facial ao acessar o ambiente ${environmentName} utilizando ${access_by}, detalhes nos logs de erro do serviço`,
       meta: meta,
     };
   }
 
   public static failedToWriteAccessImageToDisk(
-    access_by?: AccessByType,
-    userId?: string, 
-    environmentId?: string,
+    userName: string,
+    environmentName: string,
+    access_by: AccessByType,
     meta?: object,
   ): AccessLog { 
     return {
       type: "Error",
-      message: 'Falha ao gravar imagem captura do acesso no disco para reconhecimento facial, detalhes nos logs de erro do serviço',
-      user_id: userId,
-      environment_id: environmentId,
-      access_by: access_by,
+      message: `Falha ao gravar imagem captura do acesso do usuário ${userName} no disco para reconhecimento facial ao acessar o ambiente ${environmentName} utilizando ${access_by}, detalhes nos logs de erro do serviço`,
       meta: meta,
     };
   }

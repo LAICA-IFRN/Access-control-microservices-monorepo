@@ -1,5 +1,5 @@
 export class AccessByType {
-  public static readonly rfid = 'a tag RFID';
-  public static readonly app = 'o app mobile';
-  public static readonly document = 'seu documento e PIN';
+  public static readonly rfid = 'tag RFID';
+  public static readonly app = 'dispotivo móvel';
+  public static readonly document = 'documento e PIN';
 }

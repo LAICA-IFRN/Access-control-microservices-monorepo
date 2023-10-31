@@ -39,11 +39,7 @@ export class AccessService {
         skip: previousLenght,
         take: nextLenght,
         orderBy: order,
-        where: {
-          message: {
-            contains: []
-          },
-        },
+        where: filter,
       });
 
       const total = await this.prismaService.access.count({

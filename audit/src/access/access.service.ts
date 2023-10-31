@@ -18,9 +18,6 @@ export class AccessService {
         data: {
           type: createAccessDto.type,
           message: createAccessDto.message,
-          user_id: createAccessDto.user_id,
-          environment_id: createAccessDto.environment_id,
-          access_by: createAccessDto.access_by,
           meta
         }
       });
@@ -42,7 +39,11 @@ export class AccessService {
         skip: previousLenght,
         take: nextLenght,
         orderBy: order,
-        where: filter,
+        where: {
+          message: {
+            contains: []
+          },
+        },
       });
 
       const total = await this.prismaService.access.count({

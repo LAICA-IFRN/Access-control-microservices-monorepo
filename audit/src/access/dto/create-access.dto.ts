@@ -9,21 +9,6 @@ export class CreateAccessDto {
   @ApiProperty()
   @IsString()
   message: string;
-  
-  @ApiProperty()
-  @IsUUID()
-  @IsOptional()
-  user_id?: string;
-
-  @ApiProperty()
-  @IsUUID()
-  @IsOptional()
-  environment_id?: string;
-
-  @ApiProperty()
-  @IsIn(['rfid', 'pin', 'app', 'remote'])
-  @IsOptional()
-  access_by?: string;
 
   @ApiProperty({ type: JSON })
   @IsObject()

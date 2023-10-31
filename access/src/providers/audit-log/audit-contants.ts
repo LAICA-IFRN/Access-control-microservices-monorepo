@@ -9,7 +9,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return { 
-      type: "Info",
+      type: "info",
       message: `${userName} acessou o ambiente ${environmentName} utilizando ${access_by}`,
       meta: meta,
     };
@@ -21,7 +21,7 @@ export class AccessLogConstants {
     meta: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `Houve uma tentativa de acesso ao ambiente ${environmentName} com o documento ${document} não cadastrado`,
       meta: meta,
     };
@@ -34,7 +34,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `${userName} tentou acessar o ambiente ${environmentName} utilizando ${access_by} mas não possui acesso cadastrado`,
       meta: meta,
     };
@@ -47,7 +47,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `${userName} tentou acessar o ambiente ${environmentName} utilizando ${access_by} mas o usuário não está livre da restrição de acesso aplicada`,
       meta: meta,
     };
@@ -59,7 +59,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `Houve uma tentativa de acesso utilizando ${access_by} mas o ESP32 de mac ${mac} não foi encontrado`,
       meta: meta,
     };
@@ -71,7 +71,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `Houve uma tentativa de acesso utilizando ${access_by} mas o ESP32 de mac ${mac} não é válido`,
       meta: meta,
     };
@@ -81,7 +81,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: 'Falha ao processar requisição de acesso, detalhes nos logs de erro do serviço',
       meta: meta,
     };
@@ -93,7 +93,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `Houve uma tentativa de acesso ao ambiente ${environmentName} utilizando tag RFID mas a tag ${rfid} não foi encontrada`,
       meta: meta,
     };
@@ -105,7 +105,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `Houve uma tentativa de acesso ao ambiente ${environmentName} utilizando dispositivo móvel mas o seu mac ${mac} não foi encontrado`,
       meta: meta,
     };
@@ -118,7 +118,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `${userName} tentou acessar o ambiente ${environmentName} utilizando documento e PIN mas o PIN ${pin} não é válido`,
       meta: meta,
     };
@@ -131,7 +131,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return { 
-      type: "Warn",
+      type: "warn",
       message: `${userName} tentou acessar o ambiente ${environmentName} utilizando ${access_by} mas a verificação facial falhou`,
       meta: meta,
     };
@@ -144,7 +144,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog {
     return {
-      type: "Error",
+      type: "error",
       message: `Falha ao gravar imagem captura do usuário ${userName} no disco para reconhecimento facial ao acessar o ambiente ${environmentName} utilizando ${access_by}, detalhes nos logs de erro do serviço`,
       meta: meta,
     };
@@ -157,7 +157,7 @@ export class AccessLogConstants {
     meta?: object,
   ): AccessLog { 
     return {
-      type: "Error",
+      type: "error",
       message: `Falha ao gravar imagem captura do acesso do usuário ${userName} no disco para reconhecimento facial ao acessar o ambiente ${environmentName} utilizando ${access_by}, detalhes nos logs de erro do serviço`,
       meta: meta,
     };

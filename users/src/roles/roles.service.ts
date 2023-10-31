@@ -1,12 +1,13 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { user, user_role } from '@prisma/client';
+import { role, user, user_role } from '@prisma/client';
 import { isUUID } from 'class-validator';
 import { DeleteRoleDto } from './dto/delete-role.dto';
 import { RoleStatusDto } from './dto/status-role.dto';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
+import { UserRoles } from 'src/utils/types';
 
 @Injectable()
 export class RolesService {
@@ -222,17 +223,13 @@ export class RolesService {
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
-    let user: user & { user_role: user_role[] }
+    let userRoles: UserRoles[]
 
     try {
-      user = await this.prisma.user.findFirstOrThrow({
+      userRoles = await this.prisma.user_role.findMany({
         where: { id, active: true },
         include: {
-          user_role: {
-            include: {
-              role: true
-            }
-          }
+          role: true
         }
       })
     } catch (error) {
@@ -260,7 +257,9 @@ export class RolesService {
       }
     }
 
-    return user.user_role;
+    return {
+      roles: userRoles.map((userRole) => userRole.role.name)
+    };
   }
 
   async checkRole(id: string, roles: string[]) {

@@ -5,7 +5,7 @@ export class FindToAccess {
     @IsString()
     @IsOptional()
     @ApiProperty({ required: false})
-    user?: string
+    document?: string
 
     @IsString()
     @IsOptional()

@@ -6,7 +6,7 @@ import * as fs from 'fs';
 import { randomUUID } from 'crypto';
 import { AccessLogService } from './providers/audit-log/audit-log.service';
 import { AccessLogConstants } from './providers/audit-log/audit-contants';
-import { AccessByType } from './providers/constants';
+import { AccessByType, Roles } from './providers/constants';
 
 @Injectable()
 export class AppService {
@@ -29,16 +29,77 @@ export class AppService {
 
     if (!esp32) {
       this.sendLogWhenEsp32NotFound(accessDto);
-      throw new HttpException('Esp32 not found', HttpStatus.NOT_FOUND);
+      throw new HttpException('Esp32 não encontrado', HttpStatus.NOT_FOUND);
     }
 
     const { environmentId } = esp32;
     const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
+
+    //const userRoles: string[] = await this.getUserRoles(userData.userId);
+
+    // if (userRoles.includes(Roles.ADMIN)) {}
+    // if (userRoles.includes(Roles.FREQUENTER)) {}
+    // if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {}
+
     const userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
 
     const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
 
-    // TODO: criar funções para mandar log quando a analise falha e quando ocorrer corretamente
+    if (facialRecognition.result === 'false') {
+      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+    }
+
+    this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+
+    return { access: true };
+  }
+
+  // TODO: criar funções para buscar environment_manager e validar
+
+  async sendLogWhenFacialRecognitionSucceeds(userData: any, userAccessData: any, accessDto: AccessDto) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar usuário', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessOkWhenUserHasAccess(
+        user.name,
+        userAccessData.environmentName,
+        userData.accessType,
+        {
+          ...accessDto,
+          userId: userData.userId,
+          environmentId: userAccessData.environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenFacialRecognitionFails(userData: any, userAccessData: any, accessDto: AccessDto) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar usuário', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(
+        user.name,
+        userAccessData.environmentName,
+        userData.accessType,
+        {
+          ...accessDto,
+          userId: userData.userId,
+          environmentId: userAccessData.environmentId
+        }
+      )
+    )
   }
 
   async sendLogWhenEsp32NotFound(accessDto: AccessDto) {
@@ -63,6 +124,20 @@ export class AppService {
         }
       )
     )
+  }
+
+  async getUserRoles(userId: string) {
+    const getUserRolesUrl = `${process.env.SERVICE_USERS_URL}/${userId}/roles`;
+    const data = await lastValueFrom(
+      this.httpService.get(getUserRolesUrl).pipe(
+        catchError((error) => {
+          this.errorLogger.error('Falha ao buscar papéis do usuário', error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    return data.roles;
   }
 
   async getUserIdAndAccessType(accessDto: AccessDto, environmentId: string) {
@@ -304,14 +379,13 @@ export class AppService {
   }
 
   async saveUserImage(userId: string) {
-    const getUserImage = `${this.searchUserUrl}/${userId}/image`
-    const userEncodedPhoto = await lastValueFrom(this.httpService.get(getUserImage))
-      .then((response) => response.data)
+    const getUserImageUrl = `${process.env.SERVICE_USERS_URL}/${userId}/image`;
+    const userEncodedImage = await lastValueFrom(this.httpService.get(getUserImageUrl)).then((response) => response.data)
 
     // TODO: testar sem esse processo de validação do prefixo
-    const userImage = userEncodedPhoto.startsWith('data:image/') 
-    ? userEncodedPhoto
-    : `data:image/jpg;base64,${userEncodedPhoto}`;
+    const userImage = userEncodedImage.startsWith('data:image/') 
+    ? userEncodedImage
+    : `data:image/jpg;base64,${userEncodedImage}`;
 
     const matches = userImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
     const imageExtension = matches[1];
@@ -328,7 +402,7 @@ export class AppService {
             userId,
             null,
             {
-              encodedImage: userEncodedPhoto
+              encodedImage: userEncodedImage
             }
           )
         )
@@ -338,6 +412,8 @@ export class AppService {
         throw err;
       }
     });
+
+    return `access/temp/${imageName}`;
   }
 
   async saveAccessImage(captureEncodedImage: string) {

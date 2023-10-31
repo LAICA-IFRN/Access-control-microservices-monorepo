@@ -3,19 +3,27 @@
 // const prisma = new PrismaClient();
 
 // async function main() {
-//   const env1 = await prisma.environment.create({
+//   await prisma.environment.create({
 //     data: {
-//       name: 'Environment 1',
-//       description: 'Environment 1 description',
-//       created_by: '7d5db132-ec94-4f08-b9c7-69bea3b6bab8',
+//       name: 'Laica NIT',
+//       description: 'Laboratório de robótica campus CNAT',
+//       created_by: 'cea7e1d2-f3ed-4f31-a912-304bf24b11f9',
 //     },
 //   });
 
-//   const env2 = await prisma.environment.create({
+//   await prisma.environment.create({
 //     data: {
-//       name: 'Environment 2',
-//       description: 'Environment 2 description',
-//       created_by: '7d5db132-ec94-4f08-b9c7-69bea3b6bab8',
+//       name: 'Laica SGA',
+//       description: 'Laboratório de robótica campus São Gonçalo dos Amarantes',
+//       created_by: 'cea7e1d2-f3ed-4f31-a912-304bf24b11f9',
+//     },
+//   });
+
+//   await prisma.environment.create({
+//     data: {
+//       name: 'Exemplo GoRN',
+//       description: 'Ambiente de exemplo para o GoRN',
+//       created_by: 'cea7e1d2-f3ed-4f31-a912-304bf24b11f9',
 //     },
 //   });
 // }

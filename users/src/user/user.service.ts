@@ -317,7 +317,7 @@ export class UserService {
   async findOneToAccess(findToAccess: FindToAccess) {
     const user = await this.prismaService.user.findFirst({
       where: {
-        document: findToAccess.user,
+        document: findToAccess.document,
         active: true
       }
     });

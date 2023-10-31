@@ -12,14 +12,8 @@ export class AccessEntity implements access {
   type: string;
 
   @ApiProperty()
-  user_id: string;
-
-  @ApiProperty()
-  environment_id: string;
-
-  @ApiProperty()
   message: string;
 
   @ApiProperty()
-  access_by: string;
+  meta: string;
 }

@@ -13,28 +13,10 @@ export class AccessService {
       this.httpService.post(`${this.accessUrl}`, body).pipe(
         catchError((error) => {
           console.log(error);
-          
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              HttpStatus.BAD_REQUEST,
-            );
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              HttpStatus.NOT_FOUND,
-            );
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(
-              error.response.data.message,
-              HttpStatus.FORBIDDEN,
-            );
-          } else {
-            throw new HttpException(
-              'Unable to access',
-              HttpStatus.INTERNAL_SERVER_ERROR,
-            );
-          }
+          throw new HttpException(
+            error.response.data.message,
+            error.response.data.statusCode,
+          );
         }),
       ),
     );

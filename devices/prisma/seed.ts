@@ -22,6 +22,7 @@
 //       ip: '140.20.71.42',
 //       mac: '6b:8a:95:33:8c:1f',
 //       active: true,
+//       environment_id: 'b0eba550-fbdf-4bde-85a7-8a1499c2a9c2',
 //       microcontroller_type: {
 //         connect: {
 //           id: 1,
@@ -35,6 +36,7 @@
 //       ip: '147.254.119.198',
 //       mac: '28:85:cb:48:79:26',
 //       active: true,
+//       environment_id: 'b0eba550-fbdf-4bde-85a7-8a1499c2a9c2',
 //       microcontroller_type: {
 //         connect: {
 //           id: 2,

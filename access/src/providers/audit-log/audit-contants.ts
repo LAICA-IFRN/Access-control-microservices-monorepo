@@ -22,7 +22,7 @@ export class AccessLogConstants {
   ): AccessLog {
     return {
       type: "Error",
-      message: `Tentativa de acesso ao ambiente ${environmentName} com o documento ${document} não cadastrado`,
+      message: `Houve uma tentativa de acesso ao ambiente ${environmentName} com o documento ${document} não cadastrado`,
       meta: meta,
     };
   }
@@ -88,12 +88,13 @@ export class AccessLogConstants {
   }
 
   public static accessDeniedWhenTagRFIDNotFound(
+    rfid: string,
     environmentName: string,
     meta?: object,
   ): AccessLog {
     return {
       type: "Error",
-      message: `Houve uma tentativa de acesso ao ambiente ${environmentName} utilizando tag RFID mas a tag não foi encontrada`,
+      message: `Houve uma tentativa de acesso ao ambiente ${environmentName} utilizando tag RFID mas a tag ${rfid} não foi encontrada`,
       meta: meta,
     };
   }

@@ -15,7 +15,7 @@ export class AccessLogService {
   
   constructor (private readonly httpService: HttpService) {}
 
-  create(log: AccessLog) {
+  async create(log: AccessLog) {
     try {
       this.httpService.post(this.createAccessLogUrl, log);
     } catch (error) {

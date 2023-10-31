@@ -6,7 +6,6 @@ import * as fs from 'fs';
 import { randomUUID } from 'crypto';
 import { AccessLogService } from './providers/audit-log/audit-log.service';
 import { AccessLogConstants } from './providers/audit-log/audit-contants';
-import { RoleEntity } from './utils/role.type';
 import { AccessByType } from './providers/constants';
 
 @Injectable()
@@ -29,37 +28,169 @@ export class AppService {
     const esp32 = await this.getEsp32(accessDto.mac);
 
     if (!esp32) {
+      this.sendLogWhenEsp32NotFound(accessDto);
       throw new HttpException('Esp32 not found', HttpStatus.NOT_FOUND);
     }
 
     const { environmentId } = esp32;
+    const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
+    const userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
 
-    const userIdAndAccessType = await this.getUserIdAndAccessType(accessDto);
+    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
 
-    if (!userIdAndAccessType.userId) {
-      throw new HttpException('User not found', HttpStatus.UNAUTHORIZED);
-    }
-
-    const userAccess = await this.getEnvironmentAccess(userIdAndAccessType.userId, environmentId);
-
-    return userAccess
+    // TODO: criar funções para mandar log quando a analise falha e quando ocorrer corretamente
   }
 
-  async getUserIdAndAccessType(accessDto: AccessDto) {
-    let response: any = {};
+  async sendLogWhenEsp32NotFound(accessDto: AccessDto) {
+    let accessType: any;
 
     if (accessDto.rfid) {
-      response.userId = await this.getUserIdByRFID(accessDto.rfid);
-      response.accessBy = AccessByType.rfid;
+      accessType = AccessByType.rfid;
     } else if (accessDto.mobile) {
-      response.userId = await this.getUserIdByMobile(accessDto.mobile);
-      response.accessBy = AccessByType.app;
+      accessType = AccessByType.app;
     } else {
-      response.userId = await this.getUserIdByDocumentAndPin(accessDto.document, accessDto.pin);
-      response.accessBy = AccessByType.document;
+      accessType = AccessByType.document;
     }
 
-    return response;
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenEsp32NotFound(
+        accessType,
+        accessDto.mac,
+        {
+          ip: accessDto.ip,
+          mac: accessDto.mac,
+          encoded: accessDto.encoded,
+        }
+      )
+    )
+  }
+
+  async getUserIdAndAccessType(accessDto: AccessDto, environmentId: string) {
+    const userData: any = { userId: null, accessType: null };
+
+    if (accessDto.rfid) {
+      userData.userId = await this.getUserIdByRFID(accessDto.rfid);
+
+      if (!userData) {
+        this.sendLogWhenRFIDNotFound(accessDto, environmentId);
+        throw new HttpException('Tag RFID não encontrada', HttpStatus.NOT_FOUND);
+      }
+
+      userData.accessType = AccessByType.rfid;
+    } else if (accessDto.mobile) {
+      userData.userId = await this.getUserIdByMobile(accessDto.mobile);
+      
+      if (!userData) {
+        this.sendLogWhenMobileNotFound(accessDto, environmentId);
+        throw new HttpException('Dispositivo móvel não encontrado', HttpStatus.NOT_FOUND);
+      }
+
+      userData.accessType = AccessByType.app;
+    } else {
+      const response: any = await this.getUserIdByDocumentAndPin(accessDto.document, accessDto.pin);
+      
+      if (response.statusCode === 404) {
+        this.sendLogWhenUserDocumentNotFound(accessDto, environmentId);
+        throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
+      }
+  
+      if (response.statusCode === 401) {
+        this.sendLogWhenUserPinIsNotValid(accessDto, environmentId, response.userName, response.userId);
+        throw new HttpException('PIN inválido', HttpStatus.UNAUTHORIZED);
+      }
+  
+      userData.userId = response.userId;
+      userData.accessType = AccessByType.document;
+      userData.userName = response.userName;
+    }
+
+    return userData;
+  }
+
+  async sendLogWhenRFIDNotFound(accessDto: AccessDto, environmentId: string) {
+    const environment = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar ambiente', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenTagRFIDNotFound(
+        accessDto.rfid,
+        environment.name,
+        {
+          ...AccessDto,
+          environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenMobileNotFound(accessDto: AccessDto, environmentId: string) {
+    const environment = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar ambiente', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenDeviceMobileNotFound(
+        accessDto.mac,
+        environment.name,
+        {
+          ...AccessDto,
+          environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenUserPinIsNotValid(accessDto: AccessDto, environmentId: string, userName: string, userId: string) {
+    const environment = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar ambiente', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenUserPinIsNotValid(
+        accessDto.pin,
+        userName,
+        environment.name,
+        {
+          ...AccessDto,
+          environmentId,
+          userId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenUserDocumentNotFound(accessDto: AccessDto, environmentId: string) {
+    const environment = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar ambiente', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenUserDocumentNotFound(
+        accessDto.document,
+        environment.name,
+        {
+          ...AccessDto,
+          environmentId
+        }
+      )
+    )
   }
 
   async getEsp32(mac: string) {
@@ -68,6 +199,7 @@ export class AppService {
         data: { mac }
       }).pipe(
         catchError((error) => {
+          this.errorLogger.error('Falha ao buscar esp32', error);
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
@@ -86,10 +218,6 @@ export class AppService {
       )
     ).then((response) => response.data)
 
-    if (!data.userId) {
-      throw new HttpException('Tag RFID não encontrada', HttpStatus.NOT_FOUND);
-    }
-
     return data.userId;
   }
 
@@ -102,25 +230,11 @@ export class AppService {
       )
     ).then((response) => response.data)
 
-    if (!data.userId) {
-      // this.accessLogService.create(
-      //   AccessLogConstants.accessDeniedWhenDeviceMobileNotFound(
-      //     'app',
-      //     null,
-      //     null,
-      //     {
-      //       mac
-      //     }
-      //   )
-      // )
-      throw new HttpException('Aparelho não encontrado', HttpStatus.NOT_FOUND);
-    }
-
     return data.userId;
   }
 
   async getUserIdByDocumentAndPin(document: string, pin: string) {
-    const data: { result: any } = await lastValueFrom(
+    const data: any = await lastValueFrom(
       this.httpService.get(this.searchUserUrl, {
         data: { document, pin }
       }).pipe(
@@ -131,34 +245,14 @@ export class AppService {
       )
     ).then((response) => response.data)
 
-    if (data.result === 404) {
-      // this.accessLogService.create(
-      //   AccessLogConstants.accessDeniedWhenUserDocumentNotFound(
-      //     'pin',
-      //     null,
-      //     null,
-      //     {
-      //       document,
-      //       pin
-      //     }
-      //   )
-      // )
-
-      throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
-    }
-
-    if (data.result === 401) {
-      throw new HttpException('PIN inválido', HttpStatus.UNAUTHORIZED);
-    }
-
-    return data.result;
+    return data;
   }
   
-  async getEnvironmentAccess(userId: string, environmentId: string) {
+  async getEnvironmentAccess(userData: any, environmentId: string, accessDto: AccessDto) {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchUserAccessUrl, {
         data: {
-          userId,
+          userId: userData.userId,
           environmentId
         }
       }).pipe(
@@ -169,11 +263,25 @@ export class AppService {
     ).then((response) => response.data)
 
     if (!data.access) {
-      throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.FORBIDDEN);
+      this.accessLogService.create(
+        AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
+          userData.userName,
+          data.environmentName,
+          userData.accessType,
+          {
+            ...accessDto,
+            userId: userData.userId,
+            environmentId
+          }
+        )
+      )
+      throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.UNAUTHORIZED);
     }
 
     return data;
   }
+
+  async sendLogWhenUserAccessIsFalse() {}
 
   async validateUserFacial(userId: string, captureEncodedImage: string) {
     const userImagePath = await this.saveUserImage(userId)
@@ -200,7 +308,7 @@ export class AppService {
     const userEncodedPhoto = await lastValueFrom(this.httpService.get(getUserImage))
       .then((response) => response.data)
 
-    // TODO: testas sem esse processo de validação do prefixo
+    // TODO: testar sem esse processo de validação do prefixo
     const userImage = userEncodedPhoto.startsWith('data:image/') 
     ? userEncodedPhoto
     : `data:image/jpg;base64,${userEncodedPhoto}`;

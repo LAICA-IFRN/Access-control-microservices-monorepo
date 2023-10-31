@@ -210,8 +210,6 @@ export class MicrocontrollersService {
         }
       })
 
-      console.log(microcontroller);
-
       return {
         ip: microcontroller.ip,
         mac: microcontroller.mac,

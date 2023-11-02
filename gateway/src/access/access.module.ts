@@ -6,6 +6,6 @@ import { HttpModule, HttpService } from '@nestjs/axios';
 @Module({
   imports: [HttpModule],
   controllers: [AccessController],
-  providers: [AccessService, HttpService]
+  providers: [AccessService]
 })
 export class AccessModule {}

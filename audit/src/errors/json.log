@@ -1,0 +1,5 @@
+{"level":"error","message":"Falha ao criar log","stack":[null],"timestamp":"2023-11-02T20:48:44.595Z"}
+{"level":"error","message":"Falha ao criar log","stack":[null],"timestamp":"2023-11-02T20:48:47.624Z"}
+{"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2023-11-02T20:49:07.615Z"}
+{"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2023-11-02T20:49:09.203Z"}
+{"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2023-11-02T20:49:10.293Z"}

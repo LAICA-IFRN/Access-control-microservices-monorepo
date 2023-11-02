@@ -29,7 +29,7 @@ export class AccessService {
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;
-    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
+    const order = findAllDto.orderBy ? findAllDto.orderBy : {created_at: 'asc'};
     const filter = findAllDto.where ? findAllDto.where : {};
 
     try {

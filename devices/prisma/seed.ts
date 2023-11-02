@@ -22,12 +22,8 @@ async function createMicrocontrollers() {
       ip: '140.20.71.42',
       mac: '6b:8a:95:33:8c:1f',
       active: true,
-      environment_id: 'b0eba550-fbdf-4bde-85a7-8a1499c2a9c2',
-      microcontroller_type: {
-        connect: {
-          id: 1,
-        },
-      },
+      environment_id: '',
+      microcontroller_type_id: 1,
     },
   });
 
@@ -36,31 +32,22 @@ async function createMicrocontrollers() {
       ip: '147.254.119.198',
       mac: '28:85:cb:48:79:26',
       active: true,
-      environment_id: 'b0eba550-fbdf-4bde-85a7-8a1499c2a9c2',
-      microcontroller_type: {
-        connect: {
-          id: 2,
-        },
-      },
+      environment_id: '',
+      microcontroller_type_id: 2,
     },
   });
 }
 
-createMicrocontrollerType()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
+async function rfid() {
+  await prisma.tag_rfid.create({
+    data: {
+      tag: '51A25026',
+      created_by: '',
+      user_id: ''
+    },
   })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+}
 
-
-// createMicrocontrollers()
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   })
-//   .finally(async () => {
-//     await prisma.$disconnect();
-//   });
+createMicrocontrollerType().catch((error) => {console.error(error);process.exit(1);})
+//createMicrocontrollers().catch((error) => {console.error(error);process.exit(1);})
+//rfid().catch((error) => {console.error(error);process.exit(1);})

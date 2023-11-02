@@ -2,23 +2,27 @@ import { Injectable, Logger, HttpException, HttpStatus, Inject } from '@nestjs/c
 import { HttpService } from '@nestjs/axios';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateMicrocontrollerDto } from './dto/create-microcontroller.dto';
-import { AuditLogService } from 'src/audit-log/audit-log.service';
-import { AuditConstants } from 'src/audit-log/audit-contants';
+import { AuditLogService } from 'src/logs/audit-log.service';
+import { AuditConstants } from 'src/logs/audit-contants';
 import { FindOneByMacDto } from './dto/find-by-mac.dto';
 import { isUUID } from 'class-validator';
 import { UpdateMicrocontrollerDto } from './dto/update-microcontroller.dto';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { lastValueFrom } from 'rxjs';
+import { AccessLogService } from 'src/logs/access-log.service';
+import { AccessConstants } from 'src/logs/access-constants';
 
 @Injectable()
-export class MicrocontrollersService {
-  private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
-  private readonly errorLogger = new Logger()
+export class MicrocontrollersService {;
+  private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL;
+  private readonly usersServiceUrl = process.env.USERS_SERVICE_URL;
+  private readonly errorLogger = new Logger();
   
   constructor (
     private readonly prismaService: PrismaService,
     private readonly auditLogService: AuditLogService,
+    private readonly accessLogService: AccessLogService,
     private readonly httpService: HttpService,
     @Inject(CACHE_MANAGER) private cacheService: Cache,
   ) {}
@@ -75,18 +79,56 @@ export class MicrocontrollersService {
       await this.cacheService.set(key, value);
     }
 
-    console.log(microcontroller);
-    
-
     if (microcontroller.microcontroller_type.name === 'ESP8266') {
+      const findRemoteAccessUrl = `
+        ${this.environmentsServiceUrl}/env/remote-access?esp8266Id=${id}`;
       const remoteAccess = await lastValueFrom(
-        this.httpService.get(`${this.environmentsServiceUrl}/remote-access?esp8266Id=${id}`)
-      ).then(response => response.data);
+        this.httpService.get(findRemoteAccessUrl)
+      )
+      .then(response => response.data)
+      .catch(error => {
+        this.errorLogger.error('Erro ao buscar acesso remoto', error);
+      })
+
+      if (remoteAccess.value) {
+        await this.sendAccessLogWhenFindOne(
+          remoteAccess.userName,
+          remoteAccess.userId,
+          remoteAccess.environmentName,
+          remoteAccess.environmentId,
+          microcontroller.mac,
+          microcontroller.id
+        )
+
+        return remoteAccess.value;
+      }
   
-      return remoteAccess;
+      return false;
     } else {
       return true;
     }
+  }
+
+  async sendAccessLogWhenFindOne (
+    userName: string, 
+    userId: string, 
+    environmentName: string, 
+    environmentId: string,
+    microcontrollerMac: string,
+    microcontrollerId: number,
+  ) {
+    await this.accessLogService.create(
+      AccessConstants.remoteAccessSuccess(
+        userName,
+        environmentName,
+        microcontrollerMac,
+        {
+          userId,
+          environmentId,
+          microcontrollerId
+        }
+      )
+    )
   }
 
   async getMicrocontrollerInfo (id: number) {

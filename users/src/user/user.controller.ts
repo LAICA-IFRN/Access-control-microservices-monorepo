@@ -122,7 +122,6 @@ export class UserController {
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
-    console.log('findOne');
     return this.userService.findOne(id);
   }
   

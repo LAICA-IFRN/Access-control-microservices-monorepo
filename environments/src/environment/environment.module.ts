@@ -3,6 +3,7 @@ import { EnvironmentService } from './environment.service';
 import { EnvironmentController } from './environment.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { HttpModule } from '@nestjs/axios';
+import { AccessLogService } from 'src/logs/access-log.service';
 
 @Module({
   imports: [
@@ -10,6 +11,6 @@ import { HttpModule } from '@nestjs/axios';
     HttpModule,
   ],
   controllers: [EnvironmentController],
-  providers: [EnvironmentService],
+  providers: [EnvironmentService, AccessLogService],
 })
 export class EnvironmentModule {}

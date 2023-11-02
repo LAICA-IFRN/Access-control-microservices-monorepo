@@ -40,13 +40,13 @@ async function createRoles() {
 
   await prisma.role.create({
     data: {
-      name: 'ENVIRONMENT_MANAGER',
+      name: 'FREQUENTER',
     },
   });
 
   await prisma.role.create({
     data: {
-      name: 'FREQUENTER',
+      name: 'ENVIRONMENT_MANAGER',
     },
   });
 }
@@ -88,8 +88,8 @@ async function createAdmins() {
 async function createUsers() {
   const admin1 = await prisma.user.findUnique({
     where: {
-      email: 'evandro.lima@email.com'
-    }
+      email: 'evandro.lima@email.com',
+    },
   })
 
   await prisma.user.create({
@@ -114,7 +114,7 @@ async function createUsers() {
   await prisma.user_role.create({
     data: {
       user_id: user1.id,
-      role_id: 3,
+      role_id: 2,
     },
   });
 
@@ -451,30 +451,7 @@ async function createUsers() {
   });
 }
 
-createDocumentTypes()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  }
-);
-
-
-createRoles()
-  .catch((error) => {
-    console.error(error);
-    process.exit(1);
-  }
-);
-
-// createAdmins()
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   });
-
-// createUsers()
-//   .catch((error) => {
-//     console.error(error);
-//     process.exit(1);
-//   });
-  
+createDocumentTypes().catch((error) => {console.error(error); process.exit(1);})
+createRoles().catch((error) => {console.error(error);process.exit(1);})
+//createAdmins().catch((error) => {console.error(error);process.exit(1);})
+//createUsers().catch((error) => {console.error(error);process.exit(1);})

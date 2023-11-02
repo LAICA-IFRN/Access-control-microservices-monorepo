@@ -8,7 +8,6 @@ CORS(app)
 
 @app.route("/service/facial-recognition/verify/user", methods=['GET'])
 def endpoint():
-  print(request.json)
   captured_image_path = request.json.get('capturedImagePath', None)
   if captured_image_path is None:
     abort(400, "capturedImagePath is required")

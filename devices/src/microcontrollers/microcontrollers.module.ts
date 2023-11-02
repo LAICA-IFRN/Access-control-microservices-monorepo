@@ -3,7 +3,8 @@ import { MicrocontrollersService } from './microcontrollers.service';
 import { MicrocontrollersController } from './microcontrollers.controller';
 import { HttpModule } from '@nestjs/axios';
 import { PrismaModule } from 'src/prisma/prisma.module';
-import { AuditLogService } from 'src/audit-log/audit-log.service';
+import { AuditLogService } from 'src/logs/audit-log.service';
+import { AccessLogService } from 'src/logs/access-log.service';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { AuditLogService } from 'src/audit-log/audit-log.service';
   controllers: [MicrocontrollersController],
   providers: [
     MicrocontrollersService,
-    AuditLogService
+    AuditLogService,
+    AccessLogService
   ],
 })
 export class MicrocontrollersModule {}

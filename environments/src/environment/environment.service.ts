@@ -7,17 +7,21 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { AccessLogService } from 'src/logs/access-log.service';
+import { AccessConstants } from 'src/logs/access-constants';
 
 @Injectable()
 export class EnvironmentService {
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  
   private readonly verifyRoleEndpoint = `${process.env.USERS_SERVICE_URL}/roles/verify`
   private readonly getEsp8266Endpoint = process.env.DEVICES_SERVICE_URL
   private readonly errorLogger = new Logger()
   
   constructor(
-    private httpService: HttpService,
-    private prisma: PrismaService,
+    private readonly httpService: HttpService,
+    private readonly prisma: PrismaService,
+    private readonly accessLogService: AccessLogService,
     @Inject(CACHE_MANAGER) private cacheService: Cache,
   ) {} 
 
@@ -300,18 +304,59 @@ export class EnvironmentService {
       ),
     ).then((response) => response.data);
 
-    const key = esp8266.id.toString();
-    const value = true;
-    await this.cacheService.set(key, value);
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+      throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
+    });
 
-    return value;
+    const key = esp8266.id.toString();
+    const cache = { value: true, userName: user.name, userId: user.id, environmentName: environment.name, environmentId: environment.id };
+    await this.cacheService.set(key, cache);
+
+    await this.sendAccessLogWhenRemoteAccessSuccess(
+      environment.name,
+      environment.id, 
+      esp8266.mac, 
+      esp8266.id, 
+      user.name,
+      user.id
+    );
+
+    return cache;
   }
 
   async findRemoteAccess(esp8266Id: number) {
     const key = esp8266Id.toString();
     const value = await this.cacheService.get(key);
     await this.cacheService.set(key, false);
+
     return value;
+  }
+
+  async sendAccessLogWhenRemoteAccessSuccess(
+    environmentName: string, 
+    environmentId: string,
+    esp8266Mac: string, 
+    esp8266Id: number,
+    userName: string,
+    userId: string
+  ) {
+    
+
+    await this.accessLogService.create(AccessConstants.remoteAccessSuccess(
+      environmentName,
+      esp8266Mac,
+      userName,
+      {
+        environmentId,
+        esp8266Id,
+        userId
+      }
+    ));
   }
 
   async findAll(skip: number, take: number) {

@@ -42,16 +42,16 @@ export class AppService {
     // if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {}
 
     const userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
-
+    
     const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
-
-    if (facialRecognition.result === 'false') {
+    
+    if (facialRecognition.result === false) {
       this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+      return { access: false };
+    } else {
+      this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+      return { access: true };
     }
-
-    this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
-
-    return { access: true };
   }
 
   // TODO: criar funções para buscar environment_manager e validar
@@ -146,7 +146,7 @@ export class AppService {
     if (accessDto.rfid) {
       userData.userId = await this.getUserIdByRFID(accessDto.rfid);
 
-      if (!userData) {
+      if (!userData.userId) {
         this.sendLogWhenRFIDNotFound(accessDto, environmentId);
         throw new HttpException('Tag RFID não encontrada', HttpStatus.NOT_FOUND);
       }
@@ -155,7 +155,7 @@ export class AppService {
     } else if (accessDto.mobile) {
       userData.userId = await this.getUserIdByMobile(accessDto.mobile);
       
-      if (!userData) {
+      if (!userData.userId) {
         this.sendLogWhenMobileNotFound(accessDto, environmentId);
         throw new HttpException('Dispositivo móvel não encontrado', HttpStatus.NOT_FOUND);
       }
@@ -274,6 +274,8 @@ export class AppService {
         data: { mac }
       }).pipe(
         catchError((error) => {
+          console.log(error);
+          
           this.errorLogger.error('Falha ao buscar esp32', error);
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
@@ -355,8 +357,6 @@ export class AppService {
 
     return data;
   }
-
-  async sendLogWhenUserAccessIsFalse() {}
 
   async validateUserFacial(userId: string, captureEncodedImage: string) {
     const userImagePath = await this.saveUserImage(userId)

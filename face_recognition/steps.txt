@@ -11,4 +11,4 @@ apt install python3.10-venv
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
-flask --app server run
+flask --app server run || pm2 start facial_recognition.py --interpreter python3

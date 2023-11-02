@@ -5,6 +5,7 @@ import { DevicesModule } from './devices/devices.module';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { AccessModule } from './access/access.module';
+import { LogsModule } from './logs/logs.module';
 
 @Module({
   imports: [
@@ -13,7 +14,8 @@ import { AccessModule } from './access/access.module';
     EnvironmentsModule,
     DevicesModule,
     AuthModule,
-    AccessModule
+    AccessModule,
+    LogsModule
   ]
 })
 export class AppModule {}

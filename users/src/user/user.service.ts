@@ -59,14 +59,14 @@ export class UserService {
       }
     }
 
-    let roles: any
+    let roles = []
     for (const role of createUserDto.roles) {
-      roles = await this.prismaService.user_role.create({
+      roles.push(await this.prismaService.user_role.create({
         data: {
           user: { connect: { id: createdUser.id } },
           role: { connect: { name: role } },
         },
-      });
+      }))
     }
 
     if (roles.length !== createUserDto.roles.length) {

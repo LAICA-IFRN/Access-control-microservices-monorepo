@@ -43,15 +43,20 @@ export class AppService {
 
     const userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
     
-    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
     
-    if (facialRecognition.result === false) {
-      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
-      return { access: false };
-    } else {
-      this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
-      return { access: true };
+    if (accessDto.encoded) {
+      const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
+
+      if (facialRecognition.result === false) {
+        this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+        return { access: false };
+      } else {
+        this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+        return { access: true };
+      }
     }
+    
+    this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
   }
 
   // TODO: criar funções para buscar environment_manager e validar

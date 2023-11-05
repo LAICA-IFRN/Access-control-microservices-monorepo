@@ -265,12 +265,8 @@ export class EnvAccessService {
 
     const accesses: environment_user_access_control[] = [];
     for (const access of createEnvAccessDto.access) {
-      const startTime = new Date(
-        new Date().toDateString() + ' ' + access.startTime
-      );
-      const endTime = new Date(
-        new Date().toDateString() + ' ' + access.endTime
-      );
+      const startTime = new Date('1970-01-01T' + access.startTime);
+      const endTime = new Date('1970-01-01T' + access.endTime);
 
       if (startTime >= endTime) {
         await lastValueFrom(
@@ -684,31 +680,53 @@ export class EnvAccessService {
   }
 
   async findAccessByUser(userId: string, environmentId: string) {
-    const now = new Date();
-    const access = await this.prisma.environment_user.findFirst({
+    // const now = new Date();
+    // const access = await this.prisma.environment_user.findFirst({
+    //   where: {
+    //     user_id: userId,
+    //     environment_id: environmentId,
+    //     active: true,
+    //     start_period: {
+    //       lte: now,
+    //     },
+    //     end_period: {
+    //       gte: now,
+    //     },
+    //     environment_user_access_control: {
+    //       some: {
+    //         day: now.getDay(),
+    //         start_time: {
+    //           lte: now,
+    //         },
+    //         end_time: {
+    //           gte: now,
+    //         },
+    //       }
+    //     }
+    //   },
+    //   include: {
+    //     environment: {
+    //       select: {
+    //         name: true,
+    //       }
+    //     }
+    //   }
+    // });
+
+    
+    // return {
+      //   access: access ? true : false,
+      //   environmentName: access?.environment.name,
+      // };
+    
+    const environmentAccess = await this.prisma.environment_user.findFirst({
       where: {
         user_id: userId,
         environment_id: environmentId,
         active: true,
-        start_period: {
-          lte: now,
-        },
-        end_period: {
-          gte: now,
-        },
-        environment_user_access_control: {
-          some: {
-            day: now.getDay(),
-            start_time: {
-              lte: now,
-            },
-            end_time: {
-              gte: now,
-            },
-          }
-        }
       },
       include: {
+        environment_user_access_control: true,
         environment: {
           select: {
             name: true,
@@ -716,11 +734,35 @@ export class EnvAccessService {
         }
       }
     });
+    
+    const response = { access: false, environmentName: '' }
 
-    return {
-      access: access ? true : false,
-      environmentName: access?.environment.name,
-    };
+    if (!environmentAccess) {
+      return response;
+    }
+    
+    const currentDate = new Date();
+
+    if (environmentAccess.start_period <= currentDate && environmentAccess.end_period >= currentDate) {
+      for (const accessControl of environmentAccess.environment_user_access_control) {
+        if (accessControl.day !== currentDate.getDay()) {
+          continue;
+        }
+
+        const startTime = accessControl.start_time.toLocaleTimeString();
+        const endTime = accessControl.end_time.toLocaleTimeString();
+        const currentTime = currentDate.toLocaleTimeString();
+
+        if (startTime <= currentTime && endTime >= currentTime) {
+          response.access = true;
+          break;
+        }
+      }
+    }
+
+    response.environmentName = environmentAccess.environment.name;
+
+    return response;
   }
 
   async findOne(id: string) {

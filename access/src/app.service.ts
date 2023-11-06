@@ -35,14 +35,19 @@ export class AppService {
     const { environmentId } = esp32;
     const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
 
-    //const userRoles: string[] = await this.getUserRoles(userData.userId);
+    const userRoles: string[] = await this.getUserRoles(userData.userId);
 
-    // if (userRoles.includes(Roles.ADMIN)) {}
-    // if (userRoles.includes(Roles.FREQUENTER)) {}
-    // if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {}
+    let userAccessData: any;
 
-    const userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
-    
+    if (!userRoles.includes(Roles.ADMIN)) {
+      if (userRoles.includes(Roles.FREQUENTER)) {
+        userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
+      }
+
+      if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
+        userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
+      }
+    }
     
     if (accessDto.encoded) {
       const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
@@ -57,6 +62,7 @@ export class AppService {
     }
     
     this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+    return { access: true };
   }
 
   // TODO: criar funções para buscar environment_manager e validar
@@ -337,11 +343,7 @@ export class AppService {
           userId: userData.userId,
           environmentId
         }
-      }).pipe(
-        catchError((error) => {
-          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
-        })
-      )
+      })
     ).then((response) => response.data)
 
     if (!data.access) {

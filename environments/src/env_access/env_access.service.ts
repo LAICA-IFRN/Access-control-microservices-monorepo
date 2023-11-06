@@ -680,45 +680,6 @@ export class EnvAccessService {
   }
 
   async findAccessByUser(userId: string, environmentId: string) {
-    // const now = new Date();
-    // const access = await this.prisma.environment_user.findFirst({
-    //   where: {
-    //     user_id: userId,
-    //     environment_id: environmentId,
-    //     active: true,
-    //     start_period: {
-    //       lte: now,
-    //     },
-    //     end_period: {
-    //       gte: now,
-    //     },
-    //     environment_user_access_control: {
-    //       some: {
-    //         day: now.getDay(),
-    //         start_time: {
-    //           lte: now,
-    //         },
-    //         end_time: {
-    //           gte: now,
-    //         },
-    //       }
-    //     }
-    //   },
-    //   include: {
-    //     environment: {
-    //       select: {
-    //         name: true,
-    //       }
-    //     }
-    //   }
-    // });
-
-    
-    // return {
-      //   access: access ? true : false,
-      //   environmentName: access?.environment.name,
-      // };
-    
     const environmentAccess = await this.prisma.environment_user.findFirst({
       where: {
         user_id: userId,

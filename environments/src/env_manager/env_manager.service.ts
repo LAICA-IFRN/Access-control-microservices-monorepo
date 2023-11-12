@@ -106,12 +106,10 @@ export class EnvManagerService {
     }
 
     // TODO: testar
-    const { userId, environmentId } = createEnvManagerDto;
+    const { userId, environmentId, createdBy } = createEnvManagerDto;
     const hasEnvAccess = await this.hasEnvAccessOnEnv(userId, environmentId)
       .then((response) => response)
       .catch((error) => {
-        console.log(error);
-        
         if (error[0] === 400) {
           throw new HttpException(
             "Invalid id entry",
@@ -158,7 +156,7 @@ export class EnvManagerService {
         data: {
           user_id: userId,
           environment_id: environmentId,
-          created_by: '',
+          created_by: createdBy,
         },
       });
 
@@ -384,6 +382,35 @@ export class EnvManagerService {
       hasEnvAccess,
       active
     }
+  }
+
+  async findAccessByUser(userId: string, environmentId: string) {
+    console.log(environmentId);
+    
+    const envManagers = await this.prisma.environment_manager.findMany({
+      where: {
+        environment_id: environmentId,
+        active: true,
+      },
+      include: {
+        environment: {
+          select: {
+            name: true,
+          }
+        }
+      }
+    });
+
+    const response = { access: false, environmentName: envManagers[0].environment.name };
+
+    envManagers.some((envManager) => {
+      if (envManager.user_id === userId) {
+        response.access = true;
+        return true;
+      }
+    })
+
+    return response;
   }
 
   async findOne(id: string) {

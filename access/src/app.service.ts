@@ -11,12 +11,12 @@ import { AccessByMobileDeviceDto } from './dto/access-by-mobile-device.dto';
 
 @Injectable()
 export class AppService {
-  private readonly createAccessLog = process.env.CREATE_ACCESS_LOG_URL
   private readonly searchEsp32Url = process.env.SEARCH_ESP32_URL
   private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
   private readonly searchUserUrl = process.env.SEARCH_USER_URL
   private readonly searchMobileUrl = process.env.SEARCH_MOBILE_URL
-  private readonly searchUserAccessUrl = process.env.SEARCH_USER_ENV_ACCESS
+  private readonly searchFrequenterAccessUrl = process.env.SEARCH_FREQUENTER_ACCESS
+  private readonly searchManagerAccessUrl = process.env.SEARCH_MANAGER_ACCESS
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
   
@@ -35,111 +35,73 @@ export class AppService {
 
     const { environmentId } = esp32;
     const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
-
+    console.log("L38", userData);
+    
     const userRoles: string[] = await this.getUserRoles(userData.userId);
+    console.log("L41", userRoles);
+    
+    if (userRoles.includes(Roles.ADMIN)) {
+      return await this.handleAdminFacialRecognition(userData, environmentId, accessDto)
+    }
 
     let userAccessData: any;
 
-    if (!userRoles.includes(Roles.ADMIN)) {
-      if (userRoles.includes(Roles.FREQUENTER)) {
-        userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
-      }
-
-      if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
-        userAccessData = await this.getEnvironmentAccess(userData, environmentId, accessDto);
-      }
-    }
-    
-    if (accessDto.encoded) {
-      const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
-
-      if (facialRecognition.result === false) {
-        this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
-        return { access: false };
-      } else {
-        this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
-        return { access: true };
+    if (userRoles.includes(Roles.FREQUENTER)) {
+      userAccessData = await this.searchFrequenterAccess(userData, environmentId, accessDto);
+      console.log("L51", userAccessData);
+      
+      if (userAccessData.access) {
+        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
       }
     }
     
-    this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
-    return { access: true };
+    if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
+      userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId, accessDto);
+      console.log("L60", userAccessData);
+      if (userAccessData.access) {
+        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
+      }
+    }
+
+    this.handleUnauthorizedUserAccess(userData, userAccessData, accessDto, environmentId);
   }
 
   async accessByMobileDevice(accessDto: AccessByMobileDeviceDto) {}
 
-  // TODO: criar funções para buscar environment_manager e validar
+  private async handleUserFacialRecognition(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
+    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
 
-  async sendLogWhenFacialRecognitionSucceeds(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
-    const user = await lastValueFrom(
-      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar usuário', error);
-    })
-
-    this.accessLogService.create(
-      AccessLogConstants.accessOkWhenUserHasAccess(
-        user.name,
-        userAccessData.environmentName,
-        userData.accessType,
-        {
-          ...accessDto,
-          userId: userData.userId,
-          environmentId: userAccessData.environmentId
-        }
-      )
-    )
-  }
-
-  async sendLogWhenFacialRecognitionFails(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
-    const user = await lastValueFrom(
-      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar usuário', error);
-    })
-
-    this.accessLogService.create(
-      AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(
-        user.name,
-        userAccessData.environmentName,
-        userData.accessType,
-        {
-          ...accessDto,
-          userId: userData.userId,
-          environmentId: userAccessData.environmentId
-        }
-      )
-    )
-  }
-
-  async sendLogWhenEsp32NotFound(accessDto: AccessByMicrocontrollerDeviceDto) {
-    let accessType: any;
-
-    if (accessDto.rfid) {
-      accessType = AccessByType.rfid;
+    if (facialRecognition.result === false) {
+      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+      return { access: false };
     } else {
-      accessType = AccessByType.document;
+      this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+      return { access: true };
+    }
+  }
+
+  private async handleAdminFacialRecognition(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
+    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
+    this.handleCreationLogForAdmin(userData, facialRecognition, environmentId, accessDto);
+    return { access: facialRecognition.result };
+  }
+
+  private async handleCreationLogForAdmin(userData: any,facialRecognition: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
+    const environment = await this.getEnvironmentDataToLog(environmentId);
+    const environmentDataForLog = {
+      environmentId,
+      environmentName: environment.name
     }
 
-    this.accessLogService.create(
-      AccessLogConstants.accessDeniedWhenEsp32NotFound(
-        accessType,
-        accessDto.mac,
-        {
-          ip: accessDto.ip,
-          mac: accessDto.mac,
-          encoded: accessDto.encoded,
-        }
-      )
-    )
+    if (facialRecognition.result === false) {
+      this.sendLogWhenFacialRecognitionFails(userData, environmentDataForLog, accessDto);
+    } else {
+      this.sendLogWhenFacialRecognitionSucceeds(userData, environmentDataForLog, accessDto);
+    }
   }
 
   async getUserRoles(userId: string) {
-    const getUserRolesUrl = `${process.env.SERVICE_USERS_URL}/${userId}/roles`;
+    const getUserRolesUrl = `${process.env.SERVICE_USERS_URL}/roles/${userId}/all`;
     const data = await lastValueFrom(
       this.httpService.get(getUserRolesUrl).pipe(
         catchError((error) => {
@@ -183,92 +145,6 @@ export class AppService {
     }
 
     return userData;
-  }
-
-  async sendLogWhenRFIDNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
-    const environment = await lastValueFrom(
-      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar ambiente', error);
-    })
-
-    this.accessLogService.create(
-      AccessLogConstants.accessDeniedWhenTagRFIDNotFound(
-        accessDto.rfid,
-        environment.name,
-        {
-          ...AccessByMicrocontrollerDeviceDto,
-          environmentId
-        }
-      )
-    )
-  }
-
-  async sendLogWhenMobileNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
-    const environment = await lastValueFrom(
-      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar ambiente', error);
-    })
-
-    this.accessLogService.create(
-      AccessLogConstants.accessDeniedWhenDeviceMobileNotFound(
-        accessDto.mac,
-        environment.name,
-        {
-          ...AccessByMicrocontrollerDeviceDto,
-          environmentId
-        }
-      )
-    )
-  }
-
-  async sendLogWhenUserPinIsNotValid(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string, userName: string, userId: string) {
-    const environment = await lastValueFrom(
-      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar ambiente', error);
-    })
-
-    this.accessLogService.create(
-      AccessLogConstants.accessDeniedWhenUserPinIsNotValid(
-        accessDto.pin,
-        userName,
-        environment.name,
-        {
-          ...AccessByMicrocontrollerDeviceDto,
-          environmentId,
-          userId
-        }
-      )
-    )
-  }
-
-  async sendLogWhenUserDocumentNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
-    const environment = await lastValueFrom(
-      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
-    )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar ambiente', error);
-    })
-
-    this.accessLogService.create(
-      AccessLogConstants.accessDeniedWhenUserDocumentNotFound(
-        accessDto.document,
-        environment.name,
-        {
-          ...AccessByMicrocontrollerDeviceDto,
-          environmentId
-        }
-      )
-    )
   }
 
   async getEsp32(mac: string) {
@@ -328,9 +204,9 @@ export class AppService {
     return data;
   }
   
-  async getEnvironmentAccess(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
+  async searchFrequenterAccess(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
     const data: any = await lastValueFrom(
-      this.httpService.get(this.searchUserAccessUrl, {
+      this.httpService.get(this.searchFrequenterAccessUrl, {
         data: {
           userId: userData.userId,
           environmentId
@@ -338,23 +214,42 @@ export class AppService {
       })
     ).then((response) => response.data)
 
-    if (!data.access) {
-      this.accessLogService.create(
-        AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
-          userData.userName,
-          data.environmentName,
-          userData.accessType,
-          {
-            ...accessDto,
-            userId: userData.userId,
-            environmentId
-          }
-        )
-      )
-      throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.UNAUTHORIZED);
-    }
+    return data;
+  }
+
+  async searchEnvironmentManagerAccess(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
+    console.log(this.searchManagerAccessUrl);
+    
+    const data: any = await lastValueFrom(
+      this.httpService.get(this.searchManagerAccessUrl, {
+        data: {
+          userId: userData.userId,
+          environmentId
+        }
+      })
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      console.log(error);
+    })
 
     return data;
+  }
+
+  private handleUnauthorizedUserAccess(userData: any, data: any, accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
+        userData.userName,
+        data.environmentName,
+        userData.accessType,
+        {
+          ...accessDto,
+          userId: userData.userId,
+          environmentId
+        }
+      )
+    );
+    throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.UNAUTHORIZED);
   }
 
   async validateUserFacial(userId: string, captureEncodedImage: string) {
@@ -369,6 +264,8 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
+          console.log(error);
+          
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
@@ -447,5 +344,145 @@ export class AppService {
     });
 
     return `access/temp/${imageName}`;
+  }
+
+  async sendLogWhenFacialRecognitionSucceeds(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar usuário', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessOkWhenUserHasAccess(
+        user.name,
+        userAccessData.environmentName,
+        userData.accessType,
+        {
+          ...accessDto,
+          userId: userData.userId,
+          environmentId: userAccessData.environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenFacialRecognitionFails(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar usuário', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(
+        user.name,
+        userAccessData.environmentName,
+        userData.accessType,
+        {
+          ...accessDto,
+          userId: userData.userId,
+          environmentId: userAccessData.environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenEsp32NotFound(accessDto: AccessByMicrocontrollerDeviceDto) {
+    let accessType: any;
+
+    if (accessDto.rfid) {
+      accessType = AccessByType.rfid;
+    } else {
+      accessType = AccessByType.document;
+    }
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenEsp32NotFound(
+        accessType,
+        accessDto.mac,
+        {
+          ip: accessDto.ip,
+          mac: accessDto.mac,
+          encoded: accessDto.encoded,
+        }
+      )
+    )
+  }
+
+  async sendLogWhenRFIDNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
+    const environment = await this.getEnvironmentDataToLog(environmentId)
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenTagRFIDNotFound(
+        accessDto.rfid,
+        environment.name,
+        {
+          ...AccessByMicrocontrollerDeviceDto,
+          environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenMobileNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
+    const environment = await this.getEnvironmentDataToLog(environmentId)
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenDeviceMobileNotFound(
+        accessDto.mac,
+        environment.name,
+        {
+          ...AccessByMicrocontrollerDeviceDto,
+          environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenUserPinIsNotValid(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string, userName: string, userId: string) {
+    const environment = await this.getEnvironmentDataToLog(environmentId)
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenUserPinIsNotValid(
+        accessDto.pin,
+        userName,
+        environment.name,
+        {
+          ...AccessByMicrocontrollerDeviceDto,
+          environmentId,
+          userId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenUserDocumentNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
+    const environment = await this.getEnvironmentDataToLog(environmentId)
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenUserDocumentNotFound(
+        accessDto.document,
+        environment.name,
+        {
+          ...AccessByMicrocontrollerDeviceDto,
+          environmentId
+        }
+      )
+    )
+  }
+
+  private async getEnvironmentDataToLog(environmentId: string) {
+    return await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar ambiente', error);
+      });
   }
 }

@@ -227,7 +227,7 @@ export class RolesService {
 
     try {
       userRoles = await this.prisma.user_role.findMany({
-        where: { id, active: true },
+        where: { user_id: id, active: true },
         include: {
           role: true
         }
@@ -257,9 +257,12 @@ export class RolesService {
       }
     }
 
-    return {
-      roles: userRoles.map((userRole) => userRole.role.name)
-    };
+    const roles = userRoles.map((userRole) => userRole.role.name)
+
+    console.log(roles);
+    
+
+    return { roles };
   }
 
   async checkRole(id: string, roles: string[]) {

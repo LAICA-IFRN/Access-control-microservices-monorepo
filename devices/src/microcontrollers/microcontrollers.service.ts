@@ -271,7 +271,7 @@ export class MicrocontrollersService {;
         where: { 
           mac: findOneByMac.mac,
           active: true,
-          microcontroller_type_id: 1
+          //microcontroller_type_id: 1
         }
       })
 

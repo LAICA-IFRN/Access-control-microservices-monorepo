@@ -680,9 +680,8 @@ export class EnvAccessService {
   }
 
   async findAccessByUser(userId: string, environmentId: string) {
-    const environmentAccess = await this.prisma.environment_user.findFirst({
+    const environmentAccesses = await this.prisma.environment_user.findMany({
       where: {
-        user_id: userId,
         environment_id: environmentId,
         active: true,
       },
@@ -696,7 +695,15 @@ export class EnvAccessService {
       }
     });
     
-    const response = { access: false, environmentName: '' }
+    const response = { access: false, environmentName: environmentAccesses[0].environment.name }
+    let environmentAccess: any;
+
+    environmentAccesses.some((environmentAccesses) => {
+      if (environmentAccesses.user_id === userId) {
+        environmentAccess = environmentAccesses;
+        return true;
+      }
+    })
 
     if (!environmentAccess) {
       return response;
@@ -720,8 +727,6 @@ export class EnvAccessService {
         }
       }
     }
-
-    response.environmentName = environmentAccess.environment.name;
 
     return response;
   }

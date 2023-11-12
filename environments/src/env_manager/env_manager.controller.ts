@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Patch, Param } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Query } from '@nestjs/common';
 import { EnvManagerService } from './env_manager.service';
 import { CreateEnvManagerDto } from './dto/create-env_manager.dto';
 import { EnvManagerStatusDto } from './dto/status-env_manager.dto';
 import * as swagger from './entities/swagger-env-manager-responses.entity';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOkResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EnvManagerEntity } from './entities/env_manager.entity';
+import { FindAccessDto } from './dto/find-access.dto';
 
 @ApiTags('EnvManager')
 @Controller('env-manager')
@@ -20,6 +21,14 @@ export class EnvManagerController {
   @Post()
   create(@Body() createEnvManagerDto: CreateEnvManagerDto) {
     return this.envManagerService.create(createEnvManagerDto);
+  }
+
+  @Get('access')
+  findAccessByUser(@Body() findAccessDto: FindAccessDto) {
+    console.log(findAccessDto);
+    
+    const { userId, environmentId } = findAccessDto;
+    return this.envManagerService.findAccessByUser(userId, environmentId);
   }
 
   @ApiOperation({ description: 'Endpoint para listar todos os gestores de ambiente' })

@@ -41,8 +41,10 @@ export class RolesController {
 
   @ApiOperation({ description: 'Endpoint para buscar os papéis de um usuário' })
   @ApiOkResponse({ type: RoleEntity, isArray: true })
-  @Get(':id/roles')
+  @Get('roles/:id/all')
   findAll(@Param('id') id: string) {
+    console.log(id);
+    
     return this.rolesService.findAll(id);
   }
 

@@ -11,4 +11,9 @@ export class CreateEnvManagerDto {
   @IsUUID()
   @ApiProperty()
   environmentId: string;
+
+  @IsNotEmpty()
+  @IsUUID()
+  @ApiProperty()
+  createdBy: string;
 }

@@ -4,7 +4,7 @@ import { catchError, lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class AccessService {
-  private readonly accessUrl = process.env.ACCESS_SERVICE_URL;
+  private readonly accessUrl = process.env.ACCESS_SERVICE_URL + '/esp';
 
   constructor(private readonly httpService: HttpService) {}
 

@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsString } from "class-validator"
+import { IsString, IsUUID } from "class-validator"
 
 export class AccessByMobileDeviceDto {
     
@@ -14,4 +14,8 @@ export class AccessByMobileDeviceDto {
     @ApiProperty()
     @IsString()
     mac: string
+
+    @ApiProperty()
+    @IsUUID()
+    userId: string
 }

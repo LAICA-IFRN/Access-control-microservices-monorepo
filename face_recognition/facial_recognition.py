@@ -16,6 +16,9 @@ def endpoint():
   if user_image_path is None:
     abort(400, "userImagePath is required")
 
+  print(captured_image_path)
+  print(user_image_path)
+  
   captured_image = face_recognition.load_image_file('../' + captured_image_path)
   user_image = face_recognition.load_image_file('../' + user_image_path)
 

@@ -65,4 +65,15 @@ export class MobileService {
 
     return environments;
   }
+
+  async getByMac(mac: string) {
+    const mobile = await this.prismaService.mobile.findFirst({
+      where: {
+        mac,
+        active: true,
+      }
+    });
+
+    return mobile;
+  }
 }

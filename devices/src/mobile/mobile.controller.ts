@@ -16,4 +16,9 @@ export class MobileController {
   getEnvironments(@Query('id') id: number, @Query('userId') userId: string) {
     return this.mobileService.getEnvironments(+id, userId);
   }
+
+  @Get('mac/:mac')
+  getByMac(@Param('mac') mac: string) {
+    return this.mobileService.getByMac(mac);
+  }
 }

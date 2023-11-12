@@ -35,10 +35,7 @@ export class AppService {
 
     const { environmentId } = esp32;
     const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
-    console.log("L38", userData);
-    
     const userRoles: string[] = await this.getUserRoles(userData.userId);
-    console.log("L41", userRoles);
     
     if (userRoles.includes(Roles.ADMIN)) {
       return await this.handleAdminFacialRecognition(userData, environmentId, accessDto)
@@ -48,16 +45,13 @@ export class AppService {
 
     if (userRoles.includes(Roles.FREQUENTER)) {
       userAccessData = await this.searchFrequenterAccess(userData, environmentId, accessDto);
-      console.log("L51", userAccessData);
-      
       if (userAccessData.access) {
         return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
       }
     }
-    
+
     if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
       userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId, accessDto);
-      console.log("L60", userAccessData);
       if (userAccessData.access) {
         return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
       }
@@ -66,7 +60,30 @@ export class AppService {
     this.handleUnauthorizedUserAccess(userData, userAccessData, accessDto, environmentId);
   }
 
-  async accessByMobileDevice(accessDto: AccessByMobileDeviceDto) {}
+  async accessByMobileDevice(accessDto: AccessByMobileDeviceDto) {
+    const mobile = await this.searchDeviceMobile(accessDto.mac);
+
+    if(!mobile) {
+      throw new HttpException('Dispositivo mobile não encontrado', HttpStatus.NOT_FOUND);
+    }
+
+    if (mobile.user_id !== accessDto.userId) {
+      
+    }
+  }
+
+  async searchDeviceMobile(mac: string) {
+    const data: any = await lastValueFrom(
+      this.httpService.get(`${this.searchMobileUrl}/${mac}`).pipe(
+        catchError((error) => {
+          this.errorLogger.error('Falha ao buscar dispositivo mobile', error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    return data;
+  }
 
   private async handleUserFacialRecognition(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
     const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);

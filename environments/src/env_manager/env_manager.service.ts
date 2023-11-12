@@ -129,10 +129,8 @@ export class EnvManagerService {
           );
         }
       });
-    console.log(hasEnvAccess);
+
     if (hasEnvAccess && typeof hasEnvAccess === 'boolean') {
-      console.log('if hasEnvAccess');
-      
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Ambiente',
@@ -182,8 +180,6 @@ export class EnvManagerService {
 
       return envManager;
     } catch (error) {
-      console.log('catch\n', error);
-      
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {

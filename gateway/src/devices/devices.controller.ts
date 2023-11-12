@@ -52,6 +52,11 @@ export class DevicesController {
     return this.devicesService.createMicrocontroller(createMicrocontrollerDto);
   }
 
+  @Post('microcontrollers/cold-start')
+  coldStartMicrocontroller(@Query('id') id: number) {
+    return this.devicesService.coldStartMicrocontroller(id);
+  }
+
   @Post('microcontrollers/activate')
   activeMicrocontroller(
     @Query('id') id: number,

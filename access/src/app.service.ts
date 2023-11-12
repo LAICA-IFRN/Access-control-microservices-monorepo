@@ -1,12 +1,13 @@
 import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { AccessDto } from './dto/access.dto';
+import { AccessByMicrocontrollerDeviceDto } from './dto/access-by-microcontroller-device.dto';
 import { catchError, lastValueFrom } from 'rxjs';
 import * as fs from 'fs';
 import { randomUUID } from 'crypto';
 import { AccessLogService } from './providers/audit-log/audit-log.service';
 import { AccessLogConstants } from './providers/audit-log/audit-contants';
 import { AccessByType, Roles } from './providers/constants';
+import { AccessByMobileDeviceDto } from './dto/access-by-mobile-device.dto';
 
 @Injectable()
 export class AppService {
@@ -24,7 +25,7 @@ export class AppService {
     private readonly accessLogService: AccessLogService
   ) {}
 
-  async access(accessDto: AccessDto) {
+  async accessByMicrocontrollerDevice(accessDto: AccessByMicrocontrollerDeviceDto) {
     const esp32 = await this.getEsp32(accessDto.mac);
 
     if (!esp32) {
@@ -65,9 +66,11 @@ export class AppService {
     return { access: true };
   }
 
+  async accessByMobileDevice(accessDto: AccessByMobileDeviceDto) {}
+
   // TODO: criar funções para buscar environment_manager e validar
 
-  async sendLogWhenFacialRecognitionSucceeds(userData: any, userAccessData: any, accessDto: AccessDto) {
+  async sendLogWhenFacialRecognitionSucceeds(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
@@ -90,7 +93,7 @@ export class AppService {
     )
   }
 
-  async sendLogWhenFacialRecognitionFails(userData: any, userAccessData: any, accessDto: AccessDto) {
+  async sendLogWhenFacialRecognitionFails(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
@@ -113,13 +116,11 @@ export class AppService {
     )
   }
 
-  async sendLogWhenEsp32NotFound(accessDto: AccessDto) {
+  async sendLogWhenEsp32NotFound(accessDto: AccessByMicrocontrollerDeviceDto) {
     let accessType: any;
 
     if (accessDto.rfid) {
       accessType = AccessByType.rfid;
-    } else if (accessDto.mobile) {
-      accessType = AccessByType.app;
     } else {
       accessType = AccessByType.document;
     }
@@ -151,7 +152,7 @@ export class AppService {
     return data.roles;
   }
 
-  async getUserIdAndAccessType(accessDto: AccessDto, environmentId: string) {
+  async getUserIdAndAccessType(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
     const userData: any = { userId: null, accessType: null };
 
     if (accessDto.rfid) {
@@ -163,15 +164,6 @@ export class AppService {
       }
 
       userData.accessType = AccessByType.rfid;
-    } else if (accessDto.mobile) {
-      userData.userId = await this.getUserIdByMobile(accessDto.mobile);
-      
-      if (!userData.userId) {
-        this.sendLogWhenMobileNotFound(accessDto, environmentId);
-        throw new HttpException('Dispositivo móvel não encontrado', HttpStatus.NOT_FOUND);
-      }
-
-      userData.accessType = AccessByType.app;
     } else {
       const response: any = await this.getUserIdByDocumentAndPin(accessDto.document, accessDto.pin);
       
@@ -193,7 +185,7 @@ export class AppService {
     return userData;
   }
 
-  async sendLogWhenRFIDNotFound(accessDto: AccessDto, environmentId: string) {
+  async sendLogWhenRFIDNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
     const environment = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
     )
@@ -207,14 +199,14 @@ export class AppService {
         accessDto.rfid,
         environment.name,
         {
-          ...AccessDto,
+          ...AccessByMicrocontrollerDeviceDto,
           environmentId
         }
       )
     )
   }
 
-  async sendLogWhenMobileNotFound(accessDto: AccessDto, environmentId: string) {
+  async sendLogWhenMobileNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
     const environment = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
     )
@@ -228,14 +220,14 @@ export class AppService {
         accessDto.mac,
         environment.name,
         {
-          ...AccessDto,
+          ...AccessByMicrocontrollerDeviceDto,
           environmentId
         }
       )
     )
   }
 
-  async sendLogWhenUserPinIsNotValid(accessDto: AccessDto, environmentId: string, userName: string, userId: string) {
+  async sendLogWhenUserPinIsNotValid(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string, userName: string, userId: string) {
     const environment = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
     )
@@ -250,7 +242,7 @@ export class AppService {
         userName,
         environment.name,
         {
-          ...AccessDto,
+          ...AccessByMicrocontrollerDeviceDto,
           environmentId,
           userId
         }
@@ -258,7 +250,7 @@ export class AppService {
     )
   }
 
-  async sendLogWhenUserDocumentNotFound(accessDto: AccessDto, environmentId: string) {
+  async sendLogWhenUserDocumentNotFound(accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
     const environment = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_ENVIRONMENTS_URL}/env/${environmentId}`)
     )
@@ -272,7 +264,7 @@ export class AppService {
         accessDto.document,
         environment.name,
         {
-          ...AccessDto,
+          ...AccessByMicrocontrollerDeviceDto,
           environmentId
         }
       )
@@ -336,7 +328,7 @@ export class AppService {
     return data;
   }
   
-  async getEnvironmentAccess(userData: any, environmentId: string, accessDto: AccessDto) {
+  async getEnvironmentAccess(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchUserAccessUrl, {
         data: {

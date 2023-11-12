@@ -62,3 +62,13 @@
 {"context":"ExceptionsHandler","level":"error","message":"Cannot read properties of undefined (reading 'name')","stack":["TypeError: Cannot read properties of undefined (reading 'name')\n    at MicrocontrollersService.setMicrocontrollerInfo (/home/kias/Dev/laica/Access-control-microservices-monorepo/devices/src/microcontrollers/microcontrollers.service.ts:95:29)\n    at processTicksAndRejections (node:internal/process/task_queues:95:5)\n    at /home/kias/Dev/laica/Access-control-microservices-monorepo/devices/node_modules/@nestjs/core/router/router-execution-context.js:46:28\n    at /home/kias/Dev/laica/Access-control-microservices-monorepo/devices/node_modules/@nestjs/core/router/router-proxy.js:9:17"],"timestamp":"2023-11-02T19:39:50.766Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-02T19:41:13.901Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-02T19:42:15.102Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:46:59.964Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:48:17.769Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:49:08.195Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:50:26.872Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:52:39.695Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:52:58.168Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:56:53.625Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:57:29.690Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:58:18.055Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-11T23:59:10.429Z"}

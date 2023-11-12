@@ -1,7 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsHexadecimal, IsIP, IsMACAddress, IsOptional, IsString } from "class-validator"
+import { IsIP, IsMACAddress, IsOptional, IsString } from "class-validator"
 
-export class AccessDto {
+export class AccessByMicrocontrollerDeviceDto {
     
     @ApiProperty()
     @IsIP()
@@ -29,9 +29,4 @@ export class AccessDto {
     @IsOptional()
     // @IsHexadecimal() // todo: add rfid validation
     rfid?: string
-    
-    @ApiProperty()
-    @IsOptional()
-    @IsMACAddress()
-    mobile?: string
 }

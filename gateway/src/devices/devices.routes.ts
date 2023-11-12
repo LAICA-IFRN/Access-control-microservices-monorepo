@@ -8,6 +8,10 @@ export class DeviceRoutes {
 
   constructor () {}
 
+  coldStartMicrocontroller(id: number): string {
+    return `${this.deviceMicrocontrollerUrl}/cold-start?id=${id}`;
+  }
+
   createMicrocontroller(): string {
     return `${this.deviceMicrocontrollerUrl}`;
   }

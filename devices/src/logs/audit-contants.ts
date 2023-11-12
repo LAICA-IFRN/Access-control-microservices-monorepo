@@ -1,6 +1,26 @@
 import { AuditLog } from "./audit-log.service";
 
 export class AuditConstants {
+  public static coldStartMicrocontrollerSuccess(metaData: any): AuditLog {
+    const date = metaData.date;
+    const dateFormatted = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    return {
+      topic: "Dispositivos",
+      type: "info",
+      message: `Microcontrolador ${metaData.mac} reiniciado em ${dateFormatted}.`,
+      meta: metaData
+    };
+  }
+
+  public static activateMicrocontrollerSuccess(metaData: any): AuditLog {
+    return {
+      topic: "Dispositivos",
+      type: "info",
+      message: `Microcontrolador ${metaData.type} ativado.`,
+      meta: metaData
+    };
+  }
+
   public static createMicrocontrollerSuccess(metaData: any): AuditLog {
     return {
       topic: "Dispositivos",

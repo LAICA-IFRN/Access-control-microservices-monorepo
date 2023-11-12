@@ -12,13 +12,16 @@ export interface AuditLog {
 export class AuditLogService {
   private readonly createAuditLogUrl = process.env.AUDIT_LOG_URL
   private readonly errorLogger = new Logger()
-  
-  constructor (private readonly httpService: HttpService) {}
+  private readonly httpService: HttpService = new HttpService();
+
+  constructor () {}
 
   async create(log: AuditLog) {
     try {
       await lastValueFrom(this.httpService.post(this.createAuditLogUrl, log))
     } catch (error) {
+      console.log(error);
+      
       this.errorLogger.error('Falha ao enviar log', error);
     }
   }

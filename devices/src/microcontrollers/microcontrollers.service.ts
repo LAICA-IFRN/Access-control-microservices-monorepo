@@ -12,6 +12,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { lastValueFrom } from 'rxjs';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class MicrocontrollersService {;
@@ -45,8 +46,6 @@ export class MicrocontrollersService {;
 
       return microcontroller.id;
     } catch (error) {
-      console.log(error);
-      
       if (error.code === 'P2002') {
         this.auditLogService.create(AuditConstants.createMicrocontrollerConflict(createMicrocontrollerDto));
         throw new HttpException('Conflito com registro existente', HttpStatus.CONFLICT);
@@ -73,15 +72,11 @@ export class MicrocontrollersService {;
       }
     });
 
-    if (microcontroller) {
-      const key = id.toString();
-      const value = { healthCode, doorStatus };
-      await this.cacheService.set(key, value);
-    }
+    const key = id.toString();
+    const info: any = { healthCode };
 
     if (microcontroller.microcontroller_type.name === 'ESP8266') {
-      const findRemoteAccessUrl = `
-        ${this.environmentsServiceUrl}/env/remote-access?esp8266Id=${id}`;
+      const findRemoteAccessUrl = `${this.environmentsServiceUrl}/env/remote-access?esp8266Id=${id}`;
       const remoteAccess = await lastValueFrom(
         this.httpService.get(findRemoteAccessUrl)
       )
@@ -90,7 +85,15 @@ export class MicrocontrollersService {;
         this.errorLogger.error('Erro ao buscar acesso remoto', error);
       })
 
-      if (remoteAccess.value) {
+      const qrcode = randomUUID();
+
+      info.doorStatus = remoteAccess.doorStatus;
+      info.qrcode = qrcode;
+      await this.cacheService.set(key, info);
+
+      const response = { remoteAccess: false, qrcode };
+
+      if (remoteAccess?.value) {
         await this.sendAccessLogWhenFindOne(
           remoteAccess.userName,
           remoteAccess.userId,
@@ -98,15 +101,35 @@ export class MicrocontrollersService {;
           remoteAccess.environmentId,
           microcontroller.mac,
           microcontroller.id
-        )
+        );
 
-        return remoteAccess.value;
+        response.remoteAccess = true;
       }
-  
-      return false;
+      
+      return response;
     } else {
+      await this.cacheService.set(key, info);
       return true;
     }
+  }
+
+  async coldStartMicrocontroller (id: number) {
+    const microcontroller = await this.prismaService.microcontroller.findFirst({
+      where: { id, active: true },
+    })
+
+    if (!microcontroller) {
+      this.auditLogService.create(AuditConstants.findOneMicrotrollerNotFound({ id }));
+      throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)
+    }
+
+    const key = `cold-start-${id.toString()}`;
+    const date = new Date();
+    await this.cacheService.set(key, date);
+
+    this.auditLogService.create(AuditConstants.coldStartMicrocontrollerSuccess({ id, date, mac: microcontroller.mac }));
+
+    return date;
   }
 
   async sendAccessLogWhenFindOne (

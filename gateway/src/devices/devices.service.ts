@@ -183,6 +183,33 @@ export class DevicesService {
     return data;
   }
 
+  async coldStartMicrocontroller(id: number) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.deviceRoutes.coldStartMicrocontroller(id)).pipe(
+        catchError((error) => {
+          if (error.response.data.statusCode === 404) {
+            throw new HttpException(
+              error.response.data.message,
+              error.response.data.statusCode
+            );
+          } else if (error.response.data.statusCode === 400) {
+            throw new HttpException(
+              error.response.data.message,
+              error.response.data.statusCode
+            );
+          } else {
+            throw new HttpException(
+              error.response.data.message,
+              error.response.data.statusCode
+            );
+          }
+        })
+      )
+    );
+
+    return data;
+  }
+
   async activeMicrocontroller(id: number, environmentId: string) {
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.activeMicrocontroller(id, environmentId)).pipe(

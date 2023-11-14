@@ -43,6 +43,11 @@ export class MicrocontrollersController {
     return this.microcontrollersService.getMicrocontrollerInfo(+id);
   }
 
+  @Get('qr-code/:id')
+  getMicrocontrollerEnvironment(@Param('id') id: number) {
+    return this.microcontrollersService.getMicrocontrollerEnvironment(+id);
+  }
+
   @Get()
   async findAll(
     @Query('skip') skip: number,

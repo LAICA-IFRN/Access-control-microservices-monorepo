@@ -53,3 +53,7 @@
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-28T21:19:40.380Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-29T16:28:40.204Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-10-29T16:28:44.697Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-13T18:00:21.629Z"}
+{"level":"error","message":"Falha ao buscar foto de usuário","stack":[{"message":"User not found","name":"HttpException","response":"User not found","status":404}],"timestamp":"2023-11-13T18:00:21.632Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-13T18:01:10.873Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-11-13T18:01:21.798Z"}

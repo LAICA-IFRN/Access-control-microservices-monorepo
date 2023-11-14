@@ -132,6 +132,22 @@ export class MicrocontrollersService {;
     return date;
   }
 
+  async getColdStartMicrocontroller (id: number) {
+    const microcontroller = await this.prismaService.microcontroller.findFirst({
+      where: { id, active: true },
+    })
+
+    if (!microcontroller) {
+      this.auditLogService.create(AuditConstants.findOneMicrotrollerNotFound({ id }));
+      throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)
+    }
+
+    const key = `cold-start-${id.toString()}`;
+    const date = await this.cacheService.get(key);
+
+    return { microcontroller: id, coldStart: date };
+  }
+
   async sendAccessLogWhenFindOne (
     userName: string, 
     userId: string, 
@@ -163,6 +179,24 @@ export class MicrocontrollersService {;
       const key = id.toString();
       return await this.cacheService.get(key);
     }
+  }
+
+  async getMicrocontrollerEnvironment (id: number) {
+    const microcontroller = await this.prismaService.microcontroller.findFirst({
+      where: { id }
+    });
+    
+    if (microcontroller) {
+      const key = id.toString();
+      const data: any = await this.cacheService.get(key);
+
+      return {
+        environmentId: microcontroller.environment_id,
+        qrcode: data?.qrcode
+      }
+    }
+
+    return null;
   }
 
   async activateMicrocontroller (id: number, environmentId: string) {
@@ -281,8 +315,6 @@ export class MicrocontrollersService {;
         environmentId: microcontroller.environment_id
       }
     } catch (error) {
-      console.log(error);
-      
       if (error.code === 'P2025') {
         this.auditLogService.create(AuditConstants.findOneMicrotrollerNotFound(findOneByMac));
         throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)

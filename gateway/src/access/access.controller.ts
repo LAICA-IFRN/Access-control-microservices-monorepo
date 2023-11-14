@@ -5,8 +5,13 @@ import { AccessService } from './access.service';
 export class AccessController {
   constructor(private readonly accessService: AccessService) {}
 
-  @Post()
-  access(@Body() body: any) {
-    return this.accessService.access(body);
+  @Post('esp')
+  accessByEsp(@Body() body: any) {
+    return this.accessService.accessByEsp(body);
+  }
+
+  @Post('mobile')
+  accessByMobile(@Body() body: any) {
+    return this.accessService.accessByMobile(body);
   }
 }

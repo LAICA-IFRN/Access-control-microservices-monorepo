@@ -17,6 +17,7 @@ export class AppService {
   private readonly searchMobileUrl = process.env.SEARCH_MOBILE_URL
   private readonly searchFrequenterAccessUrl = process.env.SEARCH_FREQUENTER_ACCESS
   private readonly searchManagerAccessUrl = process.env.SEARCH_MANAGER_ACCESS
+  private readonly searchEspInMobileAccessUrl = process.env.SEARCH_ESP_IN_MOBILE_ACCESS
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
   
@@ -64,12 +65,67 @@ export class AppService {
     const mobile = await this.searchDeviceMobile(accessDto.mac);
 
     if(!mobile) {
+      // TODO: log
       throw new HttpException('Dispositivo mobile não encontrado', HttpStatus.NOT_FOUND);
     }
 
     if (mobile.user_id !== accessDto.userId) {
-      
+      // TODO: log
+      throw new HttpException('Dispositivo mobile não pertence ao usuário', HttpStatus.UNAUTHORIZED);
     }
+
+    const espData = await this.searchEnvironmentByQRCode(accessDto.qrcode);
+
+    if (!espData.qrCodeMatch) {
+      // TODO: log
+      throw new HttpException('QRCode inválido', HttpStatus.UNAUTHORIZED);
+    }
+    const userData = { userId: accessDto.userId, accessType: AccessByType.app };
+
+    const userRoles: string[] = await this.getUserRoles(userData.userId);
+    
+    if (userRoles.includes(Roles.ADMIN)) {
+      return await this.handleAdminFacialRecognition(userData, espData.environmentId, accessDto)
+    }
+
+    let userAccessData: any;
+
+    if (userRoles.includes(Roles.FREQUENTER)) {
+      userAccessData = await this.searchFrequenterAccess(userData, espData.environmentId, accessDto);
+      if (userAccessData.access) {
+        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
+      }
+    }
+
+    if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
+      userAccessData = await this.searchEnvironmentManagerAccess(userData, espData.environmentId, accessDto);
+      if (userAccessData.access) {
+        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
+      }
+    }
+
+    this.handleUnauthorizedUserAccess(userData, userAccessData, accessDto, espData.environmentId);
+  }
+
+  async searchEnvironmentByQRCode(qrCode: string) {
+    const id = qrCode.slice(-1);
+    
+    const data: any = await lastValueFrom(
+      this.httpService.get(`${this.searchEspInMobileAccessUrl}/${id}`).pipe(
+        catchError((error) => {
+          this.errorLogger.error('Falha ao buscar ambiente por QR Code', error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    const qrcodeWithoutId = qrCode.slice(0, -1);
+
+    return {
+      espId: id,
+      qrCodeMatch: qrcodeWithoutId === data.qrcode,
+      environmentId: data.environmentId
+    };
   }
 
   async searchDeviceMobile(mac: string) {
@@ -85,8 +141,13 @@ export class AppService {
     return data;
   }
 
-  private async handleUserFacialRecognition(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
+  private async handleUserFacialRecognition(userData: any, userAccessData: any, accessDto: any) {
     const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
+
+    if (facialRecognition.error) {
+      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+      throw new HttpException(facialRecognition.error, facialRecognition.statusCode);
+    }
 
     if (facialRecognition.result === false) {
       this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
@@ -97,13 +158,13 @@ export class AppService {
     }
   }
 
-  private async handleAdminFacialRecognition(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
+  private async handleAdminFacialRecognition(userData: any, environmentId: string, accessDto: any) {
     const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
     this.handleCreationLogForAdmin(userData, facialRecognition, environmentId, accessDto);
     return { access: facialRecognition.result };
   }
 
-  private async handleCreationLogForAdmin(userData: any,facialRecognition: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
+  private async handleCreationLogForAdmin(userData: any,facialRecognition: any, environmentId: string, accessDto: any) {
     const environment = await this.getEnvironmentDataToLog(environmentId);
     const environmentDataForLog = {
       environmentId,
@@ -170,10 +231,8 @@ export class AppService {
         data: { mac }
       }).pipe(
         catchError((error) => {
-          console.log(error);
-          
           this.errorLogger.error('Falha ao buscar esp32', error);
-          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     ).then((response) => response.data)
@@ -185,7 +244,7 @@ export class AppService {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchRFIDUrl + tag).pipe(
         catchError((error) => {
-          console.log(error);
+          this.errorLogger.error('Falha ao buscar RFID', error);
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
@@ -212,7 +271,7 @@ export class AppService {
         data: { document, pin }
       }).pipe(
         catchError((error) => {
-          console.log(error);
+          this.errorLogger.error('Falha ao buscar usuário', error);
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
@@ -221,7 +280,7 @@ export class AppService {
     return data;
   }
   
-  async searchFrequenterAccess(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
+  async searchFrequenterAccess(userData: any, environmentId: string, accessDto: any) {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchFrequenterAccessUrl, {
         data: {
@@ -234,9 +293,7 @@ export class AppService {
     return data;
   }
 
-  async searchEnvironmentManagerAccess(userData: any, environmentId: string, accessDto: AccessByMicrocontrollerDeviceDto) {
-    console.log(this.searchManagerAccessUrl);
-    
+  async searchEnvironmentManagerAccess(userData: any, environmentId: string, accessDto: any) {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchManagerAccessUrl, {
         data: {
@@ -247,13 +304,14 @@ export class AppService {
     )
     .then((response) => response.data)
     .catch((error) => {
-      console.log(error);
+      this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
 
     return data;
   }
 
-  private handleUnauthorizedUserAccess(userData: any, data: any, accessDto: AccessByMicrocontrollerDeviceDto, environmentId: string) {
+  private handleUnauthorizedUserAccess(userData: any, data: any, accessDto: any, environmentId: string) {
     this.accessLogService.create(
       AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
         userData.userName,
@@ -281,8 +339,7 @@ export class AppService {
         }
       }).pipe(
         catchError((error) => {
-          console.log(error);
-          
+          this.errorLogger.error('Falha ao validar reconhecimento facial', error);
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
@@ -439,7 +496,7 @@ export class AppService {
         accessDto.rfid,
         environment.name,
         {
-          ...AccessByMicrocontrollerDeviceDto,
+          ...accessDto,
           environmentId
         }
       )
@@ -454,7 +511,7 @@ export class AppService {
         accessDto.mac,
         environment.name,
         {
-          ...AccessByMicrocontrollerDeviceDto,
+          ...accessDto,
           environmentId
         }
       )
@@ -470,7 +527,7 @@ export class AppService {
         userName,
         environment.name,
         {
-          ...AccessByMicrocontrollerDeviceDto,
+          ...accessDto,
           environmentId,
           userId
         }

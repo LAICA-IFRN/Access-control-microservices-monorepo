@@ -257,11 +257,8 @@ export class RolesService {
       }
     }
 
-    const roles = userRoles.map((userRole) => userRole.role.name)
-
-    console.log(roles);
+    const roles = userRoles.map((userRole) => userRole.role.name);
     
-
     return { roles };
   }
 
@@ -325,9 +322,6 @@ export class RolesService {
       }
     }
 
-    console.log(user.user_role);
-    
-
     const userRoles: any = user.user_role
     const hasRole = userRoles.some((userRole: any) => roles.includes(userRole.role.name))
 
@@ -335,7 +329,6 @@ export class RolesService {
   }
 
   async changeStatus(userId: string, roleId: string, roleStatusDto: RoleStatusDto) {
-    console.log(roleStatusDto);
     if (!isUUID(userId) || !isUUID(roleId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -367,8 +360,6 @@ export class RolesService {
         data: { active: roleStatusDto.status }
       })
     } catch (error) {
-      console.log(error);
-      
       if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {

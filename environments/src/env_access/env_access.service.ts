@@ -7,6 +7,7 @@ import { catchError, lastValueFrom } from 'rxjs';
 import { isUUID } from 'class-validator';
 import { EnvAccessStatusDto } from './dto/status-env_access.dto';
 import { environment_user_access_control, environment_user } from '@prisma/client';
+import { log } from 'console';
 
 @Injectable()
 export class EnvAccessService {
@@ -28,8 +29,6 @@ export class EnvAccessService {
         },
       }).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {

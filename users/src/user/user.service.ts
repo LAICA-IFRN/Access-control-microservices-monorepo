@@ -257,7 +257,6 @@ export class UserService {
         data
       };
     } catch (error) {
-      console.log(error);
       this.auditLogService.create(AuditConstants.findAllError({target: 'users', statusCode: 500}))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }

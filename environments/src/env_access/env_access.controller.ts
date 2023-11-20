@@ -38,6 +38,11 @@ export class EnvAccessController {
     return this.envAccessService.findAll();
   }
 
+  @Get('environment/:envId/user/:userId')
+  getEnvironmentUserData(@Param('envId') envId: string, @Param('userId') userId: string) {
+    return this.envAccessService.getEnvironmentUserData(userId, envId);
+  }
+
   @ApiOperation({ description: 'Endpoint para listar todos os acessos ao ambiente de um usuário'})
   @ApiOkResponse({ type: EnvAccessEntity, isArray: true })
   @Get('user/:id')
@@ -51,6 +56,11 @@ export class EnvAccessController {
   @Get('user/:userId/env/:envId/verify')
   verifyAccessByUser(@Param('userId') userId: string, @Param('envId') envId: string) {
     return this.envAccessService.verifyAccessByUser(userId, envId);
+  }
+
+  @Get('environment-user/:id')
+  findAccessForMobileAccess(@Param('id') id: string) {
+    return this.envAccessService.findAccessForMobileAccess(id);
   }
 
   @Get('access')

@@ -16,9 +16,12 @@ export class AppService {
   private readonly searchUserUrl = process.env.SEARCH_USER_URL
   private readonly searchMobileUrl = process.env.SEARCH_MOBILE_URL
   private readonly searchFrequenterAccessUrl = process.env.SEARCH_FREQUENTER_ACCESS
+  private readonly searchFrequenterMobileAccessUrl = process.env.SEARCH_FREQUENTER_MOBILE_ACCESS
   private readonly searchManagerAccessUrl = process.env.SEARCH_MANAGER_ACCESS
+  private readonly searchManagerMobileAccessUrl = process.env.SEARCH_MANAGER_MOBILE_ACCESS
   private readonly searchEspInMobileAccessUrl = process.env.SEARCH_ESP_IN_MOBILE_ACCESS
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
+  private readonly authorizeMobileAccessUrl = process.env.AUTHORIZE_MOBILE_ACCESS_URL
   private readonly errorLogger = new Logger()
   
   constructor(
@@ -62,49 +65,33 @@ export class AppService {
   }
 
   async accessByMobileDevice(accessDto: AccessByMobileDeviceDto) {
-    const mobile = await this.searchDeviceMobile(accessDto.mac);
+    const tokenData = await lastValueFrom(
+      this.httpService.get(`${this.authorizeMobileAccessUrl}?token=${accessDto.token}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      console.log(error);
+      
+      this.errorLogger.error('Falha ao verificar token', error);
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    })
 
-    if(!mobile) {
-      // TODO: log
-      throw new HttpException('Dispositivo mobile não encontrado', HttpStatus.NOT_FOUND);
+    const { id, role } = tokenData;
+
+    if (role === 'FREQUENTER') {
+      const data: any = await lastValueFrom(
+        this.httpService.get(`${this.searchFrequenterMobileAccessUrl}/${id}`)
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar acesso de frequenter', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
+
+      // TODO: 
     }
-
-    if (mobile.user_id !== accessDto.userId) {
-      // TODO: log
-      throw new HttpException('Dispositivo mobile não pertence ao usuário', HttpStatus.UNAUTHORIZED);
-    }
-
-    const espData = await this.searchEnvironmentByQRCode(accessDto.qrcode);
-
-    if (!espData.qrCodeMatch) {
-      // TODO: log
-      throw new HttpException('QRCode inválido', HttpStatus.UNAUTHORIZED);
-    }
-    const userData = { userId: accessDto.userId, accessType: AccessByType.app };
-
-    const userRoles: string[] = await this.getUserRoles(userData.userId);
     
-    if (userRoles.includes(Roles.ADMIN)) {
-      return await this.handleAdminFacialRecognition(userData, espData.environmentId, accessDto)
-    }
-
-    let userAccessData: any;
-
-    if (userRoles.includes(Roles.FREQUENTER)) {
-      userAccessData = await this.searchFrequenterAccess(userData, espData.environmentId, accessDto);
-      if (userAccessData.access) {
-        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
-      }
-    }
-
-    if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
-      userAccessData = await this.searchEnvironmentManagerAccess(userData, espData.environmentId, accessDto);
-      if (userAccessData.access) {
-        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
-      }
-    }
-
-    this.handleUnauthorizedUserAccess(userData, userAccessData, accessDto, espData.environmentId);
+    if (accessDto.encoded) {}
   }
 
   async searchEnvironmentByQRCode(qrCode: string) {

@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator"
+import { IsLatitude, IsLongitude, IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator"
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateEnvironmentDto {
@@ -12,7 +12,15 @@ export class CreateEnvironmentDto {
   @IsOptional()
   description?: string
 
+  @IsLatitude()
+  @ApiProperty()
+  latitude: number
+
+  @IsLongitude()
+  @ApiProperty()
+  longitude: number
+
   @IsUUID()
   @ApiProperty()
-  adminId: string
+  createdBy: string
 }

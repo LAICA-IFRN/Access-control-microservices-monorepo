@@ -5,37 +5,45 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.environment.create({
     data: {
-      name: 'Laica NIT',
+      name: 'Laica ITNC',
       description: 'Laboratório de robótica campus CNAT',
-      created_by: '',
+      created_by: '8ffa136c-2055-4c63-b255-b876d0a2accf',
+      latitude: -5.8115828,
+      longitude: -35.2025893,
     },
   });
 
-  await prisma.environment.create({
-    data: {
-      name: 'Laica SGA',
-      description: 'Laboratório de robótica campus São Gonçalo dos Amarantes',
-      created_by: '',
-    },
-  });
+  // await prisma.environment.create({
+  //   data: {
+  //     name: 'Laica SGA',
+  //     description: 'Laboratório de robótica campus São Gonçalo dos Amarantes',
+  //     created_by: '',
+  //   },0
+  // });
 
-  await prisma.environment.create({
-    data: {
-      name: 'Exemplo GoRN',
-      description: 'Ambiente de exemplo para o GoRN',
-      created_by: '',
-    },
-  });
+  // await prisma.environment.create({
+  //   data: {
+  //     name: 'Exemplo GoRN',
+  //     description: 'Ambiente de exemplo para o GoRN',
+  //     created_by: '',
+  //   },
+  // });
 }
 
 async function createEnvironmentUser() {
+  const environment = await prisma.environment.findFirst({
+    where: {
+      name: 'Laica ITNC'
+    }
+  });
+
   await prisma.environment_user.create({
     data: {
-      start_period: new Date("2023/11/02"),
-      end_period: new Date("2023/12/02"),
+      start_period: new Date("2023/11/20"),
+      end_period: new Date("2023/12/20"),
       user_id: '',
-      environment_id: '',
-      created_by: '',
+      environment_id: environment.id,
+      created_by: environment.created_by,
       environment_user_access_control: {
         create: [
           {
@@ -79,5 +87,5 @@ async function createEnvironmentUser() {
   });
 }
 
-//main().catch((error) => {console.error(error);process.exit(1);})
+main().catch((error) => {console.error(error);process.exit(1);})
 //createEnvironmentUser().catch((error) => {console.error(error);process.exit(1);})

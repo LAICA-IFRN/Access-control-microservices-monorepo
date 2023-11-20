@@ -1,22 +1,17 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsNotEmpty, IsString, IsUUID } from "class-validator"
+import { IsNotEmpty, IsOptional, IsString, IsUUID } from "class-validator"
 
 export class AccessByMobileDeviceDto {
     
     @ApiProperty()
     @IsString()
     @IsNotEmpty()
-    qrcode: string
+    token: string
 
     @ApiProperty()
     @IsString()
-    @IsNotEmpty()
-    encoded: string
-    
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    mac: string
+    @IsOptional()
+    encoded?: string
 
     @ApiProperty()
     @IsUUID()

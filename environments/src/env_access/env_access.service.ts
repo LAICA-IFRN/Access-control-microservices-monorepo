@@ -566,6 +566,51 @@ export class EnvAccessService {
     });
   }
 
+  async getEnvironmentUserData(userId: string, environmentId: string) {
+    try {
+      const data = await this.prisma.environment_user.findFirst({
+        where: {
+          user_id: userId,
+          environment_id: environmentId,
+          active: true,
+        },
+        select: {
+          id: true,
+          environment: {
+            select: {
+              latitude: true,
+              longitude: true,
+            }
+          },
+          environment_user_access_control: {
+            select: {
+              day: true,
+            }
+          }
+        },
+      })
+
+      return {
+        environmentUserId: data.id,
+        latitude: data.environment.latitude,
+        longitude: data.environment.longitude,
+        days: data.environment_user_access_control.map((access) => access.day)
+      }
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new HttpException(
+          'Environment user not found',
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        throw new HttpException(
+          "Can't find environment user",
+          HttpStatus.UNPROCESSABLE_ENTITY
+        );
+      }
+    }
+  }
+
   async getEnvironmentUserAccess(userId: string) {
     try {
       return await this.prisma.environment_user.findMany({
@@ -675,6 +720,47 @@ export class EnvAccessService {
     return {
       hasEnvManager,
       active
+    }
+  }
+
+  async findAccessForMobileAccess(environmentUserId: string) {
+    const environmentUser = await this.prisma.environment_user.findFirst({
+      where: {
+        id: environmentUserId,
+        active: true,
+      },
+      include: {
+        environment_user_access_control: true,
+        environment: {
+          select: {
+            name: true,
+          }
+        }
+      }
+    });
+
+    if (!environmentUser) {
+      return { access: false };
+    }
+
+    const response = { access: false, environmentName: environmentUser.environment.name, userId: environmentUser.user_id }
+    const currentDate = new Date();
+
+    if (environmentUser.start_period <= currentDate && environmentUser.end_period >= currentDate) {
+      for (const accessControl of environmentUser.environment_user_access_control) {
+        if (accessControl.day !== currentDate.getDay()) {
+          continue;
+        }
+
+        const startTime = accessControl.start_time.toLocaleTimeString();
+        const endTime = accessControl.end_time.toLocaleTimeString();
+        const currentTime = currentDate.toLocaleTimeString();
+
+        if (startTime <= currentTime && endTime >= currentTime) {
+          response.access = true;
+          break;
+        }
+      }
     }
   }
 

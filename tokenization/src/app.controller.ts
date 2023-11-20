@@ -4,6 +4,7 @@ import { TokenizeUserDto } from './dto/tokenize-user.dto';
 import { AuthorizationUserDto } from './dto/authorization-user.dto';
 import { AuthorizationMobileDto } from './dto/authorization-mobile.dto';
 import { TokenizeMobileDto } from './dto/tokenize-mobile.dto';
+import { TokenizeAccessDto } from './dto/tokenize-access.dto';
 
 @Controller()
 export class AppController {
@@ -16,9 +17,17 @@ export class AppController {
 
   @Post('tokenize/mobile')
   tokenizeMobile(@Body() tokenizeMobileDto: TokenizeMobileDto) {
-    console.log(tokenizeMobileDto);
-
     return this.appService.tokenizeMobile(tokenizeMobileDto);
+  }
+
+  @Post('tokenize/access')
+  tokenizeAccess(@Body() tokenizeAccessDto: TokenizeAccessDto) {
+    return this.appService.tokenizeAccess(tokenizeAccessDto);
+  }
+
+  @Get('authorize/access')
+  authorizeAccess(@Query('token') token: string) {
+    return this.appService.authorizeAccess(token);
   }
 
   @Get('authorize/user')

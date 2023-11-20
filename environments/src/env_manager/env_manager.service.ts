@@ -276,6 +276,45 @@ export class EnvManagerService {
     });
   }
 
+  async getEnvironmentUserData(userId: string, environmentId: string) {
+    try {
+      const data = await this.prisma.environment_manager.findFirst({
+        where: {
+          user_id: userId,
+          environment_id: environmentId,
+          active: true,
+        },
+        select: {
+          id: true,
+          environment: {
+            select: {
+              latitude: true,
+              longitude: true,
+            }
+          }
+        },
+      })
+
+      return {
+        environmentUserId: data.id,
+        latitude: data.environment.latitude,
+        longitude: data.environment.longitude
+      }
+    } catch (error) {
+      if (error.code === 'P2025') {
+        throw new HttpException(
+          'Environment user not found',
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        throw new HttpException(
+          "Can't find environment user",
+          HttpStatus.UNPROCESSABLE_ENTITY
+        );
+      }
+    }
+  }
+
   async hasEnvAccessOnEnv(userId: string, environmentId: string) {
     if (!isUUID(userId) || !isUUID(environmentId)) {
       console.log('if !isUUID');

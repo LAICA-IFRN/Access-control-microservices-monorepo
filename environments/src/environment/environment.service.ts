@@ -29,7 +29,7 @@ export class EnvironmentService {
     const isAdmin = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
-          userId: createEnvironmentDto.adminId,
+          userId: createEnvironmentDto.createdBy,
           roles: ['ADMIN'],
         },
       }).pipe(
@@ -45,7 +45,7 @@ export class EnvironmentService {
                 type: "Error",
                 message: 'Falha ao verificar papel de usuário durante criação de ambiente: id inválido',
                 meta: {
-                  userId: createEnvironmentDto.adminId,
+                  userId: createEnvironmentDto.createdBy,
                   error: error.response.data.message,
                   statusCode: 400
                 }
@@ -64,7 +64,7 @@ export class EnvironmentService {
                 type: "Error",
                 message: 'Falha ao verificar papel de usuário durante criação de ambiente: usuário não encontrado',
                 meta: {
-                  userId: createEnvironmentDto.adminId,
+                  userId: createEnvironmentDto.createdBy,
                   error: error.response.data.message,
                   statusCode: 404
                 }
@@ -91,7 +91,7 @@ export class EnvironmentService {
           type: "Error",
           message: 'Falha ao verificar papel de usuário durante criação de ambiente: usuário não é um admin',
           meta: {
-            userId: createEnvironmentDto.adminId,
+            userId: createEnvironmentDto.createdBy,
             statusCode: 403
           }
         })
@@ -109,7 +109,9 @@ export class EnvironmentService {
         data: {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
-          created_by: createEnvironmentDto.adminId
+          created_by: createEnvironmentDto.createdBy,
+          latitude: createEnvironmentDto.latitude,
+          longitude: createEnvironmentDto.longitude,
         },
       })
 
@@ -140,7 +142,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao criar ambiente: conflito com registro existente',
             meta: {
-              adminId: createEnvironmentDto.adminId,
+              createdBy: createEnvironmentDto.createdBy,
               target: error.meta.target,
               statusCode: 409
             }
@@ -163,7 +165,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao criar ambiente: admin não encontrado',
             meta: {
-              adminId: createEnvironmentDto.adminId,
+              createdBy: createEnvironmentDto.createdBy,
               target: error.meta.target,
               statusCode: 404
             }
@@ -185,7 +187,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao criar ambiente: erro interno, verificar logs de erro do serviço',
             meta: {
-              adminId: createEnvironmentDto.adminId,
+              createdBy: createEnvironmentDto.createdBy,
               context: error,
               statusCode: 403
             }
@@ -315,7 +317,7 @@ export class EnvironmentService {
 
     const key = esp8266.id.toString();
     const cache = { value: true, userName: user.name, userId: user.id, environmentName: environment.name, environmentId: environment.id };
-    await this.cacheService.set(key, cache);
+    await this.cacheService.set(key, cache); // TODO: alterar o cache para salvar em arquivo em vez de memória
 
     await this.sendAccessLogWhenRemoteAccessSuccess(
       environment.name,
@@ -442,7 +444,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao buscar um ambiente: erro interno, verificar logs de erro do serviço',
             meta: {
-              adminId: id,
+              createdBy: id,
               context: error,
               statusCode: 403
             }
@@ -563,7 +565,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao atualizar um ambiente: erro interno, verificar logs de erro do serviço',
             meta: {
-              adminId: id,
+              createdBy: id,
               context: error,
               statusCode: 403
             }

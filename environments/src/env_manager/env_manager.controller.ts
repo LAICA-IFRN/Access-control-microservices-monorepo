@@ -25,8 +25,6 @@ export class EnvManagerController {
 
   @Get('access')
   findAccessByUser(@Body() findAccessDto: FindAccessDto) {
-    console.log(findAccessDto);
-    
     const { userId, environmentId } = findAccessDto;
     return this.envManagerService.findAccessByUser(userId, environmentId);
   }
@@ -37,6 +35,11 @@ export class EnvManagerController {
   @Get()
   findAll() {
     return this.envManagerService.findAll();
+  }
+
+  @Get('environment/:envId/user/:userId')
+  getEnvironmentUserData(@Param('envId') envId: string, @Param('userId') userId: string) {
+    return this.envManagerService.getEnvironmentUserData(userId, envId);
   }
 
   @ApiOperation({ description: 'Endpoint para verificar se um usuário possui acesso a um ambiente'})

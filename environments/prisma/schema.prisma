@@ -13,6 +13,8 @@ model environment {
   description                    String?
   active                         Boolean                          @default(true)
   created_by                     String
+  latitude                       Float
+  longitude                      Float
   created_at                     DateTime                         @default(now())
   updated_at                     DateTime                         @updatedAt
   environment_user               environment_user[]

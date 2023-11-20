@@ -23,4 +23,10 @@ export class EnvironmentEntity implements environment {
   
   @ApiProperty({ default: new Date() })
   updated_at: Date;
+
+  @ApiProperty()
+  latitude: number;
+
+  @ApiProperty()
+  longitude: number;
 }

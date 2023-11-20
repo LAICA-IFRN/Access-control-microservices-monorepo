@@ -89,6 +89,8 @@ export class MicrocontrollersService {;
 
       info.doorStatus = remoteAccess.doorStatus;
       info.qrcode = qrcode;
+      console.log(info);
+      console.log(typeof key)
       await this.cacheService.set(key, info);
 
       const response = { remoteAccess: false, qrcode };
@@ -189,6 +191,8 @@ export class MicrocontrollersService {;
     if (microcontroller) {
       const key = id.toString();
       const data: any = await this.cacheService.get(key);
+
+      console.log(data);
 
       return {
         environmentId: microcontroller.environment_id,

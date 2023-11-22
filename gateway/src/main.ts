@@ -12,6 +12,7 @@ async function bootstrap() {
     .build();
 
   app.setGlobalPrefix('access-control/gateway');
+  // teste
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   app.setGlobalPrefix('')

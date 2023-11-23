@@ -277,7 +277,6 @@ export class AppService {
     }
 
     if (userRoles.includes('ENVIRONMENT_MANAGER')) {
-      console.log(tokenizeAccessDto.userId)
       return this.handleManagerTokenizationAccess(data.environmentId, tokenizeAccessDto.userId);
     }
 
@@ -301,7 +300,7 @@ export class AppService {
     const seconds = Math.floor(difference / 1000);
 
     const token = jwt.sign(
-      {  sub: { id: userId, role: 'ADMIN' } },
+      {  sub: { id: userId, role: 'ADMIN', env: environmentId } },
       this.jwtAccessSecret,
       { expiresIn: seconds }
     )
@@ -325,6 +324,9 @@ export class AppService {
       throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
     })
 
+    console.log(environmentUserData);
+    
+
     if (!environmentUserData) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
     }
@@ -335,7 +337,7 @@ export class AppService {
     const seconds = Math.floor(difference / 1000);
 
     const token = jwt.sign(
-      {  sub: { id: environmentUserData.id, role: 'ENVIRONMENT_MANAGER' } },
+      {  sub: { id: environmentUserData.environmentUserId, role: 'ENVIRONMENT_MANAGER' } },
       this.jwtAccessSecret,
       { expiresIn: seconds }
     )
@@ -356,8 +358,11 @@ export class AppService {
     .catch((error) => {
       this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-      throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
+
+    console.log(environmentUserData);
+    
 
     if (!environmentUserData) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
@@ -374,7 +379,7 @@ export class AppService {
     const seconds = Math.floor(difference / 1000);
 
     const token = jwt.sign(
-      {  sub: { id: environmentUserData.id, role: 'FREQUENTER' } },
+      {  sub: { id: environmentUserData.environmentUserId, role: 'FREQUENTER' } },
       this.jwtAccessSecret,
       { expiresIn: seconds }
     )
@@ -389,7 +394,7 @@ export class AppService {
   async authorizeAccess(token: string) {
     try {
       const decodedToken = jwt.verify(token, this.jwtAccessSecret)
-      return { sub: decodedToken.sub }
+      return decodedToken.sub
     } catch (error) {
       throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
     }

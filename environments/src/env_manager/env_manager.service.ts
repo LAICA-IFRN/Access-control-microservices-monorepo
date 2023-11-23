@@ -452,6 +452,30 @@ export class EnvManagerService {
     return response;
   }
 
+  async findAccessForMobileAccess(environmentManagerId: string) {
+    const envManager = await this.prisma.environment_manager.findUnique({
+      where: {
+        id: environmentManagerId,
+      },
+      include: {
+        environment: {
+          select: {
+            name: true,
+            id: true,
+          }
+        }
+      }
+    });
+
+    const response: any = { access: false, environmentName: envManager.environment.name, environmentId: envManager.environment.id };
+
+    if (envManager.active) {
+      response.access = true;
+    }
+
+    return response;
+  }
+
   async findOne(id: string) {
     if (!isUUID(id)) {
       await lastValueFrom(

@@ -50,6 +50,11 @@ export class EnvManagerController {
     return this.envManagerService.verifyManagerByUser(userId, envId);
   }
 
+  @Get('environment-manager/:id')
+  findAccessForMobileAccess(@Param('id') id: string) {
+    return this.envManagerService.findAccessForMobileAccess(id);
+  }
+
   @ApiOperation({ description: 'Endpoint para listar um gestor de ambiente' })
   @ApiOkResponse({ type: EnvManagerEntity })
   @ApiForbiddenResponse({ type: swagger.FindOneForbiddenResponseEntity })

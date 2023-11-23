@@ -22,6 +22,7 @@ export class AppService {
   private readonly searchEspInMobileAccessUrl = process.env.SEARCH_ESP_IN_MOBILE_ACCESS
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly authorizeMobileAccessUrl = process.env.AUTHORIZE_MOBILE_ACCESS_URL
+  private readonly envServiceUrl = process.env.SERVICE_ENVIRONMENTS_URL
   private readonly errorLogger = new Logger()
   
   constructor(
@@ -70,13 +71,20 @@ export class AppService {
     )
     .then((response) => response.data)
     .catch((error) => {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao verificar token', error);
       throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
 
     const { id, role } = tokenData;
+
+    if (role === 'ADMIN') {
+      if (!accessDto.fingerprint) {
+        return this.handleAdminFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, tokenData.env, accessDto);
+      }
+
+      this.sendLogWhenFingerprintSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, tokenData.env, accessDto);
+      return { access: true };
+    }
 
     if (role === 'FREQUENTER') {
       const data: any = await lastValueFrom(
@@ -88,10 +96,57 @@ export class AppService {
         throw new HttpException(error.response.data.message, error.response.data.statusCode);
       })
 
-      // TODO: 
+      if (!accessDto.fingerprint) {
+        return this.handleUserFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+        // TODO: enviar solicitação de acesso remoto pro esp32
+      }
+
+      if (data.access) {
+        await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
+        this.sendLogWhenFingerprintSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+        return { access: true };
+      }
+
+      this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+      return { access: false };
     }
-    
-    if (accessDto.encoded) {}
+
+    if (role === 'ENVIRONMENT_MANAGER') {
+      const data: any = await lastValueFrom(
+        this.httpService.get(`${this.searchManagerMobileAccessUrl}/${id}`)
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
+
+      if (!accessDto.fingerprint) {
+        return this.handleUserFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+        // TODO: enviar solicitação de acesso remoto pro esp32
+      }
+
+      if (data.access) {
+        await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
+        this.sendLogWhenFingerprintSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+        return { access: true };
+      }
+
+      this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+      return { access: false };
+    }
+  }
+
+  private async sendRemoteAccessRequest(environmentId: string, esp8266Id: number, userId: string) {
+    const url = `${this.envServiceUrl}/env/remote-access?environmentId=${environmentId}&esp8266Id=${esp8266Id}&userId=${userId}`;
+    const data: any = await lastValueFrom(this.httpService.post(url))
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao solicitar acesso remoto', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
+
+    return data;
   }
 
   async searchEnvironmentByQRCode(qrCode: string) {
@@ -374,7 +429,7 @@ export class AppService {
   }
 
   async saveAccessImage(captureEncodedImage: string) {
-    const captureImage = captureEncodedImage.startsWith('data:image/') 
+    const captureImage = captureEncodedImage.startsWith('data:image/')
     ? captureEncodedImage
     : `data:image/jpg;base64,${captureEncodedImage}`;
 
@@ -418,6 +473,52 @@ export class AppService {
 
     this.accessLogService.create(
       AccessLogConstants.accessOkWhenUserHasAccess(
+        user.name,
+        userAccessData.environmentName,
+        userData.accessType,
+        {
+          ...accessDto,
+          userId: userData.userId,
+          environmentId: userAccessData.environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenFingerprintSucceeds(userData: any, userAccessData: any, accessDto: any) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar usuário', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessOkWhenUserHasAccess(
+        user.name,
+        userAccessData.environmentName,
+        userData.accessType,
+        {
+          ...accessDto,
+          userId: userData.userId,
+          environmentId: userAccessData.environmentId
+        }
+      )
+    )
+  }
+
+  async sendLogWhenFingerprintFails(userData: any, userAccessData: any, accessDto: any) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar usuário', error);
+    })
+
+    this.accessLogService.create(
+      AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
         user.name,
         userAccessData.environmentName,
         userData.accessType,

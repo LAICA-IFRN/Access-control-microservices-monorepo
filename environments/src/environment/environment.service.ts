@@ -209,6 +209,8 @@ export class EnvironmentService {
   }
 
   async requestRemoteAccess(environmentId: string, esp8266Id: number, userId: string) {
+    console.log("chegou");
+    
     if (!isUUID(environmentId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {

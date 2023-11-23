@@ -60,6 +60,8 @@ export class EnvAccessController {
 
   @Get('environment-user/:id')
   findAccessForMobileAccess(@Param('id') id: string) {
+    console.log(id);
+    
     return this.envAccessService.findAccessForMobileAccess(id);
   }
 

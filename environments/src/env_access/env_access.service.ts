@@ -567,47 +567,40 @@ export class EnvAccessService {
   }
 
   async getEnvironmentUserData(userId: string, environmentId: string) {
-    try {
-      const data = await this.prisma.environment_user.findFirst({
-        where: {
-          user_id: userId,
-          environment_id: environmentId,
-          active: true,
-        },
-        select: {
-          id: true,
-          environment: {
-            select: {
-              latitude: true,
-              longitude: true,
-            }
-          },
-          environment_user_access_control: {
-            select: {
-              day: true,
-            }
+    const data = await this.prisma.environment_user.findFirst({
+      where: {
+        user_id: userId,
+        environment_id: environmentId,
+        active: true,
+      },
+      select: {
+        id: true,
+        environment: {
+          select: {
+            latitude: true,
+            longitude: true,
           }
         },
-      })
+        environment_user_access_control: {
+          select: {
+            day: true,
+          }
+        }
+      },
+    })
 
-      return {
-        environmentUserId: data.id,
-        latitude: data.environment.latitude,
-        longitude: data.environment.longitude,
-        days: data.environment_user_access_control.map((access) => access.day)
-      }
-    } catch (error) {
-      if (error.code === 'P2025') {
-        throw new HttpException(
-          'Environment user not found',
-          HttpStatus.NOT_FOUND
-        );
-      } else {
-        throw new HttpException(
-          "Can't find environment user",
-          HttpStatus.UNPROCESSABLE_ENTITY
-        );
-      }
+    if (!data) {
+      throw new HttpException(
+        'Environment user not found',
+        HttpStatus.NOT_FOUND
+      );
+    }
+
+    return {
+      environmentUserId: data.id,
+      latitude: data.environment.latitude,
+      longitude: data.environment.longitude,
+      days: data.environment_user_access_control.map((access) => access.day)
     }
   }
 
@@ -743,7 +736,7 @@ export class EnvAccessService {
       return { access: false };
     }
 
-    const response = { access: false, environmentName: environmentUser.environment.name, userId: environmentUser.user_id }
+    const response = { access: false, environmentName: environmentUser.environment.name, environmentId: environmentUser.environment_id }
     const currentDate = new Date();
 
     if (environmentUser.start_period <= currentDate && environmentUser.end_period >= currentDate) {
@@ -762,6 +755,8 @@ export class EnvAccessService {
         }
       }
     }
+    
+    return response;
   }
 
   async findAccessByUser(userId: string, environmentId: string) {

@@ -51,14 +51,14 @@ export class AppService {
     if (userRoles.includes(Roles.FREQUENTER)) {
       userAccessData = await this.searchFrequenterAccess(userData, environmentId, accessDto);
       if (userAccessData.access) {
-        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
+        return await this.handleUserFacialRecognitionDevice(userData, userAccessData, accessDto);
       }
     }
 
     if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
       userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId, accessDto);
       if (userAccessData.access) {
-        return await this.handleUserFacialRecognition(userData, userAccessData, accessDto);
+        return await this.handleUserFacialRecognitionDevice(userData, userAccessData, accessDto);
       }
     }
 
@@ -74,7 +74,7 @@ export class AppService {
       this.errorLogger.error('Falha ao verificar token', error);
       throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
-
+    
     const { id, role } = tokenData;
 
     if (role === 'ADMIN') {
@@ -82,7 +82,7 @@ export class AppService {
         return this.handleAdminFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, tokenData.env, accessDto);
       }
 
-      this.sendLogWhenFingerprintSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, tokenData.env, accessDto);
+      await this.sendRemoteAccessRequest(tokenData.env, accessDto.espId, accessDto.userId);
       return { access: true };
     }
 
@@ -97,13 +97,11 @@ export class AppService {
       })
 
       if (!accessDto.fingerprint) {
-        return this.handleUserFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-        // TODO: enviar solicitação de acesso remoto pro esp32
+        return this.handleUserFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
       }
 
       if (data.access) {
         await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
-        this.sendLogWhenFingerprintSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
         return { access: true };
       }
 
@@ -122,13 +120,11 @@ export class AppService {
       })
 
       if (!accessDto.fingerprint) {
-        return this.handleUserFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-        // TODO: enviar solicitação de acesso remoto pro esp32
+        return this.handleUserFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
       }
 
       if (data.access) {
         await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
-        this.sendLogWhenFingerprintSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
         return { access: true };
       }
 
@@ -138,7 +134,7 @@ export class AppService {
   }
 
   private async sendRemoteAccessRequest(environmentId: string, esp8266Id: number, userId: string) {
-    const url = `${this.envServiceUrl}/env/remote-access?environmentId=${environmentId}&esp8266Id=${esp8266Id}&userId=${userId}`;
+    const url = `${this.envServiceUrl}/env/remote-access?environmentId=${environmentId}&esp8266Id=${esp8266Id}&userId=${userId}&type=mobile`;
     const data: any = await lastValueFrom(this.httpService.post(url))
       .then((response) => response.data)
       .catch((error) => {
@@ -183,7 +179,7 @@ export class AppService {
     return data;
   }
 
-  private async handleUserFacialRecognition(userData: any, userAccessData: any, accessDto: any) {
+  private async handleUserFacialRecognitionDevice(userData: any, userAccessData: any, accessDto: any) {
     const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
 
     if (facialRecognition.error) {
@@ -200,13 +196,66 @@ export class AppService {
     }
   }
 
-  private async handleAdminFacialRecognition(userData: any, environmentId: string, accessDto: any) {
+  private async handleUserFacialRecognitionMobile(userData: any, userAccessData: any, accessDto: any) {
     const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
-    this.handleCreationLogForAdmin(userData, facialRecognition, environmentId, accessDto);
+
+    if (facialRecognition.error) {
+      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+      throw new HttpException(facialRecognition.error, facialRecognition.statusCode);
+    }
+
+    this.handleLogAdminFacialRecognitionMobile(userData, facialRecognition, userAccessData.environmentId, accessDto);
+
+    if (facialRecognition.result === false) {
+      return { access: false };
+    } else {
+      return { access: true };
+    }
+  }
+
+  private async handleAdminFacialRecognition(userData: any, environmentId: string, accessDto: any, ) {
+    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
+
+    if (userData.accessType === AccessByType.app) {
+      this.handleLogAdminFacialRecognitionMobile(userData, facialRecognition, environmentId, accessDto);
+    } else {
+      this.handleLogAdminFacialRecognitionWeb(userData, facialRecognition, environmentId, accessDto);
+    }
+
     return { access: facialRecognition.result };
   }
 
-  private async handleCreationLogForAdmin(userData: any,facialRecognition: any, environmentId: string, accessDto: any) {
+  private async handleLogAdminFacialRecognitionMobile(userData: any, facialRecognition: any, environmentId: string, accessDto: any) {
+    const environment = await this.getEnvironmentDataToLog(environmentId);
+
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar usuário', error);
+    })
+    
+
+    if (facialRecognition.result === false) {
+      this.accessLogService.create(
+        AccessLogConstants.accessFailedWhenMobileRequest(
+          user.name,
+          environment.name,
+          userData.accessType,
+          {
+            ...accessDto,
+            userId: user.id,
+            environmentId
+          }
+        )
+      )
+    } else {
+      await this.sendRemoteAccessRequest(environmentId, accessDto.espId, userData.userId);
+    }
+  }
+
+  private async handleLogAdminFacialRecognitionWeb(userData: any,facialRecognition: any, environmentId: string, accessDto: any) {
     const environment = await this.getEnvironmentDataToLog(environmentId);
     const environmentDataForLog = {
       environmentId,
@@ -485,7 +534,7 @@ export class AppService {
     )
   }
 
-  async sendLogWhenFingerprintSucceeds(userData: any, userAccessData: any, accessDto: any) {
+  async sendLogWhenFingerprintSucceeds(userData: any, envId: any, accessDto: any) {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
@@ -494,15 +543,17 @@ export class AppService {
       this.errorLogger.error('Falha ao buscar usuário', error);
     })
 
+    const environment = await this.getEnvironmentDataToLog(envId);
+
     this.accessLogService.create(
-      AccessLogConstants.accessOkWhenUserHasAccess(
+      AccessLogConstants.accessOkWhenMobileRequest(
         user.name,
-        userAccessData.environmentName,
+        environment.name,
         userData.accessType,
         {
           ...accessDto,
           userId: userData.userId,
-          environmentId: userAccessData.environmentId
+          environmentId: environment.id
         }
       )
     )

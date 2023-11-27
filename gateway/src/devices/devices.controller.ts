@@ -77,23 +77,32 @@ export class DevicesController {
       doorStatus,
     );
   }
-
+  
+  @Get('microcontrollers/remote-access/:id')
+  searchRemoteAccess(@Param('id') id: number) {
+    console.log('searchRemoteAccess');
+    
+    return this.devicesService.searchRemoteAccess(+id);
+  }
+  
   @Get('microcontrollers/keep-alive')
   getMicrocontrollerInfo(@Query('id') id: number) {
+    console.log('getMicrocontrollerInfo');
     return this.devicesService.getMicrocontrollerInfo(id);
-  }
-
-  @Get('microcontrollers/:id')
-  findOneMicrocontroller(@Param('id') id: number) {
-    return this.devicesService.findOneMicrocontroller(id);
   }
 
   @Get('microcontrollers')
   findAllMicrocontroller(
-    @Query('skip') skip: number,
-    @Query('take') take: number,
+  @Query('skip') skip: number,
+  @Query('take') take: number,
   ) {
     return this.devicesService.findAllMicrocontroller(+skip, +take);
+  }
+  
+  @Get('microcontrollers/one/:id')
+  findOneMicrocontroller(@Param('id') id: number) {
+    console.log('findOneMicrocontroller');
+    return this.devicesService.findOneMicrocontroller(id);
   }
 
   @Get('microcontrollers/inactives')

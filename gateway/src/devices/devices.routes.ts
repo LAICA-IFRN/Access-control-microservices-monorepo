@@ -28,8 +28,12 @@ export class DeviceRoutes {
     return `${this.deviceMicrocontrollerUrl}/keep-alive?id=${id}`;
   }
 
+  searchRemoteAccess(id: number): string {
+    return `${this.deviceMicrocontrollerUrl}/remote-access/${id}`;
+  }
+
   findOneMicrocontroller(id: number): string {
-    return `${this.deviceMicrocontrollerUrl}/${id}`;
+    return `${this.deviceMicrocontrollerUrl}/one/${id}`;
   }
 
   findAllMicrocontroller(skip: number, take: number): string {

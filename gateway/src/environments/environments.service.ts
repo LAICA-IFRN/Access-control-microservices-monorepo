@@ -34,9 +34,9 @@ export class EnvironmentsService {
     return data;
   }
 
-  async requestRemoteAccess(environmentId: string, esp8266Id: number, userId: string) {
+  async requestRemoteAccess(environmentId: string, esp8266Id: number, remoteAccessType: string, userId: string) {
     const { data } = await lastValueFrom(
-      this.httpService.post(this.envRoutes.requestRemoteAccess(environmentId, esp8266Id, userId)).pipe(
+      this.httpService.post(this.envRoutes.requestRemoteAccess(environmentId, esp8266Id, remoteAccessType, userId)).pipe(
         catchError((error) => {
           console.log(error);
           

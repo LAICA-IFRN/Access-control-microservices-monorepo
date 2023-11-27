@@ -2,6 +2,31 @@ import { AccessByType } from "../constants";
 import { AccessLog } from "./audit-log.service";
 
 export class AccessLogConstants {
+  public static accessOkWhenMobileRequest(
+    userName: string,
+    environmentName: string,
+    access_by: AccessByType,
+    meta?: object,
+  ): AccessLog {
+    return { 
+      type: "info",
+      message: `${userName} solicitou acesso ao ambiente ${environmentName} utilizando ${access_by}`,
+      meta: meta,
+    };
+  }
+  public static accessFailedWhenMobileRequest(
+    userName: string,
+    environmentName: string,
+    access_by: AccessByType,
+    meta?: object,
+  ): AccessLog {
+    return { 
+      type: "warn",
+      message: `${userName} tentou solicitar acesso ao ambiente ${environmentName} utilizando ${access_by} mas a análise facial falhou`,
+      meta: meta,
+    };
+  }
+
   public static accessOkWhenUserHasAccess(
     userName: string,
     environmentName: string,

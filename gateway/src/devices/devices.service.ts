@@ -276,6 +276,22 @@ export class DevicesService {
     return data;
   }
 
+  async searchRemoteAccess(id: number) {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.deviceRoutes.searchRemoteAccess(id)).pipe(
+        catchError((error) => {
+          if (error.response.data.statusCode === 404) {
+            throw new HttpException(error.response.data.message, error.response.data.statusCode);
+          } else {
+            throw new HttpException(error.response.data.message, error.response.data.statusCode);
+          }
+        })
+      )
+    );
+
+    return data;
+  }
+
   async findOneMicrocontroller(id: number) {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.findOneMicrocontroller(id)).pipe(

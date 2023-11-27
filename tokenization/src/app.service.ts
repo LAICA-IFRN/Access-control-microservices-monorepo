@@ -18,7 +18,7 @@ export class AppService {
   private readonly createAuditLogUrl = process.env.CREATE_AUDIT_LOG_URL
   private readonly validateUserUrl = process.env.VALIDATE_USER_URL
   private readonly verifyAuthorizationUrl = process.env.VERIFY_AUTHORIZATION_URL
-  private readonly getEnvironmentQrCodeData = process.env.GET_ENVIRONMENT_QRCODE_DATA_URL
+  private readonly getMicrocontrollerUrl = process.env.GET_MICROCONTROLLER_URL
   private readonly environmentServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
   private readonly errorLogger = new Logger()
 
@@ -256,8 +256,8 @@ export class AppService {
   }
 
   async tokenizeAccess(tokenizeAccessDto: TokenizeAccessDto) {
-    const data = await lastValueFrom(
-      this.httpService.get(`${this.getEnvironmentQrCodeData}/${tokenizeAccessDto.microcontrollerId}`)
+    const microcontroller = await lastValueFrom(
+      this.httpService.get(`${this.getMicrocontrollerUrl}/one/${tokenizeAccessDto.microcontrollerId}`)
     )
     .then((response) => response.data)
     .catch((error) => {
@@ -266,21 +266,31 @@ export class AppService {
       throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
     })
 
-    if (tokenizeAccessDto.qrcode !== data.qrcode) {
+    const qrcode = await lastValueFrom(
+      this.httpService.get(`${this.environmentServiceUrl}/env/${microcontroller.environment_id}/qr-code`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao obter dados do ambiente', error)
+
+      throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+    })
+
+    if (tokenizeAccessDto.qrcode !== qrcode) {
       throw new HttpException('Invalid QR Code', HttpStatus.BAD_REQUEST)
     }
 
     const userRoles = await this.getUserRoles(tokenizeAccessDto.userId);
 
     if (userRoles.includes('FREQUENTER')) {
-      return this.handleFrequenterTokenizationAccess(data.environmentId, tokenizeAccessDto.userId);
+      return this.handleFrequenterTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
     }
 
     if (userRoles.includes('ENVIRONMENT_MANAGER')) {
-      return this.handleManagerTokenizationAccess(data.environmentId, tokenizeAccessDto.userId);
+      return this.handleManagerTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
     }
 
-    return this.handleAdminTokenizationAccess(data.environmentId, tokenizeAccessDto.userId);
+    return this.handleAdminTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
   }
 
   private async handleAdminTokenizationAccess(environmentId: string, userId: string) {
@@ -323,10 +333,7 @@ export class AppService {
 
       throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
     })
-
-    console.log(environmentUserData);
     
-
     if (!environmentUserData) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
     }
@@ -360,9 +367,6 @@ export class AppService {
 
       throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
-
-    console.log(environmentUserData);
-    
 
     if (!environmentUserData) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
@@ -432,8 +436,6 @@ export class AppService {
         },
       ).pipe(
         catchError((error) => {
-          console.log(error);
-
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {

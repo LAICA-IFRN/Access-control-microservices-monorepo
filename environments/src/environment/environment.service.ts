@@ -9,6 +9,8 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class EnvironmentService {
@@ -23,7 +25,31 @@ export class EnvironmentService {
     private readonly prisma: PrismaService,
     private readonly accessLogService: AccessLogService,
     @Inject(CACHE_MANAGER) private cacheService: Cache,
-  ) {} 
+  ) {}
+
+  @Cron(CronExpression.EVERY_30_SECONDS)
+  async generateQRCodes()  {
+    const environments = await this.prisma.environment.findMany({
+      where: {
+        active: true
+      },
+      select: {
+        id: true
+      }
+    })
+
+    environments.forEach(environment => {
+      const value = randomUUID();
+      const key = environment.id;
+      this.cacheService.set(key, value);
+    });
+  }
+
+  async getQRCode(environmentId: string) {
+    const key = environmentId;
+    const value = await this.cacheService.get(key);
+    return value;
+  } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
     const isAdmin = await lastValueFrom(
@@ -34,7 +60,6 @@ export class EnvironmentService {
         },
       }).pipe(
         catchError((error) => {
-          console.log(error);
           if (error.response.status === 'ECONNREFUSED') {
             this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
@@ -128,13 +153,11 @@ export class EnvironmentService {
       )
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error);
         this.errorLogger.error('Falha ao criar log', error);
       });
 
       return environment
     } catch (error) {
-      console.log(error);
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -208,9 +231,7 @@ export class EnvironmentService {
     }
   }
 
-  async requestRemoteAccess(environmentId: string, esp8266Id: number, userId: string) {
-    console.log("chegou");
-    
+  async requestRemoteAccess(environmentId: string, esp8266Id: number, remoteAccessType: string, userId: string) {
     if (!isUUID(environmentId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -259,7 +280,7 @@ export class EnvironmentService {
     }
 
     const esp8266 = await lastValueFrom(
-      this.httpService.get(`${this.getEsp8266Endpoint}/microcontrollers/${esp8266Id}`).pipe(
+      this.httpService.get(`${this.getEsp8266Endpoint}/microcontrollers/one/${esp8266Id}`).pipe(
         catchError((error) => {
           if (error.response.status === 'ECONNREFUSED') {
             this.errorLogger.error('Falha ao se conectar com o serviço de dispositivos (500)', error);
@@ -318,17 +339,26 @@ export class EnvironmentService {
     });
 
     const key = esp8266.id.toString();
-    const cache = { value: true, userName: user.name, userId: user.id, environmentName: environment.name, environmentId: environment.id };
+    const cache = { value: true, remoteAccessType, userName: user.name, userId: user.id, environmentName: environment.name, environmentId: environment.id };
     await this.cacheService.set(key, cache); // TODO: alterar o cache para salvar em arquivo em vez de memória
 
-    await this.sendAccessLogWhenRemoteAccessSuccess(
-      environment.name,
-      environment.id, 
-      esp8266.mac, 
-      esp8266.id, 
-      user.name,
-      user.id
-    );
+    if (remoteAccessType === 'web') {
+      await this.sendAccessLogWhenWebRemoteAccessSuccess(
+        environment.name,
+        environment.id,
+        esp8266.id, 
+        user.name,
+        user.id
+      );
+    } else {
+      await this.sendAccessLogWhenMobileRemoteAccessSuccess(
+        environment.name,
+        environment.id,
+        esp8266.id, 
+        user.name,
+        user.id
+      );
+    }
 
     return cache;
   }
@@ -336,24 +366,42 @@ export class EnvironmentService {
   async findRemoteAccess(esp8266Id: number) {
     const key = esp8266Id.toString();
     const value = await this.cacheService.get(key);
-    await this.cacheService.set(key, false);
+    await this.cacheService.set(key, { value: false });
 
     return value;
   }
 
-  async sendAccessLogWhenRemoteAccessSuccess(
+  async sendAccessLogWhenWebRemoteAccessSuccess(
     environmentName: string, 
     environmentId: string,
-    esp8266Mac: string, 
     esp8266Id: number,
     userName: string,
     userId: string
   ) {
     
 
-    await this.accessLogService.create(AccessConstants.remoteAccessSuccess(
+    await this.accessLogService.create(AccessConstants.webRemoteAccessSuccess(
       environmentName,
-      esp8266Mac,
+      userName,
+      {
+        environmentId,
+        esp8266Id,
+        userId
+      }
+    ));
+  }
+
+  async sendAccessLogWhenMobileRemoteAccessSuccess(
+    environmentName: string, 
+    environmentId: string,
+    esp8266Id: number,
+    userName: string,
+    userId: string
+  ) {
+    
+
+    await this.accessLogService.create(AccessConstants.mobileRemoteAccessSuccess(
+      environmentName,
       userName,
       {
         environmentId,

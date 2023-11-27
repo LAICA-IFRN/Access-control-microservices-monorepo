@@ -23,8 +23,9 @@ export class EnvironmentsController {
     @Query('environmentId') environmentId: string, 
     @Query('esp8266Id') esp8266Id: number,
     @Query('userId') userId: string,
+    @Query('type') type: string,
   ) {
-    return this.environmentsService.requestRemoteAccess(environmentId, +esp8266Id, userId);
+    return this.environmentsService.requestRemoteAccess(environmentId, +esp8266Id, type, userId);
   }
 
   // @Roles(RolesConstants.ADMIN)

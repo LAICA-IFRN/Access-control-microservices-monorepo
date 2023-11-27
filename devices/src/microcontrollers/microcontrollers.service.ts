@@ -76,39 +76,20 @@ export class MicrocontrollersService {;
     const info: any = { healthCode };
 
     if (microcontroller.microcontroller_type.name === 'ESP8266') {
-      const findRemoteAccessUrl = `${this.environmentsServiceUrl}/env/remote-access?esp8266Id=${id}`;
-      const remoteAccess = await lastValueFrom(
-        this.httpService.get(findRemoteAccessUrl)
+      const getQRCodeUrl = `${this.environmentsServiceUrl}/env/${microcontroller.environment_id}/qr-code`;
+      const qrcodeData = await lastValueFrom(
+        this.httpService.get(getQRCodeUrl)
       )
       .then(response => response.data)
       .catch(error => {
         this.errorLogger.error('Erro ao buscar acesso remoto', error);
       })
 
-      const qrcode = randomUUID();
-
-      info.doorStatus = remoteAccess.doorStatus;
-      info.qrcode = qrcode;
-      console.log(info);
-      console.log(typeof key)
+      info.doorStatus = doorStatus;
+      
       await this.cacheService.set(key, info);
 
-      const response = { remoteAccess: false, qrcode };
-
-      if (remoteAccess?.value) {
-        await this.sendAccessLogWhenFindOne(
-          remoteAccess.userName,
-          remoteAccess.userId,
-          remoteAccess.environmentName,
-          remoteAccess.environmentId,
-          microcontroller.mac,
-          microcontroller.id
-        );
-
-        response.remoteAccess = true;
-      }
-      
-      return response;
+      return { qrcode: qrcodeData };
     } else {
       await this.cacheService.set(key, info);
       return true;
@@ -150,28 +131,6 @@ export class MicrocontrollersService {;
     return { microcontroller: id, coldStart: date };
   }
 
-  async sendAccessLogWhenFindOne (
-    userName: string, 
-    userId: string, 
-    environmentName: string, 
-    environmentId: string,
-    microcontrollerMac: string,
-    microcontrollerId: number,
-  ) {
-    await this.accessLogService.create(
-      AccessConstants.remoteAccessSuccess(
-        userName,
-        environmentName,
-        microcontrollerMac,
-        {
-          userId,
-          environmentId,
-          microcontrollerId
-        }
-      )
-    )
-  }
-
   async getMicrocontrollerInfo (id: number) {
     const microcontroller = await this.prismaService.microcontroller.findFirst({
       where: { id }
@@ -183,24 +142,78 @@ export class MicrocontrollersService {;
     }
   }
 
-  async getMicrocontrollerEnvironment (id: number) {
+  async searchRemoteAccess(id: number) {
     const microcontroller = await this.prismaService.microcontroller.findFirst({
-      where: { id }
+      where: { id, active: true }
     });
     
-    if (microcontroller) {
-      const key = id.toString();
-      const data: any = await this.cacheService.get(key);
-
-      console.log(data);
-
-      return {
-        environmentId: microcontroller.environment_id,
-        qrcode: data?.qrcode
-      }
+    if (!microcontroller) {
+      throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    return null;
+    const searchRemoteAccessUrl = `${this.environmentsServiceUrl}/env/remote-access?esp8266Id=${id}`;
+    const remoteAccess = await lastValueFrom(
+      this.httpService.get(searchRemoteAccessUrl)
+    )
+    .then(response => response.data)
+    .catch(error => {
+      console.log(error);
+      
+      this.errorLogger.error('Erro ao buscar acesso remoto', error);
+      throw new HttpException('Erro ao buscar acesso remoto', HttpStatus.INTERNAL_SERVER_ERROR);
+    })
+
+    if (remoteAccess.value) {
+      this.sendAccessLogWhenFindOne(
+        remoteAccess.userName,
+        remoteAccess.userId,
+        remoteAccess.environmentName,
+        remoteAccess.environmentId,
+        microcontroller.mac,
+        id,
+        remoteAccess.remoteAccessType
+      );
+    }
+
+    return remoteAccess.value;
+  }
+
+  async sendAccessLogWhenFindOne (
+    userName: string, 
+    userId: string, 
+    environmentName: string, 
+    environmentId: string,
+    microcontrollerMac: string,
+    microcontrollerId: number,
+    remoteAccessType: string
+  ) {
+    if (remoteAccessType === 'web') {
+      await this.accessLogService.create(
+        AccessConstants.webRemoteAccessSuccess(
+          userName,
+          environmentName,
+          microcontrollerMac,
+          {
+            userId,
+            environmentId,
+            microcontrollerId
+          }
+        )
+      )
+    } else {
+      await this.accessLogService.create(
+        AccessConstants.mobileRemoteAccessSuccess(
+          userName,
+          environmentName,
+          microcontrollerMac,
+          {
+            userId,
+            environmentId,
+            microcontrollerId
+          }
+        )
+      )
+    }
   }
 
   async activateMicrocontroller (id: number, environmentId: string) {

@@ -28,8 +28,14 @@ export class EnvironmentController {
     @Query('environmentId') environmentId: string, 
     @Query('esp8266Id') esp8266Id: number,
     @Query('userId') userId: string,
+    @Query('type') type: string,
   ) {
-    return this.environmentService.requestRemoteAccess(environmentId, +esp8266Id, userId);
+    return this.environmentService.requestRemoteAccess(environmentId, +esp8266Id, type, userId);
+  }
+
+  @Get(':id/qr-code')
+  getQrCode(@Param('id') id: string) {
+    return this.environmentService.getQRCode(id);
   }
 
   @Get('remote-access')

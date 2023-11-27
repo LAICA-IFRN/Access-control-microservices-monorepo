@@ -36,16 +36,17 @@ export class MicrocontrollersController {
     return this.microcontrollersService.coldStartMicrocontroller(+id);
   }
 
+  @Get('remote-access/:id')
+  searchRemoteAccess(@Param('id') id: number) {
+    console.log('searchRemoteAccess');
+    return this.microcontrollersService.searchRemoteAccess(+id);
+  }
+
   @Get('keep-alive')
   async getMicrocontrollerInfo(
     @Query('id') id: number,
   ) {
     return this.microcontrollersService.getMicrocontrollerInfo(+id);
-  }
-
-  @Get('qr-code/:id')
-  getMicrocontrollerEnvironment(@Param('id') id: number) {
-    return this.microcontrollersService.getMicrocontrollerEnvironment(+id);
   }
 
   @Get()
@@ -76,8 +77,9 @@ export class MicrocontrollersController {
     return this.microcontrollersService.findAllByEnvironmentId(environmentId);
   }
 
-  @Get(':id')
+  @Get('one/:id')
   findOne(@Param('id') id: number) {
+    console.log('findOne');
     return this.microcontrollersService.findOne(+id);
   }
 

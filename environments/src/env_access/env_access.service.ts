@@ -579,6 +579,7 @@ export class EnvAccessService {
           select: {
             latitude: true,
             longitude: true,
+            name: true,
           }
         },
         environment_user_access_control: {
@@ -597,6 +598,7 @@ export class EnvAccessService {
     }
 
     return {
+      name: data.environment.name,
       environmentUserId: data.id,
       latitude: data.environment.latitude,
       longitude: data.environment.longitude,
@@ -606,7 +608,7 @@ export class EnvAccessService {
 
   async getEnvironmentUserAccess(userId: string) {
     try {
-      return await this.prisma.environment_user.findMany({
+      const envsUser = await this.prisma.environment_user.findMany({
         where: {
           user_id: userId,
         },
@@ -614,6 +616,11 @@ export class EnvAccessService {
           start_period: true,
           end_period: true,
           active: true,
+          environment: {
+            select: {
+              name: true
+            }
+          },
           environment_user_access_control: {
             select: {
               day: true,
@@ -623,6 +630,16 @@ export class EnvAccessService {
             }
           }
         },
+      })
+
+      return envsUser.map(envUser => {
+        return {
+          name: envUser.environment.name,
+          startPeriod: envUser.start_period,
+          endPeriod: envUser.end_period,
+          active: envUser.active,
+          environment_user_access_control: envUser.environment_user_access_control
+        }
       })
     } catch (error) {
       if (error.code === 'P2025') {

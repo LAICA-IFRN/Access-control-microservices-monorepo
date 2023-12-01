@@ -290,6 +290,7 @@ export class EnvManagerService {
             select: {
               latitude: true,
               longitude: true,
+              name: true,
             }
           }
         },
@@ -298,7 +299,8 @@ export class EnvManagerService {
       return {
         environmentUserId: data.id,
         latitude: data.environment.latitude,
-        longitude: data.environment.longitude
+        longitude: data.environment.longitude,
+        name: data.environment.name,
       }
     } catch (error) {
       if (error.code === 'P2025') {

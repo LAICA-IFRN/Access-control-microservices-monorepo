@@ -319,6 +319,7 @@ export class AppService {
       token: token,
       latitude: environmentData.latitude,
       longitude: environmentData.longitude,
+      name: environmentData.name,
     }
   }
 
@@ -353,6 +354,7 @@ export class AppService {
       token: token,
       latitude: environmentUserData.latitude,
       longitude: environmentUserData.longitude,
+      name: environmentUserData.name,
     }
   }
 
@@ -392,6 +394,7 @@ export class AppService {
       token: token,
       latitude: environmentUserData.latitude,
       longitude: environmentUserData.longitude,
+      name: environmentUserData.name,
     }
   }
 

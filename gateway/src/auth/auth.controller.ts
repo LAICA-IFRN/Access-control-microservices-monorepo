@@ -26,8 +26,13 @@ export class AuthController {
   @UseGuards(RolesGuard)
   @Post('access')
   loginEnvironmentUser(@Body() body: any, @Req() request: Request) {
+    const castBody = {
+      qrcode: body.qrcode,
+      microcontrollerId: parseInt(body.microcontrollerId)
+    }
     const userId = request['userId'];
-    return this.authService.loginEnvironmentUser(body, userId);
+    return this.authService.loginEnvironmentUser(castBody, userId);
+
   }
 
   @Get('verify/user')

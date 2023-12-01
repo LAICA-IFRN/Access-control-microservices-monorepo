@@ -39,4 +39,19 @@ export class AppController {
   authorizeMobile(@Body() authorizationMobileDto: AuthorizationMobileDto) {
     return this.appService.authorizeMobile(authorizationMobileDto)
   }
+
+  @Get('verify/user')
+  verifyUserToken(@Query('token') token: string) {
+    return this.appService.verifyUserToken(token)
+  }
+
+  @Get('verify/mobile')
+  verifyMobileToken(@Query('token') token: string) {
+    return this.appService.verifyMobileToken(token)
+  }
+
+  @Get('verify/access')
+  verifyAccessToken(@Query('token') token: string) {
+    return this.appService.verifyAccessToken(token)
+  }
 }

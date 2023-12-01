@@ -510,4 +510,34 @@ export class AppService {
       throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
     }
   }
+
+  async verifyMobileToken(token: string) {
+    try {
+      jwt.verify(token, this.jwtMobileSecret);
+      return { isValid: true }
+    } catch (error) {
+      this.errorLogger.error('Falha ao validar token', error)
+      return { isValid: false }
+    }
+  }
+
+  async verifyUserToken(token: string) {
+    try {
+      jwt.verify(token, this.jwtUserSecret);
+      return { isValid: true }
+    } catch (error) {
+      this.errorLogger.error('Falha ao validar token', error)
+      return { isValid: false }
+    }
+  }
+
+  async verifyAccessToken(token: string) {
+    try {
+      jwt.verify(token, this.jwtAccessSecret);
+      return { isValid: true }
+    } catch (error) {
+      this.errorLogger.error('Falha ao validar token', error)
+      return { isValid: false }
+    }
+  }
 }

@@ -9,6 +9,9 @@ export class AuthService {
   private readonly tokenizeUserUrl = process.env.USER_TOKENIZE_URL;
   private readonly tokenizeMobileUrl = process.env.MOBILE_TOKENIZE_URL;
   private readonly tokenizeAccessUrl = process.env.ACCESS_TOKENIZE_URL;
+  private readonly verifyUserUrl = process.env.VERIFY_USER_TOKEN_URL;
+  private readonly verifyMobileUrl = process.env.VERIFY_MOBILE_TOKEN_URL;
+  private readonly verifyAccessUrl = process.env.VERIFY_ACCESS_TOKEN_URL;
 
   constructor(
     private readonly httpService: HttpService,
@@ -63,6 +66,54 @@ export class AuthService {
         throw new HttpException(error.response, error.status);
       })
     
+    return response;
+  }
+
+  async verifyUserToken(token: string) {
+    const response = await lastValueFrom(
+      this.httpService.get(`${this.verifyUserUrl}${token}`).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        throw new HttpException(error.response, error.response.data.statusCode);
+      })
+
+    return response;
+  }
+
+  async verifyMobileToken(token: string) {
+    const response = await lastValueFrom(
+      this.httpService.get(`${this.verifyMobileUrl}${token}`).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        throw new HttpException(error.response, error.response.data.statusCode);
+      })
+
+    return response;
+  }
+
+  async verifyAccessToken(token: string) {
+    const response = await lastValueFrom(
+      this.httpService.get(`${this.verifyAccessUrl}${token}`).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        throw new HttpException(error.response, error.response.data.statusCode);
+      })
+
     return response;
   }
 }

@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginUserDto } from './dto/login-user.dto';
 import { LoginMobileDto } from './dto/login-mobile.dto';
@@ -28,5 +28,20 @@ export class AuthController {
   loginEnvironmentUser(@Body() body: any, @Req() request: Request) {
     const userId = request['userId'];
     return this.authService.loginEnvironmentUser(body, userId);
+  }
+
+  @Get('verify/user')
+  verifyUserToken(@Query('token') token: string) {
+    return this.authService.verifyUserToken(token)
+  }
+
+  @Get('verify/mobile')
+  verifyMobileToken(@Query('token') token: string) {
+    return this.authService.verifyMobileToken(token)
+  }
+
+  @Get('verify/access')
+  verifyAccessToken(@Query('token') token: string) {
+    return this.authService.verifyAccessToken(token)
   }
 }

@@ -25,12 +25,9 @@ export class DevicesController {
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Get('rfid')
-  findAllRfid( // TODO: testar
-    @Query('skip') skip: number,
-    @Query('take') take: number,
-  ) {
-    return this.devicesService.findAllRfid(+skip, +take);
+  @Post('rfid/paginate')
+  findAllRfid(@Body() body: any) {
+    return this.devicesService.findAllRfid(body);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
@@ -91,12 +88,9 @@ export class DevicesController {
     return this.devicesService.getMicrocontrollerInfo(id);
   }
 
-  @Get('microcontrollers')
-  findAllMicrocontroller(
-  @Query('skip') skip: number,
-  @Query('take') take: number,
-  ) {
-    return this.devicesService.findAllMicrocontroller(+skip, +take);
+  @Post('microcontrollers/paginate')
+  findAllMicrocontroller(@Body() body: any) {
+    return this.devicesService.findAllMicrocontroller(body);
   }
   
   @Get('microcontrollers/one/:id')
@@ -157,5 +151,12 @@ export class DevicesController {
   getMobileEnvironments(@Query('id') id: string, @Req() request: Request) {
     const userId = request['userId'];
     return this.devicesService.getMobileEnvironments(id, userId);
+  }
+
+  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  // @UseGuards(RolesGuard)
+  @Post('mobile/paginate')
+  findAllMobile(@Body() body: any) {
+    return this.devicesService.findAllMobile(body);
   }
 }

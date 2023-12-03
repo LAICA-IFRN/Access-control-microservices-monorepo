@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { mobile } from '@prisma/client';
+import { FindAllDto } from 'src/utils/find-all.dto';
 
 @Injectable()
 export class MobileService {
@@ -75,5 +76,35 @@ export class MobileService {
     });
 
     return mobile;
+  }
+
+  async findAll(findAllDto: FindAllDto) {
+    const previousLenght = findAllDto.previous * findAllDto.pageSize;
+    const nextLenght = findAllDto.pageSize;
+    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
+    const filter = findAllDto.where ? findAllDto.where : {};
+
+    try {
+      const [mobiles, total] = await this.prismaService.$transaction([
+        this.prismaService.mobile.findMany({
+          skip: previousLenght,
+          take: nextLenght,
+          orderBy: order,
+          where: filter,
+        }),
+        
+        this.prismaService.mobile.count({
+          where: filter
+        })
+      ])
+
+      return {
+        pageSize: findAllDto.pageSize,
+        previous: findAllDto.previous,
+        next: findAllDto.next,
+        total,
+        data: mobiles
+      };
+    } catch (error) {}
   }
 }

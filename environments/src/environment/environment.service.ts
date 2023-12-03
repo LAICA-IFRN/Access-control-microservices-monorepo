@@ -11,6 +11,7 @@ import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { randomUUID } from 'crypto';
+import { FindAllDto } from './dto/find-all.dto';
 
 @Injectable()
 export class EnvironmentService {
@@ -411,30 +412,37 @@ export class EnvironmentService {
     ));
   }
 
-  async findAll(skip: number, take: number) {
-    const [environments, count] = await this.prisma.$transaction([
-      this.prisma.environment.findMany({
-        where: {
-          active: true
-        },
-        skip,
-        take
-      }),
-      
-      this.prisma.environment.count({
-        where: {
-          active: true
-        }
-      })
-    ])
+  async findAll(findAllDto: FindAllDto) {
+    const previousLenght = findAllDto.previous * findAllDto.pageSize;
+    const nextLenght = findAllDto.pageSize;
+    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
+    const filter = findAllDto.where ? findAllDto.where : {};
 
-    const pages = Math.ceil(count / take)
+    const [environments, total] = await this.prisma.$transaction([
+      this.prisma.environment.findMany({
+        skip: previousLenght,
+        take: nextLenght,
+        orderBy: order,
+        where: filter,
+        include: {
+          environment_user: true,
+          environment_manager: true,
+          environment_restriction_access: true,
+        }
+      }),
+
+      this.prisma.environment.count({
+        where: filter
+      })
+    ]);
 
     return {
-      environments,
-      count,
-      pages
-    }
+      pageSize: findAllDto.pageSize,
+      previous: findAllDto.previous,
+      next: findAllDto.next,
+      total,
+      data: environments
+    };
   }
 
   async findOne(id: string) {

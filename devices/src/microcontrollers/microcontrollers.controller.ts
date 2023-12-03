@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common
 import { MicrocontrollersService } from './microcontrollers.service';
 import { CreateMicrocontrollerDto } from './dto/create-microcontroller.dto';
 import { FindOneByMacDto } from './dto/find-by-mac.dto';
+import { FindAllDto } from 'src/utils/find-all.dto';
 
 @Controller('microcontrollers')
 export class MicrocontrollersController {
@@ -49,22 +50,14 @@ export class MicrocontrollersController {
     return this.microcontrollersService.getMicrocontrollerInfo(+id);
   }
 
-  @Get()
-  async findAll(
-    @Query('skip') skip: number,
-    @Query('take') take: number,
-  ) {
-    return this.microcontrollersService.findAll(+skip, +take);
+  @Post('paginate')
+  async findAll(@Body() findAllDto: FindAllDto) {
+    return this.microcontrollersService.findAll(findAllDto);
   }
 
-  @Get('inactives')
-  async findAllInactives(
-    @Query('skip') skip: string,
-    @Query('take') take: string,
-  ) {
-    console.log('skip', skip);
-    
-    return this.microcontrollersService.findAllInactives(parseInt(skip), parseInt(take));
+  @Post('inactives')
+  async findAllInactives(@Body() findAllDto: FindAllDto) {
+    return this.microcontrollersService.findAllInactives(findAllDto);
   }
 
   @Get('mac')

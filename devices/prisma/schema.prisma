@@ -18,6 +18,7 @@ model microcontroller {
   mac                     String               @unique
   ip                      String               @unique
   environment_id          String?
+  pending                 Boolean              @default(true)
   active                  Boolean              @default(false)
   microcontroller_type    microcontroller_type @relation(fields: [microcontroller_type_id], references: [id])
   microcontroller_type_id Int

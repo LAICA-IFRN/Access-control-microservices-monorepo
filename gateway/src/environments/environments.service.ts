@@ -100,9 +100,9 @@ export class EnvironmentsService {
     return data;
   }
 
-  async findAll(skip: number, take: number) {
+  async findAll(body: any) {
     const { data } = await lastValueFrom(
-      this.httpService.get(this.envRoutes.findAll(skip, take)).pipe(
+      this.httpService.post(this.envRoutes.findAll(), body).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);

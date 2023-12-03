@@ -70,9 +70,9 @@ export class DevicesService {
     return data;
   }
 
-  async findAllRfid(skip: number, take: number) {
+  async findAllRfid(body: any) {
     const { data } = await lastValueFrom(
-      this.httpService.get(this.deviceRoutes.findAllRfid(skip, take)).pipe(
+      this.httpService.post(this.deviceRoutes.findAllRfid(), body).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 404) {
             throw new HttpException(
@@ -314,9 +314,9 @@ export class DevicesService {
     return data;
   }
 
-  async findAllMicrocontroller(skip: number, take: number) {
+  async findAllMicrocontroller(body: any) {
     const { data } = await lastValueFrom(
-      this.httpService.get(this.deviceRoutes.findAllMicrocontroller(skip, take)).pipe(
+      this.httpService.post(this.deviceRoutes.findAllMicrocontroller(), body).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 404) {
             throw new HttpException(
@@ -449,6 +449,18 @@ export class DevicesService {
   async getMobileEnvironments(deviceId: string, userId: string) {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.getMobileEnvironments(deviceId, userId)).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    )
+
+    return data;
+  }
+
+  async findAllMobile(body: any) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.deviceRoutes.findAllMobile(), body).pipe(
         catchError((error) => {
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })

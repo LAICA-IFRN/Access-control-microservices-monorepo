@@ -6,6 +6,7 @@ import { EnvStatusDto } from './dto/status-environment.dto';
 import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiForbiddenResponse, ApiNotFoundResponse, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { EnvironmentEntity } from './entities/environment.entity';
 import { ConflictResponseEntity, CreateBadRequestResponseEntity, CreateForbiddenResponseEntity, CreateNotFoundResponseEntity, EnvironmentNotFoundResponseEntity, FindAllBadRequestResponseEntity, FindOneBadRequestResponseEntity, RemoveBadRequestResponseEntity, RemoveForbiddenResponseEntity, UpdateBadRequestResponseEntity, UpdateStatusForbiddenResponseEntity, UpdateStatusSuccessResponseEntity } from './entities/swagger-env-responses.entity';
+import { FindAllDto } from './dto/find-all.dto';
 
 @ApiTags('Env')
 @Controller('env')
@@ -46,14 +47,9 @@ export class EnvironmentController {
   @ApiOperation({ description: 'Endpoint para listagem de ambientes' })
   @ApiResponse({ type: EnvironmentEntity, isArray: true })
   @ApiBadRequestResponse({ type: FindAllBadRequestResponseEntity })
-  @Get()
-  findAll(
-    @Query('skip') skip: number, 
-    @Query('take') take: number
-  ) {
-    const skipNumber = skip ? parseInt(skip.toString()) : 0;
-    const takeNumber = take ? parseInt(take.toString()) : 10;
-    return this.environmentService.findAll(skipNumber, takeNumber);
+  @Post('paginate')
+  findAll(@Body() findAllDto: FindAllDto) {
+    return this.environmentService.findAll(findAllDto);
   }
 
   @ApiOperation({ description: 'Endpoint para busca de ambiente por ID' })

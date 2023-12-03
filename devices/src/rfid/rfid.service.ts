@@ -4,6 +4,7 @@ import { UpdateStatusRfidDto } from './dto/update-status-rfid.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
+import { FindAllDto } from 'src/utils/find-all.dto';
 
 
 @Injectable()
@@ -173,51 +174,34 @@ export class RfidService {
     }
   }
 
-  async findAll(skip: number, take: number) {
-    if (isNaN(skip) || isNaN(take)) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Dispositivos',
-          type: 'Error',
-          message: 'Falha buscar Tags RFID: skip ou take inválidos',
-          meta: {
-            device: 'RFID',
-            skip,
-            take
-          }
+  async findAll(findAllDto: FindAllDto) {
+    const previousLenght = findAllDto.previous * findAllDto.pageSize;
+    const nextLenght = findAllDto.pageSize;
+    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
+    const filter = findAllDto.where ? findAllDto.where : {};
+
+    try {
+      const [rfids, total] = await this.prismaService.$transaction([
+        this.prismaService.tag_rfid.findMany({
+          skip: previousLenght,
+          take: nextLenght,
+          orderBy: order,
+          where: filter,
+        }),
+        
+        this.prismaService.tag_rfid.count({
+          where: filter
         })
-      )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+      ])
 
-      throw new HttpException('Invalid skip or take', HttpStatus.BAD_REQUEST)
-    }
-
-    const [tags, count] = await this.prismaService.$transaction([
-      this.prismaService.tag_rfid.findMany({
-        where: {
-          active: true
-        },
-        skip,
-        take
-      }),
-
-      this.prismaService.tag_rfid.count({
-        where: {
-          active: true
-        }
-      })
-    ])
-
-    const pages = Math.ceil(count / take)
-
-    return {
-      tags,
-      count,
-      pages
-    }
+      return {
+        pageSize: findAllDto.pageSize,
+        previous: findAllDto.previous,
+        next: findAllDto.next,
+        total,
+        data: rfids
+      };
+    } catch (error) {}
   }
 
   async findOne(id: number) {

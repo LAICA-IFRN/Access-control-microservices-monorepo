@@ -36,13 +36,11 @@ export class DeviceRoutes {
     return `${this.deviceMicrocontrollerUrl}/one/${id}`;
   }
 
-  findAllMicrocontroller(skip: number, take: number): string {
-    return `${this.deviceMicrocontrollerUrl}?skip=${skip}&take=${take}`;
+  findAllMicrocontroller(): string {
+    return `${this.deviceMicrocontrollerUrl}/paginate`;
   }
 
   findAllMicrocontrollersInactives(skip: number, take: number): string {
-    console.log(skip, take);
-    
     return `${this.deviceMicrocontrollerUrl}/inactives?skip=${skip}&take=${take}`;
   }
 
@@ -67,8 +65,8 @@ export class DeviceRoutes {
     return `${this.deviceRfidUrl}/${id}`;
   }
 
-  findAllRfid(skip: number, take: number): string {
-    return `${this.deviceRfidUrl}?skip=${skip}&take=${take}`;
+  findAllRfid(): string {
+    return `${this.deviceRfidUrl}/paginate`;
   }
 
   updateRfidStatus(id: string): string {
@@ -85,5 +83,9 @@ export class DeviceRoutes {
 
   getMobileEnvironments(id: string, userId: string): string {
     return `${this.deviceMobileUrl}?id=${id}&userId=${userId}`; // /?id=
+  }
+
+  findAllMobile(): string {
+    return `${this.deviceMobileUrl}/paginate`;
   }
 }

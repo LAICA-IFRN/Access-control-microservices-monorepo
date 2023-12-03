@@ -12,7 +12,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { lastValueFrom } from 'rxjs';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
-import { randomUUID } from 'crypto';
+import { FindAllDto } from 'src/utils/find-all.dto';
 
 @Injectable()
 export class MicrocontrollersService {;
@@ -254,65 +254,100 @@ export class MicrocontrollersService {;
     }
   }
 
-  async findAll(skip: number, take: number) {
-    if (isNaN(skip) || isNaN(take)) {
-      this.auditLogService.create(AuditConstants.findManyMicrocontrollersBadRequest({ skip, take }));
-      throw new HttpException('Invalid skip or take', HttpStatus.BAD_REQUEST)
-    }
+  async findAll(findAllDto: FindAllDto) {
+    const previousLenght = findAllDto.previous * findAllDto.pageSize;
+    const nextLenght = findAllDto.pageSize;
+    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
+    const filter = findAllDto.where ? findAllDto.where : {};
 
-    const [microcontrollers, count] = await this.prismaService.$transaction([
-      this.prismaService.microcontroller.findMany({
-        where: {
-          active: true
-        },
-        skip,
-        take
-      }),
-      
-      this.prismaService.microcontroller.count({
-        where: {
-          active: true
-        }
-      })
-    ])
+    try {
+      const [microcontrollers, total] = await this.prismaService.$transaction([
+        this.prismaService.microcontroller.findMany({
+          skip: previousLenght,
+          take: nextLenght,
+          orderBy: order,
+          where: filter,
+          select: {
+            microcontroller_type: {
+              select: {
+                name: true
+              }
+            },
+            id: true,
+            ip: true,
+            mac: true,
+            active: true,
+            created_at: true,
+            updated_at: true,
+          }
+        }),
+        
+        this.prismaService.microcontroller.count({
+          where: filter
+        })
+      ])
 
-    const pages = Math.ceil(count / take)
-
-    return {
-      microcontrollers,
-      count,
-      pages
+      return {
+        pageSize: findAllDto.pageSize,
+        previous: findAllDto.previous,
+        next: findAllDto.next,
+        total,
+        data: microcontrollers
+      };
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllMicrontorllerError(findAllDto));
+      this.errorLogger.error('Erro inesperado ao buscar microcontroladores', error);
+      throw new HttpException('Erro inesperado ao buscar microcontroladores', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  async findAllInactives(skip: number, take: number) {
-    if (isNaN(skip) || isNaN(take)) {
-      this.auditLogService.create(AuditConstants.findManyMicrocontrollersBadRequest({ skip, take }));
-      throw new HttpException('Invalid skip or take', HttpStatus.BAD_REQUEST)
-    }
+  async findAllInactives(findAllDto: FindAllDto) {
+    const previousLenght = findAllDto.previous * findAllDto.pageSize;
+    const nextLenght = findAllDto.pageSize;
+    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
 
-    const [microcontrollers, count] = await this.prismaService.$transaction([
-      this.prismaService.microcontroller.findMany({
-        where: {
-          active: false
-        },
-        skip,
-        take
-      }),
-      
-      this.prismaService.microcontroller.count({
-        where: {
-          active: false
-        }
-      })
-    ])
+    try {
+      const [microcontrollers, total] = await this.prismaService.$transaction([
+        this.prismaService.microcontroller.findMany({
+          skip: previousLenght,
+          take: nextLenght,
+          orderBy: order,
+          where: {
+            active: false,
+          },
+          select: {
+            microcontroller_type: {
+              select: {
+                name: true
+              }
+            },
+            id: true,
+            ip: true,
+            mac: true,
+            active: true,
+            created_at: true,
+            updated_at: true,
+          }
+        }),
+        
+        this.prismaService.microcontroller.count({
+          where: {
+            active: false,
+          }
+        })
+      ])
 
-    const pages = Math.ceil(count / take)
-
-    return {
-      microcontrollers,
-      count,
-      pages
+      return {
+        pageSize: findAllDto.pageSize,
+        previous: findAllDto.previous,
+        next: findAllDto.next,
+        total,
+        data: microcontrollers
+      };
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllMicrontorllerError(findAllDto));
+      this.errorLogger.error('Erro inesperado ao buscar microcontroladores', error);
+      throw new HttpException('Erro inesperado ao buscar microcontroladores', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 

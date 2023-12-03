@@ -93,6 +93,15 @@ export class AuditConstants {
     };
   }
 
+  public static findAllMicrontorllerError(metaData: any): AuditLog {
+    return {
+      topic: "Dispositivos",
+      type: "error",
+      message: 'Erro inesperado ao buscar microcontroladores.',
+      meta: metaData
+    };
+  }
+
   public static findAllByEnvironmentIdNotFound(metaData: any): AuditLog {
     return {
       topic: "Dispositivos",

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestj
 import { RfidService } from './rfid.service';
 import { CreateRfidDto } from './dto/create-rfid.dto';
 import { UpdateStatusRfidDto } from './dto/update-status-rfid.dto';
+import { FindAllDto } from 'src/utils/find-all.dto';
 
 @Controller('rfid')
 export class RfidController {
@@ -12,12 +13,9 @@ export class RfidController {
     return this.rfidService.create(createRfidDto);
   }
 
-  @Get()
-  findAll(
-    @Query('skip') skip: number,
-    @Query('take') take: number,
-  ) {
-    return this.rfidService.findAll(+skip, +take);
+  @Post('paginate')
+  findAll(@Body() findAllDto: FindAllDto) {
+    return this.rfidService.findAll(findAllDto);
   }
 
   @Get('tag')

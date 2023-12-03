@@ -37,9 +37,9 @@ export class EnvironmentsController {
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Get('env')
-  findAll(@Query('skip') skip: number, @Query('take') take: number) {
-    return this.environmentsService.findAll(skip, take);
+  @Post('env/paginate')
+  findAll(@Body() body: any) {
+    return this.environmentsService.findAll(body);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)

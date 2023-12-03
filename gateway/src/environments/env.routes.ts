@@ -24,8 +24,8 @@ export class EnvRoutes {
     return `${this.envBaseUrl}/${id}`;
   }
 
-  findAll(skip: number, take: number): string {
-    return `${this.envBaseUrl}?skip=${skip}&take=${take}`;
+  findAll(): string {
+    return `${this.envBaseUrl}/paginate`;
   }
 
   update(id: string): string {

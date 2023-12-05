@@ -6,7 +6,7 @@ import { RolesConstants } from 'src/utils/constants';
 
 @Controller('environments')
 export class EnvironmentsController {
-  constructor(private readonly environmentsService: EnvironmentsService) {}
+  constructor(private readonly environmentsService: EnvironmentsService) { }
 
   // @Roles(RolesConstants.ADMIN)
   // @UseGuards(RolesGuard)
@@ -19,13 +19,9 @@ export class EnvironmentsController {
   // @Roles(RolesConstants.ADMIN)
   // @UseGuards(RolesGuard)
   @Post('remote-access')
-  requestRemoteAccess(
-    @Query('environmentId') environmentId: string, 
-    @Query('esp8266Id') esp8266Id: number,
-    @Query('userId') userId: string,
-    @Query('type') type: string,
-  ) {
-    return this.environmentsService.requestRemoteAccess(environmentId, +esp8266Id, type, userId);
+  requestRemoteAccess(@Body() body: any) {
+    const { environmentId, esp8266Id, type, userId } = body;
+    return this.environmentsService.requestRemoteAccess(environmentId, parseInt(esp8266Id), type, userId);
   }
 
   // @Roles(RolesConstants.ADMIN)
@@ -139,14 +135,14 @@ export class EnvironmentsController {
   findAllAccess() {
     return this.environmentsService.findAllAccess();
   }
-  
+
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Get('env-access/frequenter/:id')
   findAllByFrequenter(@Param('id') id: string) {
     return this.environmentsService.findAllByFrequenter(id);
   }
-  
+
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Get('env-access/inactive')

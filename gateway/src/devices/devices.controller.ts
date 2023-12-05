@@ -7,7 +7,7 @@ import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
 
 @Controller('devices')
 export class DevicesController {
-  constructor(private readonly devicesService: DevicesService) {}
+  constructor(private readonly devicesService: DevicesService) { }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
@@ -50,8 +50,9 @@ export class DevicesController {
   }
 
   @Post('microcontrollers/cold-start')
-  coldStartMicrocontroller(@Query('id') id: number) {
-    return this.devicesService.coldStartMicrocontroller(id);
+  coldStartMicrocontroller(@Body() body: any) {
+    console.log(body)
+    return this.devicesService.coldStartMicrocontroller(body.id);
   }
 
   @Post('microcontrollers/activate')
@@ -63,25 +64,25 @@ export class DevicesController {
   }
 
   @Post('microcontrollers/keep-alive')
-  keepAliveMicrocontroller(
-    @Query('id') id: number,
-    @Query('healthCode') healthCode: number,
-    @Query('doorStatus') doorStatus: boolean,
-  ) {
+  keepAliveMicrocontroller(@Body() body: any) {
+    const { id, healthCode, doorStatus } = body;
+    console.log(typeof id, id)
+    console.log(typeof healthCode, healthCode)
+    console.log(typeof doorStatus, doorStatus)
     return this.devicesService.keepAliveMicrocontroller(
-      id,
-      healthCode,
-      doorStatus,
+      parseInt(id),
+      parseInt(healthCode),
+      doorStatus === "true" ? true : false,
     );
   }
-  
-  @Get('microcontrollers/remote-access/:id')
-  searchRemoteAccess(@Param('id') id: number) {
-    console.log('searchRemoteAccess');
-    
-    return this.devicesService.searchRemoteAccess(+id);
+
+  @Post('microcontrollers/remote-access')
+  searchRemoteAccess(@Body() body: any) {
+    const id = parseInt(body.id);
+    return this.devicesService.searchRemoteAccess(id);
   }
-  
+
+
   @Get('microcontrollers/keep-alive')
   getMicrocontrollerInfo(@Query('id') id: number) {
     console.log('getMicrocontrollerInfo');
@@ -92,7 +93,7 @@ export class DevicesController {
   findAllMicrocontroller(@Body() body: any) {
     return this.devicesService.findAllMicrocontroller(body);
   }
-  
+
   @Get('microcontrollers/one/:id')
   findOneMicrocontroller(@Param('id') id: number) {
     console.log('findOneMicrocontroller');

@@ -14,6 +14,8 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.userRoutes.create(), body).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 409) {

@@ -3,7 +3,7 @@ import { CreateEnvManagerDto } from './dto/create-env_manager.dto';
 import { EnvManagerStatusDto } from './dto/status-env_manager.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
-import { catchError, last, lastValueFrom } from 'rxjs';
+import { catchError, lastValueFrom } from 'rxjs';
 import { isUUID } from 'class-validator';
 
 @Injectable()
@@ -154,6 +154,7 @@ export class EnvManagerService {
     try {
       const envManager = await this.prisma.environment_manager.create({
         data: {
+          user_name: createEnvManagerDto.userName,
           user_id: userId,
           environment_id: environmentId,
           created_by: createdBy,
@@ -426,8 +427,6 @@ export class EnvManagerService {
   }
 
   async findAccessByUser(userId: string, environmentId: string) {
-    console.log(environmentId);
-    
     const envManagers = await this.prisma.environment_manager.findMany({
       where: {
         environment_id: environmentId,
@@ -455,9 +454,9 @@ export class EnvManagerService {
   }
 
   async findAccessForMobileAccess(environmentManagerId: string) {
-    const envManager = await this.prisma.environment_manager.findUnique({
+    const envManager = await this.prisma.environment_manager.findFirst({ // findUnique
       where: {
-        id: environmentManagerId,
+        user_id: environmentManagerId,//id: environmentManagerId,
       },
       include: {
         environment: {

@@ -51,7 +51,6 @@ export class DevicesController {
 
   @Post('microcontrollers/cold-start')
   coldStartMicrocontroller(@Body() body: any) {
-    console.log(body)
     return this.devicesService.coldStartMicrocontroller(body.id);
   }
 
@@ -66,9 +65,6 @@ export class DevicesController {
   @Post('microcontrollers/keep-alive')
   keepAliveMicrocontroller(@Body() body: any) {
     const { id, healthCode, doorStatus } = body;
-    console.log(typeof id, id)
-    console.log(typeof healthCode, healthCode)
-    console.log(typeof doorStatus, doorStatus)
     return this.devicesService.keepAliveMicrocontroller(
       parseInt(id),
       parseInt(healthCode),
@@ -96,7 +92,6 @@ export class DevicesController {
 
   @Get('microcontrollers/one/:id')
   findOneMicrocontroller(@Param('id') id: number) {
-    console.log('findOneMicrocontroller');
     return this.devicesService.findOneMicrocontroller(id);
   }
 

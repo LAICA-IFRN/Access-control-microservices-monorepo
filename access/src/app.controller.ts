@@ -9,11 +9,11 @@ export class AppController {
 
   @Post('esp')
   accessByMicrocontrollerDevice(@Body() accessDto: AccessByMicrocontrollerDeviceDto) {
-    return this.appService.accessByMicrocontrollerDevice(accessDto);
+    return this.appService.accessByMicrocontrollerDeviceTEMP(accessDto);
   }
 
   @Post('mobile')
   accessByMobileDevice(@Body() accessDto: AccessByMobileDeviceDto) {
-    return this.appService.accessByMobileDevice(accessDto);
+    return this.appService.accessByMobileDeviceTEMP(accessDto);
   }
 }

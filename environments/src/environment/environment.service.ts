@@ -18,6 +18,7 @@ export class EnvironmentService {
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   
   private readonly verifyRoleEndpoint = `${process.env.USERS_SERVICE_URL}/roles/verify`
+  private readonly getUserEndpoint = `${process.env.USERS_SERVICE_URL}/`
   private readonly getEsp8266Endpoint = process.env.DEVICES_SERVICE_URL
   private readonly errorLogger = new Logger()
   
@@ -53,17 +54,14 @@ export class EnvironmentService {
   } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-    const isAdmin = await lastValueFrom(
-      this.httpService.get(this.verifyRoleEndpoint, {
-        data: {
-          userId: createEnvironmentDto.createdBy,
-          roles: ['ADMIN'],
-        },
-      }).pipe(
+    const user: any = await lastValueFrom(
+      this.httpService.get(this.getUserEndpoint + createEnvironmentDto.createdBy).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.response.status === 'ECONNREFUSED') {
             this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+            throw new HttpException('Users service out', HttpStatus.INTERNAL_SERVER_ERROR);
           } else if (error.response.data.statusCode === 400) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
@@ -110,7 +108,7 @@ export class EnvironmentService {
       ),
     ).then((response) => response.data);
 
-    if (!isAdmin) {
+    if (!user || user?.user_role?.lenght > 1 || user?.user_role[0]?.role_id !== 1) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: "Ambiente",
@@ -136,6 +134,7 @@ export class EnvironmentService {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
           created_by: createEnvironmentDto.createdBy,
+          user_name: user.name,
           latitude: createEnvironmentDto.latitude,
           longitude: createEnvironmentDto.longitude,
         },
@@ -443,6 +442,160 @@ export class EnvironmentService {
       total,
       data: environments
     };
+  }
+
+  async getEnvironmentForMobile(userId: string, type: number) {
+    if (type === 1) {
+      try {
+        const environments = await this.prisma.environment.findMany({
+          where: {
+            active: true,
+          },
+          select: {
+            user_name: true,
+            created_at: true,
+            description: true,
+            id: true,
+            name: true,
+            environment_user: {
+              select: {
+                user_name: true
+              }
+            },
+            environment_manager: {
+              select: {
+                user_name: true
+              }
+            },
+            environment_restriction_access: true
+          }
+        });
+
+        return environments.map(environment => {
+          return {
+            user_name: environment.user_name,
+            created_at: environment.created_at,
+            description: environment.description,
+            id: environment.id,
+            name: environment.name,
+            frequenters: environment.environment_user,
+            managers: environment.environment_manager,
+            restrictions: environment.environment_restriction_access
+          }
+        })
+      } catch (error) {
+        this.errorLogger.error('Falha do sistema ao buscar ambientes', error);
+        throw new HttpException('Falha ao buscar ambientes, consultar logs de erro no projeto', HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    } else if (type === 2) {
+      try {
+        const envsUser = await this.prisma.environment_user.findMany({
+          where: {
+            user_id: userId,
+          },
+          select: {
+            start_period: true,
+            end_period: true,
+            active: true,
+            environment: {
+              select: {
+                name: true
+              }
+            },
+            environment_user_access_control: {
+              select: {
+                day: true,
+                start_time: true,
+                end_time: true,
+                no_access_restrict: true
+              }
+            }
+          },
+        })
+  
+        return envsUser.map(envUser => {
+          return {
+            name: envUser.environment.name,
+            startPeriod: envUser.start_period,
+            endPeriod: envUser.end_period,
+            active: envUser.active,
+            environment_user_access_control: envUser.environment_user_access_control
+          }
+        })
+      } catch (error) {
+        if (error.code === 'P2025') {
+          throw new HttpException(
+            'Environment user not found',
+            HttpStatus.NOT_FOUND
+          );
+        } else {
+          throw new HttpException(
+            "Can't find environment user",
+            HttpStatus.UNPROCESSABLE_ENTITY
+          );
+        }
+      }
+    } else if (type === 3) {
+      try {
+        const environments = await this.prisma.environment.findMany({
+          where: {
+            active: true,
+            environment_manager: {
+              some: {
+                user_id: userId
+              }
+            }
+          },
+          select: {
+            name: true,
+            created_at: true,
+            created_by: true,
+            description: true,
+            environment_user: {
+              select: {
+                user_name: true
+              }
+            },
+            environment_manager: {
+              where: {
+                NOT: {
+                  user_id: userId
+                }
+              },
+              select: {
+                user_name: true
+              },
+            },
+            environment_restriction_access: true
+          }
+        });
+
+        return environments.map(environment => {
+          return {
+            name: environment.name,
+            created_at: environment.created_at,
+            created_by: environment.created_by,
+            description: environment.description,
+            frequenters: environment.environment_user,
+            managers: environment.environment_manager,
+            restrictions: environment.environment_restriction_access
+          }
+        })
+      } catch (error) {
+        if (error.code === 'P2025') {
+          throw new HttpException(
+            'Environment user not found',
+            HttpStatus.NOT_FOUND
+          );
+        } else {
+          this.errorLogger.error('Falha do sistema ao buscar ambientes', error);
+          throw new HttpException(
+            "Can't find environments for manager",
+            HttpStatus.UNPROCESSABLE_ENTITY
+          );
+        }
+      }
+    }
   }
 
   async findOne(id: string) {

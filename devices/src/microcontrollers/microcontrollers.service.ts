@@ -378,6 +378,32 @@ export class MicrocontrollersService {;
     }
   }
 
+  async findOneByEnvironmentId(environmentId: string) {
+    if(!isUUID(environmentId)) {
+      this.auditLogService.create(AuditConstants.findOneMicrocontrollerBadRequest({ environmentId }));
+      throw new HttpException('Invalid environment id', HttpStatus.BAD_REQUEST)
+    }
+
+    try {
+      return await this.prismaService.microcontroller.findFirst({
+        where: {
+          environment_id: environmentId,
+          microcontroller_type_id: 2,
+          active: true
+        }
+      })
+    } catch (error) {
+      if (error.code === 'P2025') {
+        this.auditLogService.create(AuditConstants.findOneMicrotrollerNotFound({ environmentId }));
+        throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)
+      } else {
+        this.auditLogService.create(AuditConstants.findOneMicrontorllerError({ environmentId }));
+        this.errorLogger.error('Erro inesperado ao buscar microcontrolador', error);
+        throw new HttpException('Erro inesperado ao buscar microcontrolador', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
   async findAllByEnvironmentId(environmentId: string) {
     if(!isUUID(environmentId)) {
       this.auditLogService.create(AuditConstants.findManyMicrocontrollersBadRequest({ environmentId }));

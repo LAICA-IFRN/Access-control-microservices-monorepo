@@ -26,6 +26,9 @@ export class RolesGuard implements CanActivate {
     const [prefix, value] = request.headers.authorization?.split(' ') ?? [];
     const token = prefix === 'Bearer' ? value : undefined;
 
+    console.log(token);
+    
+
     let response: any;
     
     if (authorizationType === AuthorizationTypeConstants.USER) {
@@ -46,6 +49,7 @@ export class RolesGuard implements CanActivate {
       )
       .then((response) => response.data)
       .catch((error) => {
+        console.log(error);
         this.errorLogger.error('Falha ao verificar autorização', error);
   
         throw new HttpException(

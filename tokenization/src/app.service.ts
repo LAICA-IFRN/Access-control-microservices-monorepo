@@ -510,6 +510,8 @@ export class AppService {
       const decodeToken = jwt.verify(authorizationMobileDto.token, this.jwtMobileSecret);
       return { isAuthorized: true, userId: decodeToken.sub }
     } catch (error) {
+      console.log(error);
+      
       throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
     }
   }

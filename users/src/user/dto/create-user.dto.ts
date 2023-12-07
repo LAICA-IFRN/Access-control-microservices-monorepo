@@ -21,7 +21,8 @@ export class CreateUserDto {
   name?: string
 
   @IsOptional()
-  @IsCPFOrCNPJ()
+  //@IsCPFOrCNPJ()
+  @IsString()
   @IsOptional()
   @ApiProperty({ required: false})
   document: string

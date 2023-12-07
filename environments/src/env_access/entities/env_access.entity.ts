@@ -15,6 +15,9 @@ export class EnvAccessEntity implements environment_user {
   
   @ApiProperty()
   user_id: string;
+
+  @ApiProperty()  
+  user_name: string;
   
   @ApiProperty()
   environment_id: string;

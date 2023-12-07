@@ -65,14 +65,18 @@ export class MicrocontrollersController {
     return this.microcontrollersService.findOneByMac(findOneByMac);
   }
 
-  @Get('environment/:environmentId')
+  @Get('one/environment/:environmentId')
+  findOneByEnvironmentId(@Param('environmentId') environmentId: string) {
+    return this.microcontrollersService.findOneByEnvironmentId(environmentId);
+  }
+
+  @Get('all/environment/:environmentId')
   findAllByEnvironmentId(@Param('environmentId') environmentId: string) {
     return this.microcontrollersService.findAllByEnvironmentId(environmentId);
   }
 
   @Get('one/:id')
   findOne(@Param('id') id: number) {
-    console.log('findOne');
     return this.microcontrollersService.findOne(+id);
   }
 

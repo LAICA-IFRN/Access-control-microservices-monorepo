@@ -165,6 +165,7 @@ export class EnvAccessService {
     try {
       envAccess = await this.prisma.environment_user.create({
         data: {
+          user_name: createEnvAccessDto.userName,
           user_id: createEnvAccessDto.userId,
           environment_id: createEnvAccessDto.environmentId,
           start_period: startPeriod,
@@ -736,7 +737,7 @@ export class EnvAccessService {
   async findAccessForMobileAccess(environmentUserId: string) {
     const environmentUser = await this.prisma.environment_user.findFirst({
       where: {
-        id: environmentUserId,
+        user_id: environmentUserId,//id: environmentUserId,
         active: true,
       },
       include: {

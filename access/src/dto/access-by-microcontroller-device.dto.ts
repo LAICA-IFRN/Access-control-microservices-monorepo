@@ -13,10 +13,10 @@ export class AccessByMicrocontrollerDeviceDto {
     @IsNotEmpty()
     mac: string
 
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    encoded: string
+    // @ApiProperty()
+    // @IsString()
+    // @IsNotEmpty()
+    // encoded: string
     
     @ApiProperty()
     @IsOptional()

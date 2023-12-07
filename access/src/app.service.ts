@@ -24,13 +24,119 @@ export class AppService {
   private readonly authorizeMobileAccessUrl = process.env.AUTHORIZE_MOBILE_ACCESS_URL
   private readonly envServiceUrl = process.env.SERVICE_ENVIRONMENTS_URL
   private readonly errorLogger = new Logger()
+
+  private readonly tempGetRolesUrl = process.env.TEMP_GET_ROLES;
+  private readonly tempGetEsp = process.env.TEMP_GET_ESP;
   
   constructor(
     private readonly httpService: HttpService,
     private readonly accessLogService: AccessLogService
   ) {}
 
-  async accessByMicrocontrollerDevice(accessDto: AccessByMicrocontrollerDeviceDto) {
+  // async accessByMicrocontrollerDevice(accessDto: AccessByMicrocontrollerDeviceDto) {
+  //   const esp32 = await this.getEsp32(accessDto.mac);
+
+  //   if (!esp32) {
+  //     this.sendLogWhenEsp32NotFound(accessDto);
+  //     throw new HttpException('Esp32 não encontrado', HttpStatus.NOT_FOUND);
+  //   }
+
+  //   const { environmentId } = esp32;
+  //   const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
+  //   const userRoles: string[] = await this.getUserRoles(userData.userId);
+    
+  //   if (userRoles.includes(Roles.ADMIN)) {
+  //     return await this.handleAdminFacialRecognition(userData, environmentId, accessDto)
+  //   }
+
+  //   let userAccessData: any;
+
+  //   if (userRoles.includes(Roles.FREQUENTER)) {
+  //     userAccessData = await this.searchFrequenterAccess(userData, environmentId, accessDto);
+  //     if (userAccessData.access) {
+  //       return await this.handleUserFacialRecognitionDevice(userData, userAccessData, accessDto);
+  //     }
+  //   }
+
+  //   if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
+  //     userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId, accessDto);
+  //     if (userAccessData.access) {
+  //       return await this.handleUserFacialRecognitionDevice(userData, userAccessData, accessDto);
+  //     }
+  //   }
+
+  //   this.handleUnauthorizedUserAccess(userData, userAccessData, accessDto, environmentId);
+  // }
+
+  // async accessByMobileDevice(accessDto: AccessByMobileDeviceDto) {
+  //   const tokenData = await lastValueFrom(
+  //     this.httpService.get(`${this.authorizeMobileAccessUrl}?token=${accessDto.token}`)
+  //   )
+  //   .then((response) => response.data)
+  //   .catch((error) => {
+  //     this.errorLogger.error('Falha ao verificar token', error);
+  //     throw new HttpException(error.response.data.message, error.response.data.statusCode);
+  //   })
+    
+  //   const { id, role } = tokenData;
+
+  //   if (role === 'ADMIN') {
+  //     if (!accessDto.fingerprint) {
+  //       return this.handleAdminFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, tokenData.env, accessDto);
+  //     }
+
+  //     await this.sendRemoteAccessRequest(tokenData.env, accessDto.espId, accessDto.userId);
+  //     return { access: true };
+  //   }
+
+  //   if (role === 'FREQUENTER') {
+  //     const data: any = await lastValueFrom(
+  //       this.httpService.get(`${this.searchFrequenterMobileAccessUrl}/${id}`)
+  //     )
+  //     .then((response) => response.data)
+  //     .catch((error) => {
+  //       this.errorLogger.error('Falha ao buscar acesso de frequenter', error);
+  //       throw new HttpException(error.response.data.message, error.response.data.statusCode);
+  //     })
+
+  //     if (!accessDto.fingerprint) {
+  //       return this.handleUserFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+  //     }
+
+  //     if (data.access) {
+  //       await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
+  //       return { access: true };
+  //     }
+
+  //     this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+  //     return { access: false };
+  //   }
+
+  //   if (role === 'ENVIRONMENT_MANAGER') {
+  //     const data: any = await lastValueFrom(
+  //       this.httpService.get(`${this.searchManagerMobileAccessUrl}/${id}`)
+  //     )
+  //     .then((response) => response.data)
+  //     .catch((error) => {
+  //       this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
+  //       throw new HttpException(error.response.data.message, error.response.data.statusCode);
+  //     })
+
+  //     if (!accessDto.fingerprint) {
+  //       return this.handleUserFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+  //     }
+
+  //     if (data.access) {
+  //       await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
+  //       return { access: true };
+  //     }
+
+  //     this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+  //     return { access: false };
+  //   }
+  // }
+
+  async accessByMicrocontrollerDeviceTEMP(accessDto: AccessByMicrocontrollerDeviceDto) {
     const esp32 = await this.getEsp32(accessDto.mac);
 
     if (!esp32) {
@@ -43,52 +149,59 @@ export class AppService {
     const userRoles: string[] = await this.getUserRoles(userData.userId);
     
     if (userRoles.includes(Roles.ADMIN)) {
-      return await this.handleAdminFacialRecognition(userData, environmentId, accessDto)
+      this.handleLogAdminFacialRecognitionWeb(userData, { result: true }, environmentId, accessDto);
+      return { access: true };
     }
 
     let userAccessData: any;
 
     if (userRoles.includes(Roles.FREQUENTER)) {
       userAccessData = await this.searchFrequenterAccess(userData, environmentId, accessDto);
-      if (userAccessData.access) {
-        return await this.handleUserFacialRecognitionDevice(userData, userAccessData, accessDto);
-      }
+      this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+      return { access: true };
     }
 
     if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
       userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId, accessDto);
-      if (userAccessData.access) {
-        return await this.handleUserFacialRecognitionDevice(userData, userAccessData, accessDto);
-      }
+      this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+      return { access: true };
     }
 
     this.handleUnauthorizedUserAccess(userData, userAccessData, accessDto, environmentId);
   }
 
-  async accessByMobileDevice(accessDto: AccessByMobileDeviceDto) {
-    const tokenData = await lastValueFrom(
-      this.httpService.get(`${this.authorizeMobileAccessUrl}?token=${accessDto.token}`)
+  async accessByMobileDeviceTEMP(accessDto: AccessByMobileDeviceDto) {
+    const esp = await lastValueFrom(
+      this.httpService.get(`${this.tempGetEsp}/${accessDto.environmentId}`)
     )
     .then((response) => response.data)
     .catch((error) => {
-      this.errorLogger.error('Falha ao verificar token', error);
+      this.errorLogger.error('Falha ao buscar esp', error);
       throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
+
+    console.log(esp);
     
-    const { id, role } = tokenData;
 
-    if (role === 'ADMIN') {
-      if (!accessDto.fingerprint) {
-        return this.handleAdminFacialRecognition({ userId: accessDto.userId, accessType: AccessByType.app }, tokenData.env, accessDto);
-      }
+    const roles: string[] = await lastValueFrom(
+      this.httpService.get(`${this.tempGetRolesUrl}/${accessDto.userId}/all`)
+    )
+    .then((response) => response.data.roles)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar papéis do usuário', error);
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    })
 
-      await this.sendRemoteAccessRequest(tokenData.env, accessDto.espId, accessDto.userId);
+    if (roles.includes('ADMIN')) {
+      this.handleLogAdminFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, {result:true}, esp.environment_id, accessDto);
+
+      await this.sendRemoteAccessRequest(esp.environment_id, esp.id, accessDto.userId);
       return { access: true };
     }
 
-    if (role === 'FREQUENTER') {
+    if (roles.includes('FREQUENTER')) {
       const data: any = await lastValueFrom(
-        this.httpService.get(`${this.searchFrequenterMobileAccessUrl}/${id}`)
+        this.httpService.get(`${this.searchFrequenterMobileAccessUrl}/${accessDto.userId}`)
       )
       .then((response) => response.data)
       .catch((error) => {
@@ -96,12 +209,10 @@ export class AppService {
         throw new HttpException(error.response.data.message, error.response.data.statusCode);
       })
 
-      if (!accessDto.fingerprint) {
-        return this.handleUserFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-      }
+      this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
 
       if (data.access) {
-        await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
+        await this.sendRemoteAccessRequest(data.environmentId, esp.id, accessDto.userId);
         return { access: true };
       }
 
@@ -109,9 +220,9 @@ export class AppService {
       return { access: false };
     }
 
-    if (role === 'ENVIRONMENT_MANAGER') {
+    if (roles.includes('ENVIRONMENT_MANAGER')) {
       const data: any = await lastValueFrom(
-        this.httpService.get(`${this.searchManagerMobileAccessUrl}/${id}`)
+        this.httpService.get(`${this.searchManagerMobileAccessUrl}/${accessDto.userId}`)
       )
       .then((response) => response.data)
       .catch((error) => {
@@ -119,12 +230,10 @@ export class AppService {
         throw new HttpException(error.response.data.message, error.response.data.statusCode);
       })
 
-      if (!accessDto.fingerprint) {
-        return this.handleUserFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-      }
+      this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
 
       if (data.access) {
-        await this.sendRemoteAccessRequest(data.environmentId, accessDto.espId, accessDto.userId);
+        await this.sendRemoteAccessRequest(data.environmentId, esp.id, accessDto.userId);
         return { access: true };
       }
 
@@ -179,51 +288,51 @@ export class AppService {
     return data;
   }
 
-  private async handleUserFacialRecognitionDevice(userData: any, userAccessData: any, accessDto: any) {
-    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
+  // private async handleUserFacialRecognitionDevice(userData: any, userAccessData: any, accessDto: any) {
+  //   const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
 
-    if (facialRecognition.error) {
-      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
-      throw new HttpException(facialRecognition.error, facialRecognition.statusCode);
-    }
+  //   if (facialRecognition.error) {
+  //     this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+  //     throw new HttpException(facialRecognition.error, facialRecognition.statusCode);
+  //   }
 
-    if (facialRecognition.result === false) {
-      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
-      return { access: false };
-    } else {
-      this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
-      return { access: true };
-    }
-  }
+  //   if (facialRecognition.result === false) {
+  //     this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+  //     return { access: false };
+  //   } else {
+  //     this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
+  //     return { access: true };
+  //   }
+  // }
 
-  private async handleUserFacialRecognitionMobile(userData: any, userAccessData: any, accessDto: any) {
-    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
+  // private async handleUserFacialRecognitionMobile(userData: any, userAccessData: any, accessDto: any) {
+  //   const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
 
-    if (facialRecognition.error) {
-      this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
-      throw new HttpException(facialRecognition.error, facialRecognition.statusCode);
-    }
+  //   if (facialRecognition.error) {
+  //     this.sendLogWhenFacialRecognitionFails(userData, userAccessData, accessDto);
+  //     throw new HttpException(facialRecognition.error, facialRecognition.statusCode);
+  //   }
 
-    this.handleLogAdminFacialRecognitionMobile(userData, facialRecognition, userAccessData.environmentId, accessDto);
+  //   this.handleLogAdminFacialRecognitionMobile(userData, facialRecognition, userAccessData.environmentId, accessDto);
 
-    if (facialRecognition.result === false) {
-      return { access: false };
-    } else {
-      return { access: true };
-    }
-  }
+  //   if (facialRecognition.result === false) {
+  //     return { access: false };
+  //   } else {
+  //     return { access: true };
+  //   }
+  // }
 
-  private async handleAdminFacialRecognition(userData: any, environmentId: string, accessDto: any, ) {
-    const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
+  // private async handleAdminFacialRecognition(userData: any, environmentId: string, accessDto: any, ) {
+  //   const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
 
-    if (userData.accessType === AccessByType.app) {
-      this.handleLogAdminFacialRecognitionMobile(userData, facialRecognition, environmentId, accessDto);
-    } else {
-      this.handleLogAdminFacialRecognitionWeb(userData, facialRecognition, environmentId, accessDto);
-    }
+  //   if (userData.accessType === AccessByType.app) {
+  //     this.handleLogAdminFacialRecognitionMobile(userData, facialRecognition, environmentId, accessDto);
+  //   } else {
+  //     this.handleLogAdminFacialRecognitionWeb(userData, facialRecognition, environmentId, accessDto);
+  //   }
 
-    return { access: facialRecognition.result };
-  }
+  //   return { access: facialRecognition.result };
+  // }
 
   private async handleLogAdminFacialRecognitionMobile(userData: any, facialRecognition: any, environmentId: string, accessDto: any) {
     const environment = await this.getEnvironmentDataToLog(environmentId);
@@ -418,100 +527,100 @@ export class AppService {
     throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.UNAUTHORIZED);
   }
 
-  async validateUserFacial(userId: string, captureEncodedImage: string) {
-    const userImagePath = await this.saveUserImage(userId)
-    const captureImagePath = await this.saveAccessImage(captureEncodedImage)
+  // async validateUserFacial(userId: string, captureEncodedImage: string) {
+  //   const userImagePath = await this.saveUserImage(userId)
+  //   const captureImagePath = await this.saveAccessImage(captureEncodedImage)
 
-    const facialRecognition = await lastValueFrom(
-      this.httpService.get(this.facialRecognitionUrl, {
-        data: {
-          capturedImagePath: captureImagePath,
-          userImagePath: userImagePath
-        }
-      }).pipe(
-        catchError((error) => {
-          this.errorLogger.error('Falha ao validar reconhecimento facial', error);
-          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
-        })
-      )
-    ).then((response) => response.data)
+  //   const facialRecognition = await lastValueFrom(
+  //     this.httpService.get(this.facialRecognitionUrl, {
+  //       data: {
+  //         capturedImagePath: captureImagePath,
+  //         userImagePath: userImagePath
+  //       }
+  //     }).pipe(
+  //       catchError((error) => {
+  //         this.errorLogger.error('Falha ao validar reconhecimento facial', error);
+  //         throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+  //       })
+  //     )
+  //   ).then((response) => response.data)
 
-    return facialRecognition;
-  }
+  //   return facialRecognition;
+  // }
 
-  async saveUserImage(userId: string) {
-    const getUserImageUrl = `${process.env.SERVICE_USERS_URL}/${userId}/image`;
-    const userEncodedImage = await lastValueFrom(this.httpService.get(getUserImageUrl)).then((response) => response.data)
+  // async saveUserImage(userId: string) {
+  //   const getUserImageUrl = `${process.env.SERVICE_USERS_URL}/${userId}/image`;
+  //   const userEncodedImage = await lastValueFrom(this.httpService.get(getUserImageUrl)).then((response) => response.data)
 
-    // TODO: testar sem esse processo de validação do prefixo
-    const userImage = userEncodedImage.startsWith('data:image/') 
-    ? userEncodedImage
-    : `data:image/jpg;base64,${userEncodedImage}`;
+  //   // TODO: testar sem esse processo de validação do prefixo
+  //   const userImage = userEncodedImage.startsWith('data:image/') 
+  //   ? userEncodedImage
+  //   : `data:image/jpg;base64,${userEncodedImage}`;
 
-    const matches = userImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
-    const imageExtension = matches[1];
-    const imageBuffer = Buffer.from(matches[2], 'base64');
+  //   const matches = userImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+  //   const imageExtension = matches[1];
+  //   const imageBuffer = Buffer.from(matches[2], 'base64');
 
-    const imageName = `${userId}.${imageExtension}`;
-    const imagePath = `temp/${imageName}`;
+  //   const imageName = `${userId}.${imageExtension}`;
+  //   const imagePath = `temp/${imageName}`;
 
-    fs.writeFile(imagePath, imageBuffer, (err) => {
-      if (err) {
-        this.accessLogService.create(
-          AccessLogConstants.failedToWriteUserImageToDisk(
-            null,
-            userId,
-            null,
-            {
-              encodedImage: userEncodedImage
-            }
-          )
-        )
+  //   fs.writeFile(imagePath, imageBuffer, (err) => {
+  //     if (err) {
+  //       this.accessLogService.create(
+  //         AccessLogConstants.failedToWriteUserImageToDisk(
+  //           null,
+  //           userId,
+  //           null,
+  //           {
+  //             encodedImage: userEncodedImage
+  //           }
+  //         )
+  //       )
 
-        this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
+  //       this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
         
-        throw err;
-      }
-    });
+  //       throw err;
+  //     }
+  //   });
 
-    return `access/temp/${imageName}`;
-  }
+  //   return `access/temp/${imageName}`;
+  // }
 
-  async saveAccessImage(captureEncodedImage: string) {
-    const captureImage = captureEncodedImage.startsWith('data:image/')
-    ? captureEncodedImage
-    : `data:image/jpg;base64,${captureEncodedImage}`;
+  // async saveAccessImage(captureEncodedImage: string) {
+  //   const captureImage = captureEncodedImage.startsWith('data:image/')
+  //   ? captureEncodedImage
+  //   : `data:image/jpg;base64,${captureEncodedImage}`;
 
-    const matches = captureImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
-    const imageExtension = matches[1];
-    const imageBuffer = Buffer.from(matches[2], 'base64');
+  //   const matches = captureImage.match(/^data:image\/([A-Za-z-+/]+);base64,(.+)$/);
+  //   const imageExtension = matches[1];
+  //   const imageBuffer = Buffer.from(matches[2], 'base64');
 
-    const imageName = `${randomUUID()}.${imageExtension}`;
-    const imagePath = `temp/${imageName}`;
+  //   const imageName = `${randomUUID()}.${imageExtension}`;
+  //   const imagePath = `temp/${imageName}`;
 
-    fs.writeFile(imagePath, imageBuffer, (err) => {
-      if (err) {
-        this.accessLogService.create(
-          AccessLogConstants.failedToWriteAccessImageToDisk(
-            null,
-            null,
-            null,
-            {
-              encodedImage: captureEncodedImage
-            }
-          )
-        )
+  //   fs.writeFile(imagePath, imageBuffer, (err) => {
+  //     if (err) {
+  //       this.accessLogService.create(
+  //         AccessLogConstants.failedToWriteAccessImageToDisk(
+  //           null,
+  //           null,
+  //           null,
+  //           {
+  //             encodedImage: captureEncodedImage
+  //           }
+  //         )
+  //       )
 
-        this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
+  //       this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
 
-        throw err;
-      }
-    });
+  //       throw err;
+  //     }
+  //   });
 
-    return `access/temp/${imageName}`;
-  }
+  //   return `access/temp/${imageName}`;
+  // }
 
-  async sendLogWhenFacialRecognitionSucceeds(userData: any, userAccessData: any, accessDto: AccessByMicrocontrollerDeviceDto) {
+  async sendLogWhenFacialRecognitionSucceeds(userData: any, userAccessData: any, accessDto: any) { // AccessByMicrocontrollerDeviceDto
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
@@ -621,7 +730,7 @@ export class AppService {
         {
           ip: accessDto.ip,
           mac: accessDto.mac,
-          encoded: accessDto.encoded,
+          //encoded: accessDto.encoded,
         }
       )
     )

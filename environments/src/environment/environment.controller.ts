@@ -44,6 +44,14 @@ export class EnvironmentController {
     return this.environmentService.findRemoteAccess(esp8266Id);
   }
 
+  @Get('mobile')
+  getEnvironmentForMobile(
+    @Query('userId') userId: string,
+    @Query('type') type: number,
+  ) {
+    return this.environmentService.getEnvironmentForMobile(userId, +type);
+  }
+
   @ApiOperation({ description: 'Endpoint para listagem de ambientes' })
   @ApiResponse({ type: EnvironmentEntity, isArray: true })
   @ApiBadRequestResponse({ type: FindAllBadRequestResponseEntity })

@@ -17,6 +17,9 @@ export class EnvironmentEntity implements environment {
   
   @ApiProperty()
   created_by: string;
+
+  @ApiProperty()
+  user_name: string;
   
   @ApiProperty({ default: new Date() })
   created_at: Date;

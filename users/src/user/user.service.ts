@@ -20,7 +20,6 @@ import { InviteEmail } from './dto/invite-email.dto';
 
 @Injectable()
 export class UserService {
-  private readonly createMobileDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/mobile`
   private readonly createRFIDDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/rfid`
   private readonly generateSuapTokenUrl = process.env.GENERATE_SUAP_TOKEN_URL
   private readonly getSuapUserDataUrl = process.env.GET_SUAP_USER_DATA_URL

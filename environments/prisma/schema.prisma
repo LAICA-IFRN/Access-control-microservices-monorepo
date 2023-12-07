@@ -13,6 +13,7 @@ model environment {
   description                    String?
   active                         Boolean                          @default(true)
   created_by                     String
+  user_name      String?
   latitude                       Float
   longitude                      Float
   created_at                     DateTime                         @default(now())
@@ -20,6 +21,7 @@ model environment {
   environment_user               environment_user[]
   environment_manager            environment_manager[]
   environment_restriction_access environment_restriction_access[]
+  environment_temporary_access   environment_temporary_access[]
 }
 
 model environment_restriction_access {
@@ -38,6 +40,7 @@ model environment_manager {
   id             String      @id @default(uuid())
   active         Boolean     @default(true)
   user_id        String
+  user_name      String?
   created_by     String
   created_at     DateTime    @default(now())
   updated_at     DateTime    @updatedAt
@@ -53,6 +56,7 @@ model environment_user {
   end_period                      DateTime
   active                          Boolean                           @default(true)
   user_id                         String
+  user_name                       String?
   created_by                      String
   created_at                      DateTime                          @default(now())
   updated_at                      DateTime                          @updatedAt
@@ -64,16 +68,33 @@ model environment_user {
 }
 
 model environment_user_access_control {
-  id                  String            @id @default(uuid())
-  day                 Int
-  start_time          DateTime
-  end_time            DateTime
-  active              Boolean           @default(true)
-  no_access_restrict  Boolean           @default(false)
-  created_at          DateTime          @default(now())
-  updated_at          DateTime          @updatedAt
-  environment_user_id String?
-  environment_user    environment_user? @relation(fields: [environment_user_id], references: [id])
+  id                              String                       @id @default(uuid())
+  day                             Int
+  start_time                      DateTime
+  end_time                        DateTime
+  active                          Boolean                       @default(true)
+  no_access_restrict              Boolean                       @default(false)
+  created_at                      DateTime                      @default(now())
+  updated_at                      DateTime                      @updatedAt
+  environment_user_id             String?
+  environment_user                environment_user?             @relation(fields: [environment_user_id], references: [id])
+  environment_temporary_access_id String?
+  environment_temporary_access    environment_temporary_access? @relation(fields: [environment_temporary_access_id], references: [id])
 
   @@unique([day, start_time, end_time, environment_user_id])
+}
+
+model environment_temporary_access {
+  id                              String                            @id @default(uuid())
+  description                     String?
+  active                          Boolean                           @default(true)
+  created_by                      String
+  created_at                      DateTime                          @default(now())
+  updated_at                      DateTime                          @updatedAt
+  user_id                         String
+  environment_id                  String
+  environment                     environment                       @relation(fields: [environment_id], references: [id])
+  environment_user_access_control environment_user_access_control[]
+
+  @@unique([user_id, environment_id])
 }

@@ -11,6 +11,9 @@ export class EnvManagerEntity implements environment_manager {
   
   @ApiProperty()  
   user_id: string;
+
+  @ApiProperty()
+  user_name: string;
   
   @ApiProperty()  
   environment_id: string;

@@ -4,24 +4,24 @@ import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "c
 export class AccessByMobileDeviceDto {
 
     @ApiProperty()
-    @IsNumber()
+    @IsString()
     @IsNotEmpty()
-    espId: number
+    environmentId: number
     
-    @ApiProperty()
-    @IsString()
-    @IsNotEmpty()
-    token: string
+    // @ApiProperty()
+    // @IsString()
+    // @IsNotEmpty()
+    // token: string
 
-    @ApiProperty()
-    @IsString()
-    @IsOptional()
-    encoded?: string
+    // @ApiProperty()
+    // @IsString()
+    // @IsOptional()
+    // encoded?: string
 
-    @ApiProperty()
-    @IsBoolean()
-    @IsOptional()
-    fingerprint?: boolean
+    // @ApiProperty()
+    // @IsBoolean()
+    // @IsOptional()
+    // fingerprint?: boolean
 
     @ApiProperty()
     @IsUUID()

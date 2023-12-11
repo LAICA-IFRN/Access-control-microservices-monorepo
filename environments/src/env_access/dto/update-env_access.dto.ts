@@ -1,4 +1,4 @@
-import { IsOptional } from 'class-validator';
+import { IsOptional, IsUUID } from 'class-validator';
 import { IsDateFormat } from '../decorators/is-date-format.decorator';
 import { ApiProperty } from '@nestjs/swagger';
 import { AccessDto } from './access.dto';
@@ -22,4 +22,9 @@ export class UpdateEnvAccessDto {
   @IsDateFormat()
   @ApiProperty()
   endPeriod: string;
+
+  @IsUUID()
+  @ApiProperty()
+  @IsOptional()
+  requestUserId?: string
 }

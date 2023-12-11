@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { ArrayNotEmpty, IsArray, IsIn } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsBoolean, IsIn, IsOptional } from "class-validator";
 import { IsTimeFormat } from "../decorators/is-time-format.decorator";
 
 export class AccessDto {
@@ -16,4 +16,9 @@ export class AccessDto {
   @ApiProperty()
   @IsTimeFormat()
   endTime: string;
+
+  @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  noAccessRestrict?: boolean;
 }

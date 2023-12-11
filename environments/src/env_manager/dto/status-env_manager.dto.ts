@@ -1,8 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean } from 'class-validator';
+import { IsBoolean, IsOptional, IsUUID } from 'class-validator';
 
 export class EnvManagerStatusDto {
   @IsBoolean()
   @ApiProperty()
   status: boolean;
+
+  @IsUUID()
+  @ApiProperty()
+  @IsOptional()
+  requestUserId?: string
 }

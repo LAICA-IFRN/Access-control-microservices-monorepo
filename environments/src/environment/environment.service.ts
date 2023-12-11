@@ -10,8 +10,12 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { randomUUID } from 'crypto';
+//import { randomUUID } from 'crypto';
 import { FindAllDto } from './dto/find-all.dto';
+import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
+import { environment_temporary_access, environment_user_access_control } from '@prisma/client';
+import { AuditLogService } from 'src/logs/audit-log.service';
+import { AuditLogConstants } from 'src/providers/audit-log/audit-log.constants';
 
 @Injectable()
 export class EnvironmentService {
@@ -26,78 +30,59 @@ export class EnvironmentService {
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
     private readonly accessLogService: AccessLogService,
+    private readonly auditLogService: AuditLogService,
     @Inject(CACHE_MANAGER) private cacheService: Cache,
   ) {}
 
-  @Cron(CronExpression.EVERY_30_SECONDS)
-  async generateQRCodes()  {
-    const environments = await this.prisma.environment.findMany({
-      where: {
-        active: true
-      },
-      select: {
-        id: true
-      }
-    })
+  // @Cron(CronExpression.EVERY_30_SECONDS)
+  // async generateQRCodes()  {
+  //   const environments = await this.prisma.environment.findMany({
+  //     where: {
+  //       active: true
+  //     },
+  //     select: {
+  //       id: true
+  //     }
+  //   })
 
-    environments.forEach(environment => {
-      const value = randomUUID();
-      const key = environment.id;
-      this.cacheService.set(key, value);
-    });
-  }
+  //   environments.forEach(environment => {
+  //     const value = randomUUID();
+  //     const key = environment.id;
+  //     this.cacheService.set(key, value);
+  //   });
+  // }
 
-  async getQRCode(environmentId: string) {
-    const key = environmentId;
-    const value = await this.cacheService.get(key);
-    return value;
-  } 
+  // async getQRCode(environmentId: string) {
+  //   const key = environmentId;
+  //   const value = await this.cacheService.get(key);
+  //   return value;
+  // } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
     const user: any = await lastValueFrom(
       this.httpService.get(this.getUserEndpoint + createEnvironmentDto.createdBy).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.status === 'ECONNREFUSED') {
             this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
             throw new HttpException('Users service out', HttpStatus.INTERNAL_SERVER_ERROR);
           } else if (error.response.data.statusCode === 400) {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: "Ambiente",
-                type: "Error",
-                message: 'Falha ao verificar papel de usuário durante criação de ambiente: id inválido',
-                meta: {
-                  userId: createEnvironmentDto.createdBy,
-                  error: error.response.data.message,
-                  statusCode: 400
-                }
+            this.auditLogService.create(
+              AuditLogConstants.createEnvironmentVerifyRolesFailedById({
+                userId: createEnvironmentDto.createdBy,
+                error: error.response.data.message,
+                statusCode: 400
               })
-            )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao criar log', error);
-            });
+            );
 
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 404) {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: "Ambiente",
-                type: "Error",
-                message: 'Falha ao verificar papel de usuário durante criação de ambiente: usuário não encontrado',
-                meta: {
-                  userId: createEnvironmentDto.createdBy,
-                  error: error.response.data.message,
-                  statusCode: 404
-                }
+            this.auditLogService.create(
+              AuditLogConstants.createEnvironmentVerifyRolesFailedByUser({
+                userId: createEnvironmentDto.createdBy,
+                error: error.response.data.message,
+                statusCode: 404
               })
             )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao criar log', error);
-            });
 
             throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
           } else {
@@ -109,21 +94,13 @@ export class EnvironmentService {
     ).then((response) => response.data);
 
     if (!user || user?.user_role?.lenght > 1 || user?.user_role[0]?.role_id !== 1) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Ambiente",
-          type: "Error",
-          message: 'Falha ao verificar papel de usuário durante criação de ambiente: usuário não é um admin',
-          meta: {
-            userId: createEnvironmentDto.createdBy,
-            statusCode: 403
-          }
+      this.auditLogService.create(
+        AuditLogConstants.createEnvironmentVerifyRolesFailedByRole({
+          userId: createEnvironmentDto.createdBy,
+          error: 'Usuário não é um admin',
+          statusCode: 403
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
 
       throw new HttpException('User is not a admin', HttpStatus.FORBIDDEN);
     }
@@ -133,48 +110,36 @@ export class EnvironmentService {
         data: {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
-          created_by: createEnvironmentDto.createdBy,
+          created_by: createEnvironmentDto.createdBy ? createEnvironmentDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf',
           user_name: user.name,
           latitude: createEnvironmentDto.latitude,
           longitude: createEnvironmentDto.longitude,
         },
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Ambiente",
-          type: "Info",
-          message: 'Ambiente criado: ' + environment.name || '',
-          meta: {
-            created_by: environment.created_by,
-            environmentId: environment.id
+      // TODO: alterar pra pegar o nome do usuário que criou o ambiente
+
+      this.auditLogService.create(
+        AuditLogConstants.createEnvironmentSuccess(
+          user.name,
+          environment.name,
+          {
+            enronmentId: environment.id,
+            userId: user.id
           }
-        })
+        )
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
 
       return environment
     } catch (error) {
       if (error.code === 'P2002') {
-        await lastValueFrom(
-          this.httpService.post(this.createAuditLogUrl, {
-            topic: "Ambiente",
-            type: "Error",
-            message: 'Falha ao criar ambiente: conflito com registro existente',
-            meta: {
-              createdBy: createEnvironmentDto.createdBy,
-              target: error.meta.target,
-              statusCode: 409
-            }
+        this.auditLogService.create(
+          AuditLogConstants.verifyRolesFailedByEnvironment({
+            createdBy: createEnvironmentDto.createdBy,
+            target: error.meta.target,
+            statusCode: 409
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
 
         throw new HttpException(
           `Already exists: ${error.meta.target}`,
@@ -186,7 +151,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao criar ambiente: admin não encontrado',
+            message: 'Falha ao criar ambiente, usuário não encontrado',
             meta: {
               createdBy: createEnvironmentDto.createdBy,
               target: error.meta.target,
@@ -200,7 +165,7 @@ export class EnvironmentService {
         });
 
         throw new HttpException(
-          `Admin not found: ${error.meta.target}`,
+          `User not found: ${error.meta.target}`,
           HttpStatus.NOT_FOUND
         );
       } else {
@@ -208,7 +173,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao criar ambiente: erro interno, verificar logs de erro do serviço',
+            message: 'Falha ao criar ambiente, erro interno verificar logs de erro do serviço',
             meta: {
               createdBy: createEnvironmentDto.createdBy,
               context: error,
@@ -231,13 +196,298 @@ export class EnvironmentService {
     }
   }
 
+  async createTemporaryAccess(createTemporaryAccessDto: CreateTemporaryAccessDto) {
+    const isAdmin = await lastValueFrom(
+      this.httpService.get(this.verifyRoleEndpoint, {
+        data: {
+          userId: createTemporaryAccessDto.userId,
+          roles: ['ADMIN'],
+        },
+      }).pipe(
+        catchError((error) => {
+          if (error.response.status === 'ECONNREFUSED') {
+            this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+            throw new HttpException('Users service out', HttpStatus.INTERNAL_SERVER_ERROR);
+          } else if (error.response.data.statusCode === 400) {
+            lastValueFrom(
+              this.httpService.post(this.createAuditLogUrl, {
+                topic: "Ambiente",
+                type: "Error",
+                message: 'Falha ao verificar papel de usuário durante criação de acesso temporário, id inválido',
+                meta: {
+                  userId: createTemporaryAccessDto.userId,
+                  error: error.response.data.message,
+                  statusCode: 400
+                }
+              })
+            )
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
+
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          } else if (error.response.data.statusCode === 404) {
+            lastValueFrom(
+              this.httpService.post(this.createAuditLogUrl, {
+                topic: "Ambiente",
+                type: "Error",
+                message: 'Falha ao verificar papel de usuário durante criação de acesso temporário, usuário não encontrado',
+                meta: {
+                  userId: createTemporaryAccessDto.userId,
+                  error: error.response.data.message,
+                  statusCode: 404
+                }
+              })
+            )
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
+
+            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
+          } else {
+            this.errorLogger.error('Falha do sistema (500)', error);
+            throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+          }
+        }),
+      ),
+    ).then((response) => response.data);
+
+    if (isAdmin) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Ambiente",
+          type: "Error",
+          message: 'Um usuário admin não pode ter acesso temporário',
+          meta: {
+            userId: createTemporaryAccessDto.userId,
+            statusCode: 403
+          }
+        })
+      )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
+
+      throw new HttpException('An admin can not have temporary access', HttpStatus.FORBIDDEN);
+    }
+
+    const startPeriod = new Date(createTemporaryAccessDto.startPeriod);
+    const endPeriod = new Date(createTemporaryAccessDto.endPeriod);
+
+    if (startPeriod > endPeriod) {
+      await lastValueFrom(
+        this.httpService.post(this.createAuditLogUrl, {
+          topic: "Ambiente",
+          type: "Error",
+          message: 'A data de início do período não pode ser maior que a data de fim',
+          meta: {
+            userId: createTemporaryAccessDto.userId,
+            statusCode: 400
+          }
+        })
+      )
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar log', error);
+      });
+
+      throw new HttpException('Start period can not be greater than end period', HttpStatus.BAD_REQUEST);
+    }
+
+    let tempAccess: environment_temporary_access;
+    try {
+      tempAccess = await this.prisma.environment_temporary_access.create({
+        data: {
+          start_period: startPeriod,
+          end_period: endPeriod,
+          description: createTemporaryAccessDto.description,
+          created_by: createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+          user_name: createTemporaryAccessDto.userName,
+          environment_id: createTemporaryAccessDto.environmentId,
+          user_id: createTemporaryAccessDto.userId,
+        }
+      })
+    } catch (error) {
+      if (error.code === 'P2002') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Ambiente",
+            type: "Error",
+            message: "Falha ao criar acesso temporário, conflito com registro existente",
+            meta: {
+              createdBy: createTemporaryAccessDto.createdBy,
+              target: error.meta.target,
+              statusCode: 409
+            }
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
+
+        throw new HttpException(
+          `Already exists: ${error.meta.target}`,
+          HttpStatus.CONFLICT
+        );
+      }
+    }
+
+    const accesses: environment_user_access_control[] = [];
+    for (const access of createTemporaryAccessDto.access) {
+      const startTime = new Date('1970-01-01T' + access.startTime);
+      const endTime = new Date('1970-01-01T' + access.endTime);
+
+      if (startTime > endTime) {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: "Ambiente",
+            type: "Error",
+            message: 'A hora de início do período não pode ser maior que a hora de fim',
+            meta: {
+              userId: createTemporaryAccessDto.userId,
+              statusCode: 400
+            }
+          })
+        )
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
+
+        try {
+          await this.prisma.environment_temporary_access.delete({
+            where: {
+              id: tempAccess.id
+            }
+          })
+        } catch (error) {
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: "Ambiente",
+              type: "Error",
+              message: 'Falha ao remover acesso temporário durante cancelamento de sua criação, erro interno, verificar logs de erro do serviço',
+              meta: {
+                userId: createTemporaryAccessDto.userId,
+                statusCode: 500
+              }
+            })
+          )
+          this.errorLogger.error('Falha ao remover acesso temporário', error);
+        }
+
+        throw new HttpException('Start time can not be greater than end time', HttpStatus.BAD_REQUEST);
+      }
+
+      try {
+        for (const day of access.days) {
+          const accessControl = await this.prisma.environment_user_access_control.create({
+            data: {
+              day: day,
+              start_time: startTime,
+              end_time: endTime,
+              no_access_restrict: access.noAccessRestrict,
+              environment_temporary_access_id: tempAccess.id
+            }
+          })
+
+          accesses.push(accessControl);
+        }
+      } catch (error) {
+        await this.prisma.environment_temporary_access.delete({
+          where: {
+            id: tempAccess.id
+          }
+        })
+
+        if (error.code === 'P2002') {
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: "Ambiente",
+              type: "Error",
+              message: 'Falha ao criar acesso temporário, conflito com registro existente',
+              meta: {
+                createdBy: createTemporaryAccessDto.createdBy,
+                target: error.meta.target,
+                statusCode: 409
+              }
+            })
+          )
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+          throw new HttpException(
+            `Already exists: ${error.meta.target}`,
+            HttpStatus.CONFLICT
+          );
+        } else {
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: "Ambiente",
+              type: "Error",
+              message: 'Falha ao criar acesso temporário, erro interno verificar logs de erro do serviço',
+              meta: {
+                createdBy: createTemporaryAccessDto.createdBy,
+                context: error,
+                statusCode: 403
+              }
+            })
+          )
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+          this.errorLogger.error('Falha do sistema (500)', error);
+
+          throw new HttpException(
+            "Can't create temporary access",
+            HttpStatus.FORBIDDEN
+          );
+        }
+      }
+    }
+
+    
+
+    return {
+      ...tempAccess,
+      accesses
+    }
+  }
+
+  // TODO: alterar pra pegar o nome do usuário que criou o acesso temporário
+  async sendLogWhenTemporaryAccessCreated(
+    environmentName: string,
+    environmentId: string,
+    userName: string,
+    userId: string,
+    createdById: string,
+    createTemporaryAccessDto: CreateTemporaryAccessDto
+  ) {
+    const user: any = this.findUserForLog(createTemporaryAccessDto.createdBy);
+
+    await this.auditLogService.create(
+      AuditLogConstants.createTemporaryAccessSuccess(
+        userName,
+        environmentName,
+        user.name,
+        {
+          environmentId,
+          userId,
+          data: createTemporaryAccessDto
+        }
+      )
+    );
+  }
+
   async requestRemoteAccess(environmentId: string, esp8266Id: number, remoteAccessType: string, userId: string) {
     if (!isUUID(environmentId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: "Ambiente",
           type: "Error",
-          message: 'Falha ao solicitar acesso remoto: id de ambiente inválido',
+          message: 'Falha ao solicitar acesso remoto, id de ambiente inválido',
           meta: {
             environmentId,
             userId,
@@ -264,7 +514,7 @@ export class EnvironmentService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: "Ambiente",
           type: "Error", 
-          message: 'Falha ao solicitar acesso remoto: ambiente não encontrado',
+          message: 'Falha ao solicitar acesso remoto, ambiente não encontrado',
           meta: {
             environmentId,
             userId,
@@ -290,7 +540,7 @@ export class EnvironmentService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: "Ambiente",
                 type: "Error",
-                message: 'Falha ao solicitar acesso remoto: id de dispositivo inválido',
+                message: 'Falha ao solicitar acesso remoto, id de dispositivo inválido',
                 meta: {
                   environmentId,
                   userId,
@@ -308,7 +558,7 @@ export class EnvironmentService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: "Ambiente",
                 type: "Error",
-                message: 'Falha ao solicitar acesso remoto: dispositivo não encontrado',
+                message: 'Falha ao solicitar acesso remoto, dispositivo não encontrado',
                 meta: {
                   environmentId,
                   userId,
@@ -416,6 +666,7 @@ export class EnvironmentService {
     const nextLenght = findAllDto.pageSize;
     const order = findAllDto.orderBy ? findAllDto.orderBy : {};
     const filter = findAllDto.where ? findAllDto.where : {};
+    const select = findAllDto.select ? findAllDto.select : {};
 
     const [environments, total] = await this.prisma.$transaction([
       this.prisma.environment.findMany({
@@ -423,11 +674,7 @@ export class EnvironmentService {
         take: nextLenght,
         orderBy: order,
         where: filter,
-        include: {
-          environment_user: true,
-          environment_manager: true,
-          environment_restriction_access: true,
-        }
+        select: select
       }),
 
       this.prisma.environment.count({
@@ -604,7 +851,7 @@ export class EnvironmentService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: "Ambiente",
           type: "Error",
-          message: 'Falha ao buscar um ambiente: id inválido',
+          message: 'Falha ao buscar um ambiente, id inválido',
           meta: {
             target: id,
             statusCode: 400
@@ -653,7 +900,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao buscar um ambiente: erro interno, verificar logs de erro do serviço',
+            message: 'Falha ao buscar um ambiente, erro interno verificar logs de erro do serviço',
             meta: {
               createdBy: id,
               context: error,
@@ -682,7 +929,7 @@ export class EnvironmentService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: "Ambiente",
           type: "Error",
-          message: 'Falha ao atualizar um ambiente: id inválido',
+          message: 'Falha ao atualizar um ambiente, id inválido',
           meta: {
             target: id,
             statusCode: 400
@@ -709,21 +956,12 @@ export class EnvironmentService {
         }
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Ambiente",
-          type: "Info",
-          message: 'Ambiente atualizado',
-          meta: {
-            createdBy: environment.created_by,
-            environmentId: environment.id
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+      this.sendLogWhenEnvironmentUpdated(
+        environment.name, 
+        environment.id, 
+        updateEnvironmentDto.requestUserId ? updateEnvironmentDto.requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf', 
+        updateEnvironmentDto
+      );
 
       return environment
     } catch (error) {
@@ -732,7 +970,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao atualizar um ambiente: ambiente não encontrado',
+            message: 'Falha ao atualizar um ambiente, ambiente não encontrado',
             meta: {
               target: id,
               statusCode: 404
@@ -753,7 +991,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao atualizar um ambiente: conflito com registro existente',
+            message: 'Falha ao atualizar um ambiente, conflito com registro existente',
             meta: {
               target: error.meta.target,
               statusCode: 409
@@ -774,7 +1012,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao atualizar um ambiente: erro interno, verificar logs de erro do serviço',
+            message: 'Falha ao atualizar um ambiente, erro interno verificar logs de erro do serviço',
             meta: {
               createdBy: id,
               context: error,
@@ -797,13 +1035,29 @@ export class EnvironmentService {
     }
   }
 
-  async changeStatus(id: string, status: boolean) {
+  async sendLogWhenEnvironmentUpdated(environmentName: string, environmentId: string, userId: string, updateEnvironmentDto: UpdateEnvironmentDto) {
+    const user = await this.findUserForLog(userId);
+
+    await this.auditLogService.create(
+      AuditLogConstants.updateEnvironmentSuccess(
+        user.name,
+        environmentName,
+        {
+          environmentId,
+          userId,
+          data: updateEnvironmentDto
+        }
+      )
+    );
+  }
+
+  async changeStatus(id: string, status: boolean, requestUserId: string) {
     if (!isUUID(id)) {
       lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: "Ambiente",
           type: "Error",
-          message: 'Falha ao atualizar o status de ambiente: id inválido',
+          message: 'Falha ao atualizar o status de ambiente, id inválido',
           meta: {
             target: id,
             statusCode: 400
@@ -829,22 +1083,12 @@ export class EnvironmentService {
         }
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Ambiente",
-          type: "Info", 
-          message: 'Status de ambiente atualizado: ' + environment.name || '',
-          meta: {
-            createdBy: environment.created_by,
-            environmentId: environment.id,
-            status: environment.active
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+      this.sendLogWhenEnvironmentStatusChanged(
+        environment.name, 
+        environment.id, 
+        requestUserId ? requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf', 
+        status
+      );
 
       return environment
     } catch (error) {
@@ -853,7 +1097,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao atualizar o status de ambiente: ambiente não encontrado',
+            message: 'Falha ao atualizar o status de ambiente, registro não encontrado',
             meta: {
               target: error.meta.target,
               statusCode: 404
@@ -870,7 +1114,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao atualizar o status de ambiente: erro interno, verificar logs de erro do serviço',
+            message: 'Falha ao atualizar o status de ambiente, erro interno verificar logs de erro do serviço',
             meta: {
               adminId: id,
               context: error,
@@ -893,13 +1137,30 @@ export class EnvironmentService {
     }
   }
 
-  async remove(id: string) {
+  async sendLogWhenEnvironmentStatusChanged(environmentName: string, environmentId: string, userId: string, status: boolean) {
+    const user = await this.findUserForLog(userId);
+
+    await this.auditLogService.create(
+      AuditLogConstants.changeEnvironmentStatusSuccess(
+        user.name,
+        environmentName,
+        status,
+        {
+          environmentId,
+          userId,
+          status
+        }
+      )
+    );
+  }
+
+  async remove(id: string, requestUserId: string) {
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: "Ambiente",
           type: "Error",
-          message: 'Falha ao remover ambiente: id inválido',
+          message: 'Falha ao remover ambiente, id inválido',
           meta: {
             target: id,
             statusCode: 400
@@ -922,21 +1183,11 @@ export class EnvironmentService {
         where: { id, active: true }
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Ambiente",
-          type: "Info",
-          message: 'Ambiente removido: ' + environment.name || '',
-          meta: {
-            createdBy: environment.created_by,
-            environmentId: environment.id
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+      this.sendLogWhenEnvironmentRemoved(
+        environment.name, 
+        environment.id, 
+        requestUserId ? requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      );
 
       return environment
     } catch (error) {
@@ -945,7 +1196,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao remover ambiente: ambiente não encontrado',
+            message: 'Falha ao remover ambiente, ambiente não encontrado',
             meta: {
               target: error.meta.target,
               statusCode: 404
@@ -965,7 +1216,7 @@ export class EnvironmentService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",
             type: "Error",
-            message: 'Falha ao remover ambiente: erro interno, verificar logs de erro do serviço',
+            message: 'Falha ao remover ambiente, erro interno, verificar logs de erro do serviço',
             meta: {
               adminId: id,
               context: error,
@@ -986,5 +1237,33 @@ export class EnvironmentService {
         );
       }
     }
+  }
+
+  async sendLogWhenEnvironmentRemoved(environmentName: string, environmentId: string, userId: string) {
+    const user = await this.findUserForLog(userId);
+
+    await this.auditLogService.create(
+      AuditLogConstants.removeEnvironmentSuccess(
+        user.name,
+        environmentName,
+        {
+          environmentId,
+          userId
+        }
+      )
+    );
+  }
+
+  private async findUserForLog(userId: string) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+      throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    return user;
   }
 }

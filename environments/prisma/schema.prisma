@@ -13,7 +13,7 @@ model environment {
   description                    String?
   active                         Boolean                          @default(true)
   created_by                     String
-  user_name      String?
+  user_name                      String?
   latitude                       Float
   longitude                      Float
   created_at                     DateTime                         @default(now())
@@ -68,7 +68,7 @@ model environment_user {
 }
 
 model environment_user_access_control {
-  id                              String                       @id @default(uuid())
+  id                              String                        @id @default(uuid())
   day                             Int
   start_time                      DateTime
   end_time                        DateTime
@@ -91,7 +91,10 @@ model environment_temporary_access {
   created_by                      String
   created_at                      DateTime                          @default(now())
   updated_at                      DateTime                          @updatedAt
+  start_period                    DateTime                          @default(now())
+  end_period                      DateTime
   user_id                         String
+  user_name                       String
   environment_id                  String
   environment                     environment                       @relation(fields: [environment_id], references: [id])
   environment_user_access_control environment_user_access_control[]

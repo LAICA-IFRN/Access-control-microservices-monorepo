@@ -22,6 +22,11 @@ export class FindAllDto {
   @ApiProperty()
   where?: any;
 
+  @IsObject()
+  @IsOptional()
+  @ApiProperty()
+  select?: any;
+
   @IsOptional()
   @ApiProperty()
   orderBy?: any;

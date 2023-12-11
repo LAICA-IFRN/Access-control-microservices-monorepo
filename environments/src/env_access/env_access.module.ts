@@ -3,6 +3,7 @@ import { EnvAccessService } from './env_access.service';
 import { EnvAccessController } from './env_access.controller';
 import { HttpModule } from '@nestjs/axios';
 import { PrismaModule } from 'src/prisma/prisma.module';
+import { AuditLogService } from 'src/logs/audit-log.service';
 //import { EnvAccessConflictMiddleware } from './middlewares/env-access-conflict.middleware';
 
 @Module({
@@ -11,7 +12,7 @@ import { PrismaModule } from 'src/prisma/prisma.module';
     HttpModule
   ],
   controllers: [EnvAccessController],
-  providers: [EnvAccessService], // , EnvAccessConflictMiddleware
+  providers: [EnvAccessService, AuditLogService], // , EnvAccessConflictMiddleware
 })
 export class EnvAccessModule {}
 // export class EnvAccessModule implements NestModule {

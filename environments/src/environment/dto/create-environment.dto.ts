@@ -22,5 +22,6 @@ export class CreateEnvironmentDto {
 
   @IsUUID()
   @ApiProperty()
-  createdBy: string
+  @IsOptional()
+  createdBy?: string
 }

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { EnvAccessService } from './env_access.service';
 import { CreateEnvAccessDto } from './dto/create-env_access.dto';
 import { UpdateEnvAccessDto } from './dto/update-env_access.dto';
@@ -137,7 +137,7 @@ export class EnvAccessController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   // @ApiForbiddenResponse({ type: swagger.DeleteForbiddenResponseEntity })
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.envAccessService.remove(id);
+  remove(@Param('id') id: string, @Query('userId') userId: string) {
+    return this.envAccessService.remove(id, userId);
   }
 }

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, IsString } from 'class-validator';
+import { IsOptional, IsString, IsUUID } from 'class-validator';
 
 export class UpdateEnvironmentDto {
   @IsString()
@@ -11,4 +11,9 @@ export class UpdateEnvironmentDto {
   @ApiProperty()
   @IsOptional()
   description: string
+
+  @IsUUID()
+  @ApiProperty()
+  @IsOptional()
+  requestUserId?: string
 }

@@ -7,6 +7,7 @@ import { ApiBadRequestResponse, ApiConflictResponse, ApiCreatedResponse, ApiForb
 import { EnvironmentEntity } from './entities/environment.entity';
 import { ConflictResponseEntity, CreateBadRequestResponseEntity, CreateForbiddenResponseEntity, CreateNotFoundResponseEntity, EnvironmentNotFoundResponseEntity, FindAllBadRequestResponseEntity, FindOneBadRequestResponseEntity, RemoveBadRequestResponseEntity, RemoveForbiddenResponseEntity, UpdateBadRequestResponseEntity, UpdateStatusForbiddenResponseEntity, UpdateStatusSuccessResponseEntity } from './entities/swagger-env-responses.entity';
 import { FindAllDto } from './dto/find-all.dto';
+import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
 
 @ApiTags('Env')
 @Controller('env')
@@ -34,10 +35,15 @@ export class EnvironmentController {
     return this.environmentService.requestRemoteAccess(environmentId, +esp8266Id, type, userId);
   }
 
-  @Get(':id/qr-code')
-  getQrCode(@Param('id') id: string) {
-    return this.environmentService.getQRCode(id);
+  @Post('temporary-access')
+  createTemporaryAccess(@Body() createTemporaryAccessDto: CreateTemporaryAccessDto) {
+    return this.environmentService.createTemporaryAccess(createTemporaryAccessDto);
   }
+
+  // @Get(':id/qr-code')
+  // getQrCode(@Param('id') id: string) {
+  //   return this.environmentService.getQRCode(id);
+  // }
 
   @Get('remote-access')
   findRemoteAccess(@Query('esp8266Id') esp8266Id: number) {

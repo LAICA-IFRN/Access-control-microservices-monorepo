@@ -7,7 +7,7 @@ import { catchError, lastValueFrom } from 'rxjs';
 import { isUUID } from 'class-validator';
 import { EnvAccessStatusDto } from './dto/status-env_access.dto';
 import { environment_user_access_control, environment_user } from '@prisma/client';
-import { log } from 'console';
+import { AuditLogService } from 'src/logs/audit-log.service';
 
 @Injectable()
 export class EnvAccessService {
@@ -18,6 +18,7 @@ export class EnvAccessService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async create(createEnvAccessDto: CreateEnvAccessDto) {
@@ -34,7 +35,7 @@ export class EnvAccessService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Acesso de ambiente',
                 type: 'Error',
-                message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente: id inválido',
+                message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, id inválido',
                 meta: {
                   target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
                   statusCode: error.response.data.statusCode,
@@ -52,7 +53,7 @@ export class EnvAccessService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Acesso de ambiente',
                 type: 'Error',
-                message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente: usuário não encontrado',
+                message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, usuário não encontrado',
                 meta: {
                   target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
                   statusCode: error.response.data.statusCode,
@@ -70,7 +71,7 @@ export class EnvAccessService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Acesso de ambiente',
                 type: 'Error',
-                message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente: erro interno',
+                message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, erro interno verificar logs de erro do serviço',
                 meta: {
                   target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
                   statusCode: error.response.data.statusCode,
@@ -94,7 +95,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente: usuário não é um frequentador',
+          message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, usuário não é um frequentador',
           meta: {
             target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
             statusCode: 403,
@@ -117,7 +118,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao buscar paridade em ambiente na criação de gestor de ambiente: usuário é um gestor ativo',
+          message: 'Falha ao buscar paridade em ambiente na criação de gestor de ambiente, usuário é um gestor ativo',
           meta: {
             target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
             statusCode: 403,
@@ -143,7 +144,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao verificar período de acesso na criação de acesso à ambiente: período de início maior ou igual ao período de término',
+          message: 'Falha ao verificar período de acesso na criação de acesso à ambiente, período de início maior ou igual ao período de término',
           meta: {
             target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startPeriod: createEnvAccessDto.startPeriod, endPeriod: createEnvAccessDto.endPeriod}],
             statusCode: 400,
@@ -170,7 +171,7 @@ export class EnvAccessService {
           environment_id: createEnvAccessDto.environmentId,
           start_period: startPeriod,
           end_period: endPeriod,
-          created_by: '1554e723-21c0-4fb7-ab23-ca3f57addc7a',
+          created_by: createEnvAccessDto.createdBy ? createEnvAccessDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf',
         },
       });
     } catch (error) {
@@ -179,7 +180,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: registro já existe',
+            message: 'Falha ao criar acesso à ambiente, conflito com registro existente',
             meta: {
               target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
               statusCode: 400,
@@ -200,7 +201,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: registro não encontrado',
+            message: 'Falha ao criar acesso à ambiente, registro não encontrado',
             meta: {
               target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
               statusCode: 404,
@@ -221,7 +222,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: chave duplicada',
+            message: 'Falha ao criar acesso à ambiente, chave duplicada',
             meta: {
               target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
               statusCode: 400,
@@ -242,7 +243,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: erro interno, verificar logs de erro do serviço',
+            message: 'Falha ao criar acesso à ambiente, erro interno verificar logs de erro do serviço',
             meta: {
               target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
               statusCode: 500,
@@ -273,7 +274,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao criar acesso à ambiente: horário de início maior ou igual ao horário de término',
+            message: 'Falha ao criar acesso à ambiente, horário de início maior ou igual ao horário de término',
             meta: {
               target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: access.startTime, endTime: access.endTime}],
               statusCode: 400,
@@ -296,7 +297,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao deletar acesso à ambiente durante cancelamento de sua criação: erro interno, verificar logs de erro do serviço',
+              message: 'Falha ao deletar acesso à ambiente durante cancelamento de sua criação, erro interno verificar logs de erro do serviço',
               meta: {
                 target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
                 statusCode: 500,
@@ -347,7 +348,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao criar acesso à ambiente: registro já existe',
+              message: 'Falha ao criar acesso à ambiente, conflito com registro existente',
               meta: {
                 target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
                 statusCode: 400,
@@ -368,7 +369,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao criar acesso à ambiente: registro não encontrado',
+              message: 'Falha ao criar acesso à ambiente, registro não encontrado',
               meta: {
                 target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
                 statusCode: 404,
@@ -389,7 +390,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao criar acesso à ambiente: chave duplicada',
+              message: 'Falha ao criar acesso à ambiente, chave duplicada',
               meta: {
                 target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
                 statusCode: 400,
@@ -410,7 +411,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao criar acesso à ambiente: erro interno, verificar logs de erro do serviço',
+              message: 'Falha ao criar acesso à ambiente, erro interno verificar logs de erro do serviço',
               meta: {
                 target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
                 statusCode: 500,
@@ -424,10 +425,44 @@ export class EnvAccessService {
       }
     }
 
+    this.sendLogWhenEnvironmentAccessIsCreated(
+      createEnvAccessDto.userId,
+      createEnvAccessDto.createdBy,
+      environmentId,
+      {
+        createEnvAccessDto,
+      },
+    );
+
     return {
       ...envAccess,
       accesses,
     };
+  }
+
+  async sendLogWhenEnvironmentAccessIsCreated(
+    userId: string,
+    created_by: string,
+    environmentId: string,
+    meta?: object,
+  ) {
+    const user = await this.findUserForLog(userId);
+    const created_by_user = await this.findUserForLog(created_by);
+    const environment = await this.prisma.environment.findFirst({
+      where: {
+        id: environmentId,
+      },
+      select: {
+        name: true,
+      }
+    });
+
+    await this.auditLogService.create({
+      topic: 'Ambientes',
+      type: 'info',
+      message: `${created_by_user.name} criou acesso para ${user.name} no ambiente ${environment.name}`,
+      meta: meta,
+    });
   }
 
   async findParity(createEnvAccessDto: CreateEnvAccessDto) {
@@ -439,7 +474,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao verificar período de acesso na criação de acesso à ambiente: período de início maior ou igual ao período de término',
+          message: 'Falha ao verificar período de acesso na criação de acesso à ambiente, período de início maior ou igual ao período de término',
           meta: {
             target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startPeriod: createEnvAccessDto.startPeriod, endPeriod: createEnvAccessDto.endPeriod}],
             statusCode: 400,
@@ -472,7 +507,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao buscar paridade de acesso à ambiente: horário de início maior ou igual ao horário de término',
+            message: 'Falha ao buscar paridade de acesso à ambiente, horário de início maior ou igual ao horário de término',
             meta: {
               target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: access.startTime, endTime: access.endTime}],
               statusCode: 400,
@@ -663,7 +698,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao buscar conflito de usuário gestor em ambiente: id inválido',
+          message: 'Falha ao buscar conflito de usuário gestor em ambiente, id inválido',
           meta: {
             target: [userId, environmentId],
             statusCode: 400,
@@ -700,7 +735,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao verificar acesso de usuário em ambiente: id inválido',
+          message: 'Falha ao verificar acesso de usuário em ambiente, id inválido',
           meta: {
             target: [userId, environmentId],
             statusCode: 400,
@@ -778,9 +813,10 @@ export class EnvAccessService {
   }
 
   async findAccessByUser(userId: string, environmentId: string) {
-    const environmentAccesses = await this.prisma.environment_user.findMany({
+    const environmentAccess = await this.prisma.environment_user.findFirst({
       where: {
         environment_id: environmentId,
+        user_id: userId,
         active: true,
       },
       include: {
@@ -792,20 +828,51 @@ export class EnvAccessService {
         }
       }
     });
-    
-    const response = { access: false, environmentName: environmentAccesses[0].environment.name }
-    let environmentAccess: any;
-
-    environmentAccesses.some((environmentAccesses) => {
-      if (environmentAccesses.user_id === userId) {
-        environmentAccess = environmentAccesses;
-        return true;
-      }
-    })
 
     if (!environmentAccess) {
+      const tempAccess = await this.prisma.environment_temporary_access.findFirst({
+        where: {
+          environment_id: environmentId,
+          user_id: userId,
+        },
+        include: {
+          environment_user_access_control: true,
+          environment: {
+            select: {
+              name: true,
+            }
+          }
+        }
+      });
+
+      if (!tempAccess) {
+        return { access: false };
+      }
+
+      const response = { access: false, environmentName: tempAccess.environment.name }
+      const currentDate = new Date();
+
+      if (tempAccess.start_period <= currentDate && tempAccess.end_period >= currentDate) {
+        for (const accessControl of tempAccess.environment_user_access_control) {
+          if (accessControl.day !== currentDate.getDay()) {
+            continue;
+          }
+  
+          const startTime = accessControl.start_time.toLocaleTimeString();
+          const endTime = accessControl.end_time.toLocaleTimeString();
+          const currentTime = currentDate.toLocaleTimeString();
+  
+          if (startTime <= currentTime && endTime >= currentTime) {
+            response.access = true;
+            break;
+          }
+        }
+      }
+
       return response;
     }
+
+    const response = { access: false, environmentName: environmentAccess.environment.name }
     
     const currentDate = new Date();
 
@@ -835,7 +902,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao buscar acesso à ambiente: id inválido',
+          message: 'Falha ao buscar acesso à ambiente, id inválido',
           meta: {
             target: [id],
             statusCode: 400,
@@ -866,7 +933,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao buscar acesso à ambiente: registro não encontrado',
+            message: 'Falha ao buscar acesso à ambiente, registro não encontrado',
             meta: {
               target: [id],
               statusCode: 404,
@@ -887,7 +954,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao buscar acesso à ambiente: erro interno, verificar logs de erro do serviço',
+            message: 'Falha ao buscar acesso à ambiente, erro interno verificar logs de erro do serviço',
             meta: {
               target: [id],
               statusCode: 500,
@@ -915,7 +982,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao buscar os acessos à ambiente de frequentador: id inválido',
+          message: 'Falha ao buscar os acessos à ambiente de frequentador, id inválido',
           meta: {
             target: [userId],
             statusCode: 400,
@@ -955,7 +1022,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao buscar os acessos à ambiente por ambiente: id inválido',
+          message: 'Falha ao buscar os acessos à ambiente por ambiente, id inválido',
           meta: {
             target: [environmentId],
             statusCode: 400,
@@ -986,7 +1053,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao buscar os acessos à ambiente por ambiente: registro não encontrado',
+            message: 'Falha ao buscar os acessos à ambiente por ambiente, registro não encontrado',
             meta: {
               target: [environmentId],
               statusCode: 404,
@@ -1012,7 +1079,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao atualizar status de acesso à ambiente: id inválido',
+          message: 'Falha ao atualizar status de acesso à ambiente, id inválido',
           meta: {
             target: [id],
             statusCode: 400,
@@ -1041,7 +1108,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Error',
-          message: 'Falha ao atualizar status de acesso à ambiente: registro não encontrado',
+          message: 'Falha ao atualizar status de acesso à ambiente, registro não encontrado',
           meta: {
             target: [id],
             statusCode: 400,
@@ -1069,21 +1136,15 @@ export class EnvAccessService {
         },
       });
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Acesso de ambiente',
-          type: 'Info',
-          message: 'Status de acesso à ambiente atualizado com sucesso',
-          meta: {
-            target: [id],
-            statusCode: 200,
-          },
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error)
-      });
+      this.sendLogWhenEnvironmentAccessStatusIsUpdated(
+        envAccess.user_id,
+        envAccessStatusDto.requestUserId ? envAccessStatusDto.requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+        envAccess.environment_id,
+        envAccessStatusDto.status,
+        {
+          envAccessStatusDto,
+        },
+      );
 
       return envAccess;
     } catch (error) {
@@ -1092,7 +1153,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao atualizar status de acesso à ambiente: registro não encontrado',
+            message: 'Falha ao atualizar status de acesso à ambiente, registro não encontrado',
             meta: {
               target: [id],
               statusCode: 400,
@@ -1113,7 +1174,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Error',
-            message: 'Falha ao atualizar status de acesso à ambiente: erro interno, verificar os logs de erro do serviço',
+            message: 'Falha ao atualizar status de acesso à ambiente, erro interno verificar os logs de erro do serviço',
             meta: {
               target: [id],
               statusCode: 500,
@@ -1135,13 +1196,39 @@ export class EnvAccessService {
     }
   }
 
+  async sendLogWhenEnvironmentAccessStatusIsUpdated(
+    userId: string,
+    created_by: string,
+    environmentId: string,
+    status: boolean,
+    meta?: object,
+  ) {
+    const user = await this.findUserForLog(userId);
+    const created_by_user = await this.findUserForLog(created_by);
+    const environment = await this.prisma.environment.findFirst({
+      where: {
+        id: environmentId,
+      },
+      select: {
+        name: true,
+      }
+    });
+
+    await this.auditLogService.create({
+      topic: 'Ambientes',
+      type: 'info',
+      message: `${created_by_user.name} atualizou status de acesso de ${user.name} no ambiente ${environment.name} para ${status ? 'ativo' : 'inativo'}`,
+      meta: meta,
+    });
+  }
+
   async update(id: string, updateEnvAccessDto: UpdateEnvAccessDto) {
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Info',
-          message: 'Falha ao atualizar acesso à ambiente: id inválido',
+          message: 'Falha ao atualizar acesso à ambiente, id inválido',
           meta: {
             target: [id],
             statusCode: 400,
@@ -1169,7 +1256,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Info',
-          message: 'Falha ao atualizar acesso à ambiente: registro não encontrado',
+          message: 'Falha ao atualizar acesso à ambiente, registro não encontrado',
           meta: {
             target: [id],
             statusCode: 404,
@@ -1201,7 +1288,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Info',
-          message: 'Falha ao atualizar acesso à ambiente: período de início maior ou igual ao período de término',
+          message: 'Falha ao atualizar acesso à ambiente, período de início maior ou igual ao período de término',
           meta: {
             target: [id, {startPeriod: updateEnvAccessDto.startPeriod, endPeriod: updateEnvAccessDto.endPeriod}],
             statusCode: 400,
@@ -1234,7 +1321,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Info',
-            message: 'Falha ao atualizar acesso à ambiente: registro não encontrado',
+            message: 'Falha ao atualizar acesso à ambiente, registro não encontrado',
             meta: {
               target: [id],
               statusCode: 404,
@@ -1254,7 +1341,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Info',
-            message: 'Falha ao atualizar acesso à ambiente: registro já existe',
+            message: 'Falha ao atualizar acesso à ambiente, conflito com registro existente',
             meta: {
               target: [id],
               statusCode: 400,
@@ -1274,7 +1361,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Info',
-            message: 'Falha ao atualizar acesso à ambiente: erro interno, verificar os logs de erro do serviço',
+            message: 'Falha ao atualizar acesso à ambiente, erro interno verificar os logs de erro do serviço',
             meta: {
               target: [id],
               statusCode: 500,
@@ -1312,7 +1399,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao atualizar acesso à ambiente: registro não encontrado',
+              message: 'Falha ao atualizar acesso à ambiente, registro não encontrado',
               meta: {
                 target: [id],
                 statusCode: 404,
@@ -1332,7 +1419,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao atualizar acesso à ambiente: erro interno, verificar os logs de erro do serviço',
+              message: 'Falha ao atualizar acesso à ambiente, erro interno verificar os logs de erro do serviço',
               meta: {
                 target: [id],
                 statusCode: 500,
@@ -1372,7 +1459,7 @@ export class EnvAccessService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Acesso de ambiente',
                 type: 'Info',
-                message: 'Falha ao atualizar acesso à ambiente: horário de início maior ou igual ao horário de término',
+                message: 'Falha ao atualizar acesso à ambiente, horário de início maior ou igual ao horário de término',
                 meta: {
                   target: [id, {startTime: access.startTime, endTime: access.endTime}],
                   statusCode: 400,
@@ -1402,13 +1489,22 @@ export class EnvAccessService {
             );
           }
         }
+
+        this.sendLogWhenEnvironmentAccessIsUpdated(
+          envAccess.user_id,
+          envAccess.created_by ? envAccess.created_by : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+          envAccess.environment_id,
+          {
+            updateEnvAccessDto,
+          },
+        );
       } catch (error) {
         if (error.code === 'P2025') {
           await lastValueFrom(
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao atualizar acesso à ambiente: registro não encontrado',
+              message: 'Falha ao atualizar acesso à ambiente, registro não encontrado',
               meta: {
                 target: [id],
                 statusCode: 404,
@@ -1428,7 +1524,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao atualizar acesso à ambiente: registro já existe',
+              message: 'Falha ao atualizar acesso à ambiente, conflito com registro existente',
               meta: {
                 target: [id],
                 statusCode: 400,
@@ -1448,7 +1544,7 @@ export class EnvAccessService {
             this.httpService.post(this.createAuditLogUrl, {
               topic: 'Acesso de ambiente',
               type: 'Error',
-              message: 'Falha ao atualizar acesso à ambiente: erro interno, verificar os logs de erro do serviço',
+              message: 'Falha ao atualizar acesso à ambiente, erro interno verificar os logs de erro do serviço',
               meta: {
                 target: [id],
                 statusCode: 500,
@@ -1470,13 +1566,38 @@ export class EnvAccessService {
     }
   }
 
-  async remove(id: string) {
+  async sendLogWhenEnvironmentAccessIsUpdated(
+    userId: string,
+    createdBy: string,
+    environmentId: string,
+    meta?: object,
+  ) {
+    const user = await this.findUserForLog(userId);
+    const created_by_user = await this.findUserForLog(createdBy);
+    const environment = await this.prisma.environment.findFirst({
+      where: {
+        id: environmentId,
+      },
+      select: {
+        name: true,
+      }
+    });
+
+    await this.auditLogService.create({
+      topic: 'Ambientes',
+      type: 'info',
+      message: `${created_by_user.name} atualizou acesso para ${user.name} no ambiente ${environment.name}`,
+      meta: meta,
+    });
+  }
+
+  async remove(id: string, requestUserId?: string) {
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Info',
-          message: 'Falha ao remover acesso à ambiente: id inválido',
+          message: 'Falha ao remover acesso à ambiente, id inválido',
           meta: {
             target: [id],
             statusCode: 400,
@@ -1504,7 +1625,7 @@ export class EnvAccessService {
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
           type: 'Info',
-          message: 'Falha ao remover acesso à ambiente: registro não encontrado',
+          message: 'Falha ao remover acesso à ambiente, registro não encontrado',
           meta: {
             target: [id],
             statusCode: 404,
@@ -1529,17 +1650,14 @@ export class EnvAccessService {
         }
       });
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Acesso de ambiente',
-          type: 'Info',
-          message: 'Acesso à ambiente removido com sucesso',
-          meta: {
-            target: [id],
-            statusCode: 200,
-          },
-        })
-      )
+      this.sendLogWhenEnvironmentAccessIsRemoved(
+        envAccess.user_id,
+        requestUserId ? requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+        envAccess.environment_id,
+        {
+          envAccess,
+        },
+      );
 
       return envAccess;
     } catch (error) {
@@ -1548,7 +1666,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Info',
-            message: 'Falha ao remover acesso à ambiente: registro não encontrado',
+            message: 'Falha ao remover acesso à ambiente, registro não encontrado',
             meta: {
               target: [id],
               statusCode: 404,
@@ -1568,7 +1686,7 @@ export class EnvAccessService {
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
             type: 'Info',
-            message: 'Falha ao remover acesso à ambiente: erro interno, verificar os logs de erro do serviço',
+            message: 'Falha ao remover acesso à ambiente, erro interno verificar os logs de erro do serviço',
             meta: {
               target: [id],
               statusCode: 500,
@@ -1587,5 +1705,43 @@ export class EnvAccessService {
         );
       }
     }
+  }
+
+  async sendLogWhenEnvironmentAccessIsRemoved(
+    userId: string,
+    createdBy: string,
+    environmentId: string,
+    meta?: object,
+  ) {
+    const user = await this.findUserForLog(userId);
+    const created_by_user = await this.findUserForLog(createdBy);
+    const environment = await this.prisma.environment.findFirst({
+      where: {
+        id: environmentId,
+      },
+      select: {
+        name: true,
+      }
+    });
+
+    await this.auditLogService.create({
+      topic: 'Ambientes',
+      type: 'info',
+      message: `${created_by_user.name} removeu acesso de ${user.name} no ambiente ${environment.name}`,
+      meta: meta,
+    });
+  }
+
+  private async findUserForLog(userId: string) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+      throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    return user;
   }
 }

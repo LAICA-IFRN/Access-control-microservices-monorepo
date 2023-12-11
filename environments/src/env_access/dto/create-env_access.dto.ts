@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsIn, IsString, IsUUID } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsIn, IsOptional, IsString, IsUUID } from "class-validator";
 import { IsDateFormat } from "../decorators/is-date-format.decorator";
 import { ApiProperty } from "@nestjs/swagger";
 import { AccessDto } from "./access.dto";
@@ -26,6 +26,7 @@ export class CreateEnvAccessDto {
 
   @ApiProperty()
   @IsUUID()
+  @IsOptional()
   createdBy: string;
 
   @ApiProperty()

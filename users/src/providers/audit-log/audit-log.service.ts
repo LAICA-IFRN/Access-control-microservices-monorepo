@@ -12,8 +12,9 @@ export interface AuditLog {
 export class AuditLogService {
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly errorLogger = new Logger()
+  private readonly httpService: HttpService = new HttpService()
   
-  constructor (private readonly httpService: HttpService) {}
+  constructor () {}
 
   create(log: AuditLog) {
     try {

@@ -34,6 +34,20 @@ export class EnvironmentsService {
     return data;
   }
 
+  async createTemporaryAccess(body: any) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.envRoutes.createTemporaryAccess(), body).pipe(
+        catchError((error) => {
+          console.log(error);
+          
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    );
+
+    return data;
+  }
+
   async requestRemoteAccess(environmentId: string, esp8266Id: number, remoteAccessType: string, userId: string) {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.requestRemoteAccess(environmentId, esp8266Id, remoteAccessType, userId)).pipe(

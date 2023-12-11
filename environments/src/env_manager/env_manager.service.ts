@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { isUUID } from 'class-validator';
+import { AuditLogService } from 'src/logs/audit-log.service';
 
 @Injectable()
 export class EnvManagerService {
@@ -15,9 +16,14 @@ export class EnvManagerService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   async create(createEnvManagerDto: CreateEnvManagerDto) {
+    if (!createEnvManagerDto.createdBy) {
+      createEnvManagerDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     const isEnvManager = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -29,7 +35,7 @@ export class EnvManagerService {
           if (error.response.data.statusCode === 400) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Ambiente',
+                topic: 'Ambientes',
                 type: 'Error',
                 message: 'Falha ao verificar papel de usuário na criação de gestor de ambiente, id inválido',
                 meta: {
@@ -47,7 +53,7 @@ export class EnvManagerService {
           } else if (error.response.data.statusCode === 404) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Ambiente',
+                topic: 'Ambientes',
                 type: 'Error',
                 message: 'Falha ao verificar papel de usuário na criação de gestor de ambiente, usuário não encontrado',
                 meta: {
@@ -65,7 +71,7 @@ export class EnvManagerService {
           } else {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Ambiente',
+                topic: 'Ambientes',
                 type: 'Error',
                 message: 'Falha ao verificar papel de usuário na criação de gestor de ambiente, erro interno verificar logs de erro no serviço',
                 meta: {
@@ -88,7 +94,7 @@ export class EnvManagerService {
     if (!isEnvManager) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha ao verificar papel de usuário na criação de gestor de ambiente, usuário não possui o papel gestor de ambiente',
           meta: {
@@ -105,7 +111,6 @@ export class EnvManagerService {
       throw new HttpException('User is not a enviroment manager', HttpStatus.FORBIDDEN);
     }
 
-    // TODO: testar
     const { userId, environmentId, createdBy } = createEnvManagerDto;
     const hasEnvAccess = await this.hasEnvAccessOnEnv(userId, environmentId)
       .then((response) => response)
@@ -131,7 +136,7 @@ export class EnvManagerService {
     if (hasEnvAccess && typeof hasEnvAccess === 'boolean') {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha ao buscar paridade em ambiente na criação de gestor de ambiente, usuário possui acesso ativo ao ambiente',
           meta: {
@@ -168,7 +173,7 @@ export class EnvManagerService {
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
             message: 'Falha ao criar gestor de ambiente, conflito com registro existente',
             meta: {
@@ -189,7 +194,7 @@ export class EnvManagerService {
       } else if (error.code === 'P2003') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
             message: 'Falha ao criar gestor de ambiente, violação de unicidade gestor-ambiente',
             meta: {
@@ -210,7 +215,7 @@ export class EnvManagerService {
       } else if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
             message: 'Falha ao criar gestor de ambiente, registro não encontrado',
             meta: {
@@ -231,7 +236,7 @@ export class EnvManagerService {
       } else {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
             message: 'Falha ao criar gestor de ambiente, erro interno verificar logs de erro no serviço',
             meta: {
@@ -274,7 +279,7 @@ export class EnvManagerService {
     const log = {
       type: 'Info',
       message: `${createdByUser.name} vinculou ${user.name} como o gestor no ambiente ${environment.name}`,
-      topic: 'Ambiente',
+      topic: 'Ambientes',
       meta: {
         target: [userId, environmentId, createdBy],
         statusCode: 201
@@ -345,7 +350,7 @@ export class EnvManagerService {
       
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha ao verificar se usuário possui acesso no ambiente durante criação de gestor: id inválido',
           meta: {
@@ -363,7 +368,7 @@ export class EnvManagerService {
     }
 
     try {
-      const envAccess = await this.prisma.environment_user.findFirstOrThrow({
+      const envAccess = await this.prisma.environment_user.findFirst({
         where: { 
           user_id: userId,
           environment_id: environmentId,
@@ -371,14 +376,9 @@ export class EnvManagerService {
         }
       })
   
-      console.log(envAccess);
-  
       const hasEnvAccess = envAccess ? true : false;
-      console.log(hasEnvAccess);
       return hasEnvAccess
     } catch (error) {
-      console.log(error);
-      
       if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -409,7 +409,7 @@ export class EnvManagerService {
     if (!isUUID(userId) || !isUUID(environmentId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha verificar se usuário possui acesso ao ambiente: id inválido',
           meta: {
@@ -420,8 +420,6 @@ export class EnvManagerService {
       )
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error);
-        
         this.errorLogger.error('Falha ao criar log', error);
       });
 
@@ -503,7 +501,7 @@ export class EnvManagerService {
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha ao buscar gestor de ambiente: id inválido',
           meta: {
@@ -534,7 +532,7 @@ export class EnvManagerService {
       if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
             message: 'Falha ao buscar gestor de ambiente: registro não encontrado',
             meta: {
@@ -555,7 +553,7 @@ export class EnvManagerService {
       } else {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
             message: 'Falha ao buscar gestor de ambiente: erro interno, verificar logs de erro no serviço',
             meta: {
@@ -583,7 +581,7 @@ export class EnvManagerService {
     if (!isUUID(userId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha ao buscar todos os gestores de ambiente por usuário: id inválido',
           meta: {
@@ -615,7 +613,7 @@ export class EnvManagerService {
     if (!isUUID(environmentId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha ao buscar todos os gestores de ambiente por ambiente: id inválido',
           meta: {
@@ -644,10 +642,14 @@ export class EnvManagerService {
   }
 
   async updateStatus(id: string, envManagerStatusDto: EnvManagerStatusDto) {
+    if (!envManagerStatusDto.requestUserId) {
+      envManagerStatusDto.requestUserId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Error',
           message: 'Falha ao atualizar status do gestor de ambiente: id inválido',
           meta: {
@@ -679,7 +681,7 @@ export class EnvManagerService {
 
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambiente',
+          topic: 'Ambientes',
           type: 'Info',
           message: 'Status do gestor de ambiente atualizado com sucesso',
           meta: {
@@ -693,6 +695,13 @@ export class EnvManagerService {
         this.errorLogger.error('Falha ao criar log', error);
       });
 
+      this.sendLogWhenEnvironmentManagerIsUpdated(
+        envManager.user_name,
+        envManagerStatusDto.requestUserId,
+        envManager.environment_id,
+        envManagerStatusDto
+      )
+
       return {
         active: envManager.active,
       }
@@ -700,9 +709,9 @@ export class EnvManagerService {
       if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
-            message: 'Falha ao atualizar status do gestor de ambiente: registro não encontrado',
+            message: 'Falha ao at ualizar status do gestor de ambiente: registro não encontrado',
             meta: {
               target: error.meta.target,
               statusCode: 404
@@ -721,7 +730,7 @@ export class EnvManagerService {
       } else {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
-            topic: 'Ambiente',
+            topic: 'Ambientes',
             type: 'Error',
             message: 'Falha ao atualizar status do gestor de ambiente: erro interno, verificar logs de erro no serviço',
             meta: {
@@ -743,6 +752,30 @@ export class EnvManagerService {
         );
       }
     }
+  }
+
+  async sendLogWhenEnvironmentManagerIsUpdated(
+    userName: string,
+    createdBy: string,
+    environmentId: string,
+    meta?: object,
+  ) {
+    const created_by_user = await this.findUserForLog(createdBy);
+    const environment = await this.prisma.environment.findFirst({
+      where: {
+        id: environmentId,
+      },
+      select: {
+        name: true,
+      }
+    });
+
+    await this.auditLogService.create({
+      topic: 'Ambientes',
+      type: 'info',
+      message: `${created_by_user.name} atualizou o vinculo do gestor ${userName} no ambiente ${environment.name}`,
+      meta: meta,
+    });
   }
 
   private async findUserForLog(userId: string) {

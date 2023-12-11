@@ -59,6 +59,10 @@ export class EnvironmentService {
   // } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
+    if (!createEnvironmentDto.createdBy) {
+      createEnvironmentDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     const user: any = await lastValueFrom(
       this.httpService.get(this.getUserEndpoint + createEnvironmentDto.createdBy).pipe(
         catchError((error) => {
@@ -110,25 +114,19 @@ export class EnvironmentService {
         data: {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
-          created_by: createEnvironmentDto.createdBy ? createEnvironmentDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+          created_by: createEnvironmentDto.createdBy,
           user_name: user.name,
           latitude: createEnvironmentDto.latitude,
           longitude: createEnvironmentDto.longitude,
         },
       })
 
-      // TODO: alterar pra pegar o nome do usuário que criou o ambiente
-
-      this.auditLogService.create(
-        AuditLogConstants.createEnvironmentSuccess(
-          user.name,
-          environment.name,
-          {
-            enronmentId: environment.id,
-            userId: user.id
-          }
-        )
-      )
+      this.sendLogWhenEnvironmentCreated(
+        environment.name, 
+        environment.id, 
+        createEnvironmentDto.createdBy, 
+        createEnvironmentDto
+      );
 
       return environment
     } catch (error) {
@@ -196,7 +194,27 @@ export class EnvironmentService {
     }
   }
 
+  async sendLogWhenEnvironmentCreated(environmentName: string, environmentId: string, userId: string, createEnvironmentDto: CreateEnvironmentDto) {
+    const user = await this.findUserForLog(userId);
+
+    await this.auditLogService.create(
+      AuditLogConstants.createEnvironmentSuccess(
+        user.name,
+        environmentName,
+        {
+          environmentId,
+          userId,
+          data: createEnvironmentDto
+        }
+      )
+    );
+  }
+
   async createTemporaryAccess(createTemporaryAccessDto: CreateTemporaryAccessDto) {
+    if (!createTemporaryAccessDto.createdBy) {
+      createTemporaryAccessDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+    
     const isAdmin = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -448,7 +466,12 @@ export class EnvironmentService {
       }
     }
 
-    
+    this.sendLogWhenTemporaryAccessCreated(
+      tempAccess.environment_id,
+      tempAccess.user_name,
+      tempAccess.user_id,
+      createTemporaryAccessDto
+    )
 
     return {
       ...tempAccess,
@@ -456,22 +479,24 @@ export class EnvironmentService {
     }
   }
 
-  // TODO: alterar pra pegar o nome do usuário que criou o acesso temporário
   async sendLogWhenTemporaryAccessCreated(
-    environmentName: string,
     environmentId: string,
     userName: string,
     userId: string,
-    createdById: string,
     createTemporaryAccessDto: CreateTemporaryAccessDto
   ) {
-    const user: any = this.findUserForLog(createTemporaryAccessDto.createdBy);
+    const createdByUser: any = await this.findUserForLog(
+      createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    );
+    const environment = await this.prisma.environment.findFirst({
+      where: { id: environmentId }
+    })
 
     await this.auditLogService.create(
       AuditLogConstants.createTemporaryAccessSuccess(
         userName,
-        environmentName,
-        user.name,
+        environment.name,
+        createdByUser.name,
         {
           environmentId,
           userId,
@@ -1260,6 +1285,8 @@ export class EnvironmentService {
     )
     .then((response) => response.data)
     .catch((error) => {
+      console.log(error);
+      
       this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
       throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
     });

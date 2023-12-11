@@ -63,3 +63,6 @@
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-12-07T18:13:52.369Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-12-07T18:14:27.991Z"}
 {"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-12-07T18:14:39.596Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-12-11T16:43:24.348Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-12-11T16:48:44.462Z"}
+{"level":"error","message":"Falha ao enviar log","stack":[{}],"timestamp":"2023-12-11T16:55:44.551Z"}

@@ -89,7 +89,7 @@ export class EnvironmentController {
   @ApiNotFoundResponse({ type: EnvironmentNotFoundResponseEntity })
   @Patch(':id/status')
   changeStatus(@Param('id') id: string, @Body() updateEnvironmentDto: EnvStatusDto) {
-    return this.environmentService.changeStatus(id, updateEnvironmentDto.status);
+    return this.environmentService.changeStatus(id, updateEnvironmentDto.status, updateEnvironmentDto.requestUserId);
   }
 
   @ApiOperation({ description: 'Endpoint para remoção de ambiente' })
@@ -97,7 +97,7 @@ export class EnvironmentController {
   @ApiForbiddenResponse({ type: RemoveForbiddenResponseEntity })
   @ApiNotFoundResponse({ type: EnvironmentNotFoundResponseEntity })
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.environmentService.remove(id);
+  remove(@Param('id') id: string, @Query('userId') userId: string) {
+    return this.environmentService.remove(id, userId);
   }
 }

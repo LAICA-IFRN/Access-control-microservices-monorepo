@@ -18,6 +18,14 @@ export class EnvironmentsController {
 
   // @Roles(RolesConstants.ADMIN)
   // @UseGuards(RolesGuard)
+  @Post('env/temporary-access')
+  createTemporaryAccess(@Body() body: any, @Req() request: Request) {
+    const userId = request['userId'];
+    return this.environmentsService.createTemporaryAccess(body); //{...body, requestUserId: userId}
+  }
+
+  // @Roles(RolesConstants.ADMIN)
+  // @UseGuards(RolesGuard)
   @Post('remote-access')
   requestRemoteAccess(@Body() body: any) {
     const { environmentId, esp8266Id, type, userId } = body;

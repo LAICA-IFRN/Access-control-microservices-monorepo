@@ -12,6 +12,10 @@ export class EnvRoutes {
     return `${this.envBaseUrl}`;
   }
 
+  createTemporaryAccess(): string {
+    return `${this.envBaseUrl}/temporary-access`
+  }
+
   requestRemoteAccess(environmentId: string, esp8266Id: number, remoteAccessType: string, userId: string): string {
     return `${this.envBaseUrl}/remote-access?environmentId=${environmentId}&esp8266Id=${esp8266Id}&type=${remoteAccessType}&userId=${userId}`;
   }

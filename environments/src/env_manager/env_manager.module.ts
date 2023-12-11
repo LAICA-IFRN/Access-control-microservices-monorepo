@@ -3,6 +3,7 @@ import { EnvManagerService } from './env_manager.service';
 import { EnvManagerController } from './env_manager.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { HttpModule } from '@nestjs/axios';
+import { AuditLogService } from 'src/logs/audit-log.service';
 
 @Module({
   imports: [
@@ -10,6 +11,6 @@ import { HttpModule } from '@nestjs/axios';
     HttpModule
   ],
   controllers: [EnvManagerController],
-  providers: [EnvManagerService],
+  providers: [EnvManagerService, AuditLogService],
 })
 export class EnvManagerModule {}

@@ -22,6 +22,10 @@ export class EnvAccessService {
   ) {}
 
   async create(createEnvAccessDto: CreateEnvAccessDto) {
+    if (!createEnvAccessDto.createdBy) {
+      createEnvAccessDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     const isFrequenter = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -171,7 +175,7 @@ export class EnvAccessService {
           environment_id: createEnvAccessDto.environmentId,
           start_period: startPeriod,
           end_period: endPeriod,
-          created_by: createEnvAccessDto.createdBy ? createEnvAccessDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+          created_by: createEnvAccessDto.createdBy,
         },
       });
     } catch (error) {
@@ -1074,6 +1078,10 @@ export class EnvAccessService {
   }
 
   async updateStatus(id: string, envAccessStatusDto: EnvAccessStatusDto) {
+    if (!envAccessStatusDto.requestUserId) {
+      envAccessStatusDto.requestUserId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -1138,7 +1146,7 @@ export class EnvAccessService {
 
       this.sendLogWhenEnvironmentAccessStatusIsUpdated(
         envAccess.user_id,
-        envAccessStatusDto.requestUserId ? envAccessStatusDto.requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+        envAccessStatusDto.requestUserId,
         envAccess.environment_id,
         envAccessStatusDto.status,
         {
@@ -1223,6 +1231,10 @@ export class EnvAccessService {
   }
 
   async update(id: string, updateEnvAccessDto: UpdateEnvAccessDto) {
+    if (!updateEnvAccessDto.requestUserId) {
+      updateEnvAccessDto.requestUserId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {

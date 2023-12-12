@@ -6,27 +6,12 @@
 //   const today = new Date();
 //   today.setHours(0,0,0,0);
 
-//   const access = await prisma.access.findMany({
+//   const access = await prisma.log.deleteMany({
 //     where: {
-//       OR: [
-//         {
-//           message: {
-//             contains: 'acesso'
-//           }
-//         },
-//         {
-//           message: {
-//             contains: 'accessou'
-//           }
-//         }
-//       ],
-//       AND: {
-//         created_at: {
-//           gte: today.toISOString()
-//         }
+//       message: {
+//         contains: 'teste'
 //       }
-//     },
-//     take: 5
+//     }
 //   });
 
 //   console.log(access);

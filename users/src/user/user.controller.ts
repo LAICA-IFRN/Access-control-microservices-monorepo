@@ -55,6 +55,11 @@ export class UserController {
     return this.userService.sendInviteEmail(body);
   }
 
+  @Get('dashboard')
+  dashboardConsultData() {
+    return this.userService.dashboardConsultData();
+  }
+
   @Get('document-types')
   findDocumentTypes() {
     return this.userService.findDocumentTypes();

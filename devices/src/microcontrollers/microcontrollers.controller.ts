@@ -17,8 +17,9 @@ export class MicrocontrollersController {
   async activate(
     @Query('id') id: number,
     @Query('environmentId') environmentId: string,
+    @Query('userId') userId?: string,
   ) {
-    return this.microcontrollersService.activateMicrocontroller(+id, environmentId);
+    return this.microcontrollersService.activateMicrocontroller(+id, environmentId, userId);
   }
 
   @Post('keep-alive')

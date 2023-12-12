@@ -10,7 +10,7 @@ import { FindAllDto } from 'src/utils/find-all.dto';
 @Injectable()
 export class RfidService {
   private readonly usersServiceUrl = `${process.env.USERS_SERVICE_URL}`
-  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly createAuditLogUrl = process.env.AUDIT_LOG_URL
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -19,6 +19,10 @@ export class RfidService {
   ) { }
 
   async create(createRfidDto: CreateRfidDto) {
+    if (!createRfidDto.createdBy) {
+      createRfidDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     const findUserEndpoint = `${this.usersServiceUrl}/${createRfidDto.userId}`
     const findUser = await lastValueFrom(
       this.httpService.get(findUserEndpoint)
@@ -31,7 +35,7 @@ export class RfidService {
                 this.httpService.post(this.createAuditLogUrl, {
                   topic: 'Dispositivos',
                   type: 'Error',
-                  message: 'Falha ao criar Tag RFID: serviço de usuários indisponível',
+                  message: 'Falha ao criar Tag RFID, serviço de usuários indisponível',
                   meta: {
                     device: 'RFID',
                     userId: createRfidDto.userId,
@@ -48,7 +52,7 @@ export class RfidService {
                 this.httpService.post(this.createAuditLogUrl, {
                   topic: 'Dispositivos',
                   type: 'Error',
-                  message: 'Falha ao criar Tag RFID: usuário não encontrado',
+                  message: 'Falha ao criar Tag RFID, usuário não encontrado',
                   meta: {
                     device: 'RFID',
                     userId: createRfidDto.userId,
@@ -66,7 +70,7 @@ export class RfidService {
                 this.httpService.post(this.createAuditLogUrl, {
                   topic: 'Dispositivos',
                   type: 'Error',
-                  message: 'Falha ao criar Tag RFID: ID de usuário inválido',
+                  message: 'Falha ao criar Tag RFID, ID de usuário inválido',
                   meta: {
                     device: 'RFID',
                     userId: createRfidDto.userId,
@@ -84,7 +88,7 @@ export class RfidService {
                 this.httpService.post(this.createAuditLogUrl, {
                   topic: 'Dispositivos',
                   type: 'Error',
-                  message: 'Falha ao criar Tag RFID: erro interno, verificar logs de erro do serviço',
+                  message: 'Falha ao criar Tag RFID, erro interno verificar logs de erro do serviço',
                   meta: {
                     device: 'RFID',
                     userId: createRfidDto.userId,
@@ -113,27 +117,10 @@ export class RfidService {
         },
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Dispositivos',
-          type: 'Info',
-          message: `Tag RFID criada com sucesso`,
-          meta: {
-            device: 'RFID',
-            tag: rfid.id,
-            userId: rfid.user_id
-          }
-        })
-      )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+      this.sendLogWhenCreate(rfid.tag, createRfidDto);
 
       return rfid
     } catch (error) {
-      console.log('try\n', error);
-
       if (error.code === 'P2002') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
@@ -172,6 +159,28 @@ export class RfidService {
         throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
       }
     }
+  }
+
+  async sendLogWhenCreate(tag: string, createRfidDto: CreateRfidDto) {
+    const user = await this.findUserForLog(createRfidDto.userId);
+    const createdByUser = await this.findUserForLog(createRfidDto.createdBy);
+
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: 'Dispositivos',
+        type: 'Info',
+        message: `${createdByUser.name} criou a tag RFID ${tag} para o usuário ${user.name}`,
+        meta: {
+          device: 'RFID',
+          tag: tag,
+          userId: user.id
+        }
+      })
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error)
+      })
   }
 
   async findAll(findAllDto: FindAllDto) {
@@ -287,6 +296,10 @@ export class RfidService {
   }
 
   async updateStatus(updateStatusRfidDto: UpdateStatusRfidDto) {
+    if (!updateStatusRfidDto.updatedBy) {
+      updateStatusRfidDto.updatedBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     try {
       const rfid = await this.prismaService.tag_rfid.update({
         where: {
@@ -297,21 +310,7 @@ export class RfidService {
         }
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Dispositivos',
-          type: 'Info',
-          message: `Status da tag RFID atualizada com sucesso`,
-          meta: {
-            device: 'RFID',
-            tag: rfid.id,
-            userId: rfid.user_id
-          }
-        })
-      )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+      this.sendLogWhenUpdateStatus(rfid.tag, updateStatusRfidDto);
 
       return rfid
     } catch (error) {
@@ -353,7 +352,32 @@ export class RfidService {
     }
   }
 
-  async remove(id: number, deletedBy: string) {
+  async sendLogWhenUpdateStatus(tag: string, updateStatusRfidDto: UpdateStatusRfidDto) {
+    const user = await this.findUserForLog(updateStatusRfidDto.updatedBy);
+
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: 'Dispositivos',
+        type: 'Info',
+        message: `${user.name} alterou o status da tag RFID ${tag} para ${updateStatusRfidDto.status ? 'ativo' : 'inativo'}`,
+        meta: {
+          device: 'RFID',
+          tag: tag,
+          userId: user.id
+        }
+      })
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error)
+      })
+  }
+
+  async remove(id: number, deletedBy?: string) {
+    if (!deletedBy) {
+      deletedBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+    
     if (isNaN(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -381,22 +405,7 @@ export class RfidService {
         }
       })
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Dispositivos',
-          type: 'Info',
-          message: `Tag RFID removida com sucesso`,
-          meta: {
-            device: 'RFID',
-            tag: rfid.id,
-            userId: rfid.user_id,
-            deletedBy
-          }
-        })
-      )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error)
-        })
+      this.sendLogWhenRemove(rfid.tag, deletedBy);
 
       return rfid
     } catch (error) {
@@ -436,5 +445,42 @@ export class RfidService {
         throw new HttpException(error.message, HttpStatus.INTERNAL_SERVER_ERROR)
       }
     }
+  }
+
+  async sendLogWhenRemove(tag: string, deletedBy: string) {
+    const user = await this.findUserForLog(deletedBy);
+
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: 'Dispositivos',
+        type: 'Info',
+        message: `${user.name} removeu a tag RFID ${tag}`,
+        meta: {
+          device: 'RFID',
+          tag: tag,
+          userId: user.id,
+          deletedBy
+        }
+      })
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao enviar log', error)
+      })
+  }
+
+  private async findUserForLog(userId: string) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      console.log(error);
+      
+      this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+      throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    return user;
   }
 }

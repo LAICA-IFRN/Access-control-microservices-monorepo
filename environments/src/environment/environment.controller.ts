@@ -58,6 +58,11 @@ export class EnvironmentController {
     return this.environmentService.getEnvironmentForMobile(userId, +type);
   }
 
+  @Get('dashboard')
+  dashboardConsultData() {
+    return this.environmentService.dashboardConsultData();
+  }
+
   @ApiOperation({ description: 'Endpoint para listagem de ambientes' })
   @ApiResponse({ type: EnvironmentEntity, isArray: true })
   @ApiBadRequestResponse({ type: FindAllBadRequestResponseEntity })

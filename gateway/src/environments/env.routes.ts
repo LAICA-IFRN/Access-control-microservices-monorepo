@@ -8,6 +8,10 @@ export class EnvRoutes {
   private readonly envManagerBaseUrl = this.envServiceBaseUrl + '/env-manager'
   private readonly envAccessBaseUrl = this.envServiceBaseUrl + '/env-access'
 
+  dashboardConsultData(): string {
+    return `${this.envBaseUrl}/dashboard`;
+  }
+
   create(): string {
     return `${this.envBaseUrl}`;
   }

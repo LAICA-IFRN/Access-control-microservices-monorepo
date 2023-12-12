@@ -11,6 +11,18 @@ export class DevicesService {
     private readonly deviceRoutes: DeviceRoutes,
   ) {}
 
+  async dashboardConsultData() {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.deviceRoutes.dashboardConsultData()).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    );
+
+    return data;
+  }
+
   async createRfid(body: any) {
     const response = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.createRfid(), body).pipe(

@@ -12,11 +12,17 @@ export class AuditConstants {
     };
   }
 
-  public static activateMicrocontrollerSuccess(metaData: any): AuditLog {
+  public static activateMicrocontrollerSuccess(
+    userName: string,
+    environmentName: string,
+    microcontrollerMac: string,
+    type: string,
+    metaData: any
+  ): AuditLog {
     return {
       topic: "Dispositivos",
       type: "info",
-      message: `Microcontrolador ${metaData.type} ativado.`,
+      message: `${userName} ativou o ${type} de mac ${microcontrollerMac} vinculando-o ao ambiente ${environmentName}`,
       meta: metaData
     };
   }
@@ -25,7 +31,7 @@ export class AuditConstants {
     return {
       topic: "Dispositivos",
       type: "info",
-      message: `Microcontrolador ${metaData.type} criado, aguardando ativação.`,
+      message: `Microcontrolador ${metaData.microcontroller_type.name} de mac ${metaData.mac} criado, aguardando ativação.`,
       meta: metaData
     };
   }
@@ -143,6 +149,21 @@ export class AuditConstants {
       topic: "Dispositivos",
       type: "error",
       message: 'Erro inesperado ao atualizar microcontrolador.',
+      meta: metaData
+    };
+  }
+
+  public static updateMicrocontrollerStatusSuccess(
+    userName: string,
+    environmentName: string,
+    microcontrollerMac: string,
+    type: string,
+    metaData: any
+  ): AuditLog {
+    return {
+      topic: "Dispositivos",
+      type: "info",
+      message: `${userName} atualizou o status do ${type} de mac ${microcontrollerMac} para ${metaData.status} no ambiente ${environmentName}`,
       meta: metaData
     };
   }

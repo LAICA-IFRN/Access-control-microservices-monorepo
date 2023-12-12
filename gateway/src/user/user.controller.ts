@@ -8,6 +8,11 @@ import { RolesConstants } from 'src/utils/constants';
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Get('dashboard')
+  dashboardConsultData() {
+    return this.userService.dashboardConsultData();
+  }
+
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Post()

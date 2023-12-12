@@ -3,3 +3,6 @@
 {"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2023-11-02T20:49:07.615Z"}
 {"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2023-11-02T20:49:09.203Z"}
 {"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2023-11-02T20:49:10.293Z"}
+{"level":"error","message":"Falha ao criar log","stack":[null],"timestamp":"2023-12-11T21:22:13.538Z"}
+{"level":"error","message":"Falha ao criar log","stack":[null],"timestamp":"2023-12-11T21:22:17.119Z"}
+{"level":"error","message":"Falha ao criar log","stack":[null],"timestamp":"2023-12-11T21:22:50.249Z"}

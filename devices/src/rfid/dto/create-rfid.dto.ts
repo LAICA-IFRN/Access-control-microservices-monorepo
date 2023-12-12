@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString, IsUUID } from "class-validator";
+import { IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateRfidDto {
   
@@ -13,5 +13,6 @@ export class CreateRfidDto {
 
   @ApiProperty()
   @IsUUID()
-  createdBy: string;
+  @IsOptional()
+  createdBy?: string;
 }

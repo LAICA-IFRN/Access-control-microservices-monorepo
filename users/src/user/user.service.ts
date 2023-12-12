@@ -211,6 +211,22 @@ export class UserService {
     }
   }
 
+  async dashboardConsultData() {
+    const totalUsers = await this.prismaService.user.count();
+    const usersCreatedAtLastWeek = await this.prismaService.user.count({
+      where: {
+        created_at: {
+          gte: new Date(new Date().setDate(new Date().getDate() - 7))
+        }
+      }
+    });
+
+    return {
+      totalUsers,
+      usersCreatedAtLastWeek
+    }
+  }
+
   async findDocumentTypes() {
     try {
       return await this.prismaService.document_type.findMany();

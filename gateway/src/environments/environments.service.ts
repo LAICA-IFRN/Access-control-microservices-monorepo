@@ -10,6 +10,18 @@ export class EnvironmentsService {
     private envRoutes: EnvRoutes
   ) {}
 
+  async dashboardConsultData() {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.envRoutes.dashboardConsultData()).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    );
+
+    return data;
+  }
+
   async create(body: any) {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.create(), body).pipe(

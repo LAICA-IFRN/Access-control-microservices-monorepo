@@ -39,6 +39,15 @@ export class MicrocontrollersService {;
               name: createMicrocontrollerDto.type
             }
           }
+        },
+        select: {
+          id: true,
+          mac: true,
+          microcontroller_type: {
+            select: {
+              name: true
+            }
+          }
         }
       });
 
@@ -144,7 +153,15 @@ export class MicrocontrollersService {;
 
   async searchRemoteAccess(id: number) {
     const microcontroller = await this.prismaService.microcontroller.findFirst({
-      where: { id, active: true }
+      where: { id, active: true },
+      select: {
+        mac: true,
+        microcontroller_type: {
+          select: {
+            name: true
+          }
+        }
+      }
     });
     
     if (!microcontroller) {
@@ -165,13 +182,10 @@ export class MicrocontrollersService {;
 
     if (remoteAccess.value) {
       this.sendAccessLogWhenFindOne(
-        remoteAccess.userName,
-        remoteAccess.userId,
-        remoteAccess.environmentName,
-        remoteAccess.environmentId,
+        remoteAccess,
         microcontroller.mac,
         id,
-        remoteAccess.remoteAccessType
+        microcontroller.microcontroller_type.name
       );
     }
 
@@ -179,23 +193,21 @@ export class MicrocontrollersService {;
   }
 
   async sendAccessLogWhenFindOne (
-    userName: string, 
-    userId: string, 
-    environmentName: string, 
-    environmentId: string,
+    remoteAccess: any,
     microcontrollerMac: string,
     microcontrollerId: number,
-    remoteAccessType: string
+    microcontrollerType: string,
   ) {
-    if (remoteAccessType === 'web') {
+    if (remoteAccess.remoteAccessType === 'web') {
       await this.accessLogService.create(
         AccessConstants.webRemoteAccessSuccess(
-          userName,
-          environmentName,
+          remoteAccess.userName,
+          remoteAccess.environmentName,
           microcontrollerMac,
+          microcontrollerType,
           {
-            userId,
-            environmentId,
+            userId: remoteAccess.userId,
+            environmentId: remoteAccess.environmentId,
             microcontrollerId
           }
         )
@@ -203,12 +215,13 @@ export class MicrocontrollersService {;
     } else {
       await this.accessLogService.create(
         AccessConstants.mobileRemoteAccessSuccess(
-          userName,
-          environmentName,
+          remoteAccess.userName,
+          remoteAccess.environmentName,
           microcontrollerMac,
+          microcontrollerType,
           {
-            userId,
-            environmentId,
+            userId: remoteAccess.userId,
+            environmentId: remoteAccess.environmentId,
             microcontrollerId
           }
         )
@@ -216,7 +229,11 @@ export class MicrocontrollersService {;
     }
   }
 
-  async activateMicrocontroller (id: number, environmentId: string) {
+  async activateMicrocontroller (id: number, environmentId: string, userId?: string) {
+    if (!userId) {
+      userId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     if(isNaN(id)) {
       this.auditLogService.create(AuditConstants.findOneMicrocontrollerBadRequest({ id }));
       throw new HttpException('Invalid microcontroller id', HttpStatus.BAD_REQUEST)
@@ -236,10 +253,26 @@ export class MicrocontrollersService {;
         data: {
           environment_id: environmentId,
           active: true
+        },
+        select: {
+          id: true,
+          mac: true,
+          ip: true,
+          microcontroller_type: {
+            select: {
+              name: true
+            }
+          }
         }
       })
 
-      this.auditLogService.create(AuditConstants.createMicrocontrollerSuccess(microcontroller));
+      this.sendLogWhenActivateMicrocontroller(
+        microcontroller.mac,
+        microcontroller.ip,
+        microcontroller.microcontroller_type.name,
+        environmentId,
+        userId
+      );
 
       return microcontroller.id;
     } catch (error) {
@@ -252,6 +285,26 @@ export class MicrocontrollersService {;
         throw new HttpException('Erro inesperado ao criar microcontrolador', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
+  }
+
+  async sendLogWhenActivateMicrocontroller (mac: string, ip: string, type: string, environmentId: string, userId: string) {
+    const user = await this.findUserForLog(userId);
+    const environment = await this.findEnvironmentForLog(environmentId);
+
+    await this.auditLogService.create(
+      AuditConstants.activateMicrocontrollerSuccess(
+        user.name,
+        environment.name,
+        mac,
+        type,
+        {
+          mac,
+          ip,
+          userId,
+          environmentId
+        }
+      )
+    )
   }
 
   async findAll(findAllDto: FindAllDto) {
@@ -495,7 +548,11 @@ export class MicrocontrollersService {;
     }
   }
 
-  async updateStatus(id: number, status: boolean) {
+  async updateStatus(id: number, status: boolean, userId?: string) {
+    if (!userId) {
+      userId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     if(isNaN(id)) {
       this.auditLogService.create(AuditConstants.findOneMicrocontrollerBadRequest({ id }));
       throw new HttpException('Invalid id', HttpStatus.BAD_REQUEST)
@@ -513,10 +570,25 @@ export class MicrocontrollersService {;
         },
         data: {
           active: status
+        },
+        select: {
+          environment_id: true,
+          mac: true,
+          microcontroller_type: {
+            select: {
+              name: true
+            }
+          }
         }
       })
 
-      this.auditLogService.create(AuditConstants.createMicrocontrollerSuccess(microcontroller));
+      this.sendLogWhenUpdateMicrocontrollerStatus(
+        userId,
+        microcontroller.environment_id,
+        microcontroller.mac,
+        microcontroller.microcontroller_type.name,
+        { status, mac: microcontroller.mac, userId, environmentId: microcontroller.environment_id }
+      );
 
       return microcontroller;
     } catch (error) {
@@ -529,5 +601,56 @@ export class MicrocontrollersService {;
         throw new HttpException('Erro inesperado ao atualizar microcontrolador', HttpStatus.INTERNAL_SERVER_ERROR);
       }
     }
+  }
+
+  async sendLogWhenUpdateMicrocontrollerStatus (
+    userId: string,
+    environmentId: string,
+    microcontrollerMac: string,
+    type: string,
+    metaData: any
+  ) {
+    const user = await this.findUserForLog(userId);
+    const environment = await this.findEnvironmentForLog(environmentId);
+
+    await this.auditLogService.create(
+      AuditConstants.updateMicrocontrollerStatusSuccess(
+        user.name,
+        environment.name,
+        microcontrollerMac,
+        type,
+        metaData
+      )
+    )
+  }
+
+  private async findUserForLog(userId: string) {
+    const user = await lastValueFrom(
+      this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      console.log(error);
+      
+      this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+      throw new HttpException('Internal server error when search user', HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    return user;
+  }
+
+  private async findEnvironmentForLog(environmentId: string) {
+    const environment = await lastValueFrom(
+      this.httpService.get(`${process.env.ENVIRONMENTS_SERVICE_URL}/env/${environmentId}`)
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      console.log(error);
+      
+      this.errorLogger.error('Falha ao se conectar com o serviço de ambientes (500)', error);
+      throw new HttpException('Internal server error when search environments', HttpStatus.INTERNAL_SERVER_ERROR);
+    });
+
+    return environment;
   }
 }

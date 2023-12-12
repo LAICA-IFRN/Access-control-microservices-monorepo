@@ -5,6 +5,8 @@ import { CacheModule } from '@nestjs/cache-manager';
 import { MicrocontrollersModule } from './microcontrollers/microcontrollers.module';
 import { HttpModule } from '@nestjs/axios';
 import { MobileModule } from './mobile/mobile.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -19,7 +21,7 @@ import { MobileModule } from './mobile/mobile.module';
     }),
     MobileModule,
   ],
-  controllers: [],
-  providers: [],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}

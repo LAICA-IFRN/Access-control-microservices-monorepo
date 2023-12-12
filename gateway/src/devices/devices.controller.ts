@@ -9,6 +9,11 @@ import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) { }
 
+  @Get('dashboard')
+  dashboardConsultData() {
+    return this.devicesService.dashboardConsultData();
+  }
+
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
   @Post('rfid')

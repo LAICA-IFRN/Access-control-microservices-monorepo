@@ -8,6 +8,10 @@ export class DeviceRoutes {
 
   constructor () {}
 
+  dashboardConsultData(): string {
+    return `${process.env.DEVICES_SERVICE_URL}/dashboard`;
+  }
+
   coldStartMicrocontroller(id: number): string {
     return `${this.deviceMicrocontrollerUrl}/cold-start?id=${id}`;
   }
@@ -70,7 +74,7 @@ export class DeviceRoutes {
   }
 
   updateRfidStatus(id: string): string {
-    return `${this.deviceRfidUrl}/${id}/status`;
+    return `${this.deviceRfidUrl}/status`;
   }
 
   removeRfid(id: string): string {

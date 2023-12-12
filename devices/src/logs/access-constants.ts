@@ -5,11 +5,12 @@ export class AccessConstants {
     userName: string,
     environmentName: string,
     microcontrollerMac: string,
+    type: string,
     metaData: any
   ): AccessLog {
     return {
       type: "info",
-      message: `ESP8266 de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pelo sistema web ao ambiente ${environmentName}`,
+      message: `${type} de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pelo sistema web ao ambiente ${environmentName}`,
       meta: metaData
     };
   }
@@ -18,11 +19,12 @@ export class AccessConstants {
     userName: string,
     environmentName: string,
     microcontrollerMac: string,
+    type: string,
     metaData: any
   ): AccessLog {
     return {
       type: "info",
-      message: `ESP8266 de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pelo dispositivo móvel ao ambiente ${environmentName}`,
+      message: `${type} de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pelo dispositivo móvel ao ambiente ${environmentName}`,
       meta: metaData
     };
   }

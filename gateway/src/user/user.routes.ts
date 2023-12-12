@@ -5,6 +5,10 @@ export class UserRoutes {
   private readonly baseUrl = process.env.USERS_SERVICE_URL;
 
   constructor() {}
+
+  dashboardConsultData(): string {
+    return `${this.baseUrl}/dashboard`;
+  }
   
   create(): string {
     return `${this.baseUrl}`;

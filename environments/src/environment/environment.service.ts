@@ -686,6 +686,22 @@ export class EnvironmentService {
     ));
   }
 
+  async dashboardConsultData() {
+    const totalEnvironments = await this.prisma.environment.count();
+    const environmentsCreatedAtLastWeek = await this.prisma.environment.count({
+      where: {
+        created_at: {
+          gte: new Date(new Date().setDate(new Date().getDate() - 7))
+        }
+      }
+    });
+
+    return {
+      totalEnvironments,
+      environmentsCreatedAtLastWeek
+    }
+  }
+
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;

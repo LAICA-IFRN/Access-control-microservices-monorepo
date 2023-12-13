@@ -8,6 +8,7 @@ import { EnvironmentEntity } from './entities/environment.entity';
 import { ConflictResponseEntity, CreateBadRequestResponseEntity, CreateForbiddenResponseEntity, CreateNotFoundResponseEntity, EnvironmentNotFoundResponseEntity, FindAllBadRequestResponseEntity, FindOneBadRequestResponseEntity, RemoveBadRequestResponseEntity, RemoveForbiddenResponseEntity, UpdateBadRequestResponseEntity, UpdateStatusForbiddenResponseEntity, UpdateStatusSuccessResponseEntity } from './entities/swagger-env-responses.entity';
 import { FindAllDto } from './dto/find-all.dto';
 import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
+import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
 
 @ApiTags('Env')
 @Controller('env')
@@ -51,11 +52,8 @@ export class EnvironmentController {
   }
 
   @Get('mobile')
-  getEnvironmentForMobile(
-    @Query('userId') userId: string,
-    @Query('type') type: number,
-  ) {
-    return this.environmentService.getEnvironmentForMobile(userId, +type);
+  getEnvironmentForMobile(@Body() body: MobileGetEnvironmentsDto) {
+    return this.environmentService.getEnvironmentForMobile(body);
   }
 
   @Get('dashboard')

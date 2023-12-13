@@ -11,7 +11,7 @@ import { FindAllDto } from 'src/utils/find-all.dto';
 export class MobileService {
   private readonly tokenizationServiceUrl = process.env.TOKENIZATION_SERVICE_URL
   private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
-  private readonly usersServiceUrl = `${process.env.USERS_SERVICE_URL}`
+  private readonly getUserRolesUrl = `${process.env.USERS_SERVICE_URL}/roles`
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
   private readonly errorLogger = new Logger()
 
@@ -40,6 +40,33 @@ export class MobileService {
     return mobile.id;
   }
 
+  // async getEnvironments(id: number, userId: string) {
+  //   const mobile = await this.prismaService.mobile.findFirst({
+  //     where: {
+  //       id,
+  //       user_id: userId,
+  //       active: true,
+  //     }
+  //   });
+
+  //   if (!mobile) {
+  //     throw new HttpException('Mobile not found', HttpStatus.NOT_FOUND);
+  //   }
+
+  //   const environments = await lastValueFrom(
+  //     this.httpService.get(this.environmentsServiceUrl + '/env-access/user/' + userId).pipe(
+  //       catchError((error) => {
+  //         console.log(error);
+          
+  //         this.errorLogger.error(error);
+  //         throw new HttpException(error.response.data.message, error.response.data.statusCode);
+  //       })
+  //     )
+  //   ).then((response) => response.data);
+
+  //   return environments;
+  // }
+
   async getEnvironments(id: number, userId: string) {
     const mobile = await this.prismaService.mobile.findFirst({
       where: {
@@ -53,8 +80,8 @@ export class MobileService {
       throw new HttpException('Mobile not found', HttpStatus.NOT_FOUND);
     }
 
-    const environments = await lastValueFrom(
-      this.httpService.get(this.environmentsServiceUrl + '/env-access/user/' + userId).pipe(
+    const roles: string[] = await lastValueFrom(
+      this.httpService.get(`${this.getUserRolesUrl}/${userId}/all`).pipe(
         catchError((error) => {
           console.log(error);
           
@@ -62,10 +89,40 @@ export class MobileService {
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
+    ).then((response) => response.data.roles);
+
+    const roleKeys: number[] = [];
+    if (roles.includes('ADMIN')) {
+      roleKeys.push(1);
+    }
+    if (roles.includes('FREQUENTER')) {
+      roleKeys.push(2);
+    }
+    if (roles.includes('ENVIRONMENT_MANAGER')) {
+      roleKeys.push(3);
+    }
+
+    const environments = await lastValueFrom(
+      this.httpService.get(this.environmentsServiceUrl + '/env/mobile', {
+        data: {
+          roleKeys,
+          userId
+        }
+      }).pipe(
+        catchError((error) => {
+          console.log(error.response.data.message);
+          
+          this.errorLogger.error(error);
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
     ).then((response) => response.data);
 
-    return environments;
+    return {
+      environments
+    };
   }
+
 
   async getByMac(mac: string) {
     const mobile = await this.prismaService.mobile.findFirst({

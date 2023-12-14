@@ -227,6 +227,8 @@ export class AppService {
     )
       .then((response) => response.data)
       .catch((error) => {
+        console.log(error);
+        
         this.errorLogger.error('Falha ao validar usuário', error)
         throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
       })

@@ -20,12 +20,12 @@ export class MobileService {
     private readonly httpService: HttpService,
   ) { }
 
-  async create(createMobileDto: CreateMobileDto, userId: string) {
+  async create(userId: string) { //createMobileDto: CreateMobileDto, userId: string) {
     let mobile: mobile;
     try {
       mobile = await this.prismaService.mobile.create({
         data: {
-          ...createMobileDto,
+          //...createMobileDto,
           user_id: userId,
         }
       });

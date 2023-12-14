@@ -43,8 +43,8 @@ model tag_rfid {
 model mobile {
   id         Int      @id @default(autoincrement())
   user_id    String   @unique
-  number     String   @unique
-  mac        String   @unique
+  number     String?   @unique
+  mac        String?   @unique
   active     Boolean  @default(true)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

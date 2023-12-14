@@ -41,7 +41,7 @@ export class UserController {
   @ApiBadRequestResponse({ type: BadRequestResponseEntity })
   @Post()
   create(@Body() body: CreateUserDto) {
-    return this.userService.create(body, '');
+    return this.userService.create(body);
   }
 
   @Post('frequenter/invited')

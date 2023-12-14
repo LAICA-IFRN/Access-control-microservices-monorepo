@@ -33,7 +33,8 @@ export class CreateUserDto {
 
   @IsBase64()
   @ApiProperty()
-  encodedImage: string
+  @IsOptional()
+  encodedImage?: string
 
   @IsEmail()
   @IsOptional()
@@ -44,6 +45,10 @@ export class CreateUserDto {
   @IsOptional()
   @ApiProperty({ required: false})
   password?: string
+
+  @IsUUID()
+  @IsOptional()
+  createdBy?: string
 
   @IsArray()
   @ArrayNotEmpty()

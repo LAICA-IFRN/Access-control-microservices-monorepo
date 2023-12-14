@@ -33,7 +33,11 @@ export class UserService {
     private readonly emailService: EmailService
   ) {}
 
-  async create(createUserDto: CreateUserDto, userId: string) {
+  async create(createUserDto: CreateUserDto) {
+    if (!createUserDto.createdBy) {
+      createUserDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
     if (
       createUserDto.roles.includes(RolesConstants.ADMIN)
       && createUserDto.roles.length > 1
@@ -47,8 +51,11 @@ export class UserService {
     let createdUser: user;
   
     try {
-      createdUser = await this.prismaService.user.create(this.factoryCreateUser(createUserDto, hashedPassword, userId));
+      createdUser = await this.prismaService.user.create(this.factoryCreateUser(createUserDto, hashedPassword));
+      console.log(createdUser);
+      
     } catch (error) {
+      console.log(error);
       if (error.code === 'P2002') {
         this.auditLogService.create(AuditConstants.createUserConflict({target: error.meta.target, statusCode: 409}));
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
@@ -76,7 +83,7 @@ export class UserService {
       }));
     }
 
-    this.auditLogService.create(AuditConstants.createUserOk({userId: createdUser.id, author: userId, statusCode: 201}));
+    this.auditLogService.create(AuditConstants.createUserOk({userId: createdUser.id, author: createUserDto.createdBy, statusCode: 201}));
 
     let mobileDevice: any
     if (createUserDto.mac) {}
@@ -102,7 +109,7 @@ export class UserService {
     };
   }
 
-  private factoryCreateUser(createUserDto: CreateUserDto, hashedPassword: string, userId: string): any {
+  private factoryCreateUser(createUserDto: CreateUserDto, hashedPassword: string): any {
     return {
       data: {
         name: createUserDto.name,
@@ -111,12 +118,12 @@ export class UserService {
         active: true,
         user_image: {
           create: {
-            encoded: createUserDto.encodedImage
+            encoded: createUserDto.encodedImage ? createUserDto.encodedImage : ''
           }
         },
         document_type: { connect: { name: createUserDto.documentType } },
         document: createUserDto.document,
-        created_by: userId
+        created_by: createUserDto.createdBy
       }
     };
   }

@@ -10,7 +10,7 @@ export class MobileController {
 
   @Post()
   create(@Body() createMobileDto: CreateMobileDto, @Query('userId') userId: string) {
-    return this.mobileService.create(createMobileDto, userId);
+    return this.mobileService.create(userId); //createMobileDto, userId);
   }
 
   @Post('paginate')

@@ -241,7 +241,6 @@ export class AppService {
 
     const response = {
       accessToken: token,
-      hasMobile: false,
       mobileId: 0
     }
 
@@ -253,6 +252,19 @@ export class AppService {
         this.errorLogger.error('Falha ao obter dados do aparelho', error)
         throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
       })
+
+    if (!mobileData.hasMobile) {
+      const mobile = await lastValueFrom(
+        this.httpService.post(`${this.devicesServiceUrl}/mobile?userId=${data.userId}`)
+      )
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar aparelho', error)
+          throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+        })
+
+      response.mobileId = mobile.id;
+    }
 
     await lastValueFrom(
       this.httpService.post(this.createAuditLogUrl, {
@@ -269,7 +281,6 @@ export class AppService {
     })
 
     if (mobileData.hasMobile) {
-      response.hasMobile = true;
       response.mobileId = mobileData.mobileId;
     }
 

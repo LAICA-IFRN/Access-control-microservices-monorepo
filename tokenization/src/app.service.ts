@@ -228,7 +228,7 @@ export class AppService {
       .then((response) => response.data)
       .catch((error) => {
         console.log(error);
-        
+
         this.errorLogger.error('Falha ao validar usuário', error)
         throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
       })
@@ -238,6 +238,12 @@ export class AppService {
       this.jwtMobileSecret,
       { expiresIn: this.jwtMobileExpirationTime }
     )
+
+    const response = {
+      accessToken: token,
+      hasMobile: false,
+      mobileId: 0
+    }
 
     const mobileData = await lastValueFrom(
       this.httpService.get(`${this.devicesServiceUrl}/mobile/has-mobile?userId=${data.userId}`)
@@ -262,11 +268,12 @@ export class AppService {
       this.errorLogger.error('Falha ao enviar log', error)
     })
 
-    return {
-      accessToken: token,
-      hasMobile: mobileData.hasMobile,
-      mobileId: mobileData.mobileId,
+    if (mobileData.hasMobile) {
+      response.hasMobile = true;
+      response.mobileId = mobileData.mobileId;
     }
+
+    return response;
   }
 
   async tokenizeAccess(tokenizeAccessDto: TokenizeAccessDto) {

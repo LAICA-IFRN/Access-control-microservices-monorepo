@@ -20,6 +20,7 @@ export class AppService {
   private readonly verifyAuthorizationUrl = process.env.VERIFY_AUTHORIZATION_URL
   private readonly getMicrocontrollerUrl = process.env.GET_MICROCONTROLLER_URL
   private readonly environmentServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
+  private readonly devicesServiceUrl = process.env.DEVICES_SERVICE_URL
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -236,6 +237,15 @@ export class AppService {
       { expiresIn: this.jwtMobileExpirationTime }
     )
 
+    const mobileData = await lastValueFrom(
+      this.httpService.get(`${this.devicesServiceUrl}/mobile/has-mobile?userId=${data.userId}`)
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao obter dados do aparelho', error)
+        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      })
+
     await lastValueFrom(
       this.httpService.post(this.createAuditLogUrl, {
         topic: 'Tokenização',
@@ -251,7 +261,9 @@ export class AppService {
     })
 
     return {
-      accessToken: token
+      accessToken: token,
+      hasMobile: mobileData.hasMobile,
+      mobileId: mobileData.mobileId,
     }
   }
 
@@ -259,22 +271,22 @@ export class AppService {
     const microcontroller = await lastValueFrom(
       this.httpService.get(`${this.getMicrocontrollerUrl}/one/${tokenizeAccessDto.microcontrollerId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao obter dados do ambiente', error)
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-      throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-    })
+        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      })
 
     const qrcode = await lastValueFrom(
       this.httpService.get(`${this.environmentServiceUrl}/env/${microcontroller.environment_id}/qr-code`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao obter dados do ambiente', error)
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-      throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-    })
+        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      })
 
     if (tokenizeAccessDto.qrcode !== qrcode) {
       throw new HttpException('Invalid QR Code', HttpStatus.BAD_REQUEST)
@@ -297,11 +309,11 @@ export class AppService {
     const environmentData: any = await lastValueFrom(
       this.httpService.get(`${this.environmentServiceUrl}/env/${environmentId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao obter dados do ambiente', error)
-      throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao obter dados do ambiente', error)
+        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      })
 
     const now = new Date();
 
@@ -310,7 +322,7 @@ export class AppService {
     const seconds = Math.floor(difference / 1000);
 
     const token = jwt.sign(
-      {  sub: { id: userId, role: 'ADMIN', env: environmentId } },
+      { sub: { id: userId, role: 'ADMIN', env: environmentId } },
       this.jwtAccessSecret,
       { expiresIn: seconds }
     )
@@ -328,13 +340,13 @@ export class AppService {
     const environmentUserData = await lastValueFrom(
       this.httpService.get(searchEnvironmentUserData)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao obter dados do ambiente', error)
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-      throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-    })
-    
+        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      })
+
     if (!environmentUserData) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
     }
@@ -345,7 +357,7 @@ export class AppService {
     const seconds = Math.floor(difference / 1000);
 
     const token = jwt.sign(
-      {  sub: { id: environmentUserData.environmentUserId, role: 'ENVIRONMENT_MANAGER' } },
+      { sub: { id: environmentUserData.environmentUserId, role: 'ENVIRONMENT_MANAGER' } },
       this.jwtAccessSecret,
       { expiresIn: seconds }
     )
@@ -363,12 +375,12 @@ export class AppService {
     const environmentUserData = await lastValueFrom(
       this.httpService.get(searchEnvironmentUserData)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao obter dados do ambiente', error)
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     if (!environmentUserData) {
       throw new HttpException('User not found', HttpStatus.NOT_FOUND)
@@ -385,7 +397,7 @@ export class AppService {
     const seconds = Math.floor(difference / 1000);
 
     const token = jwt.sign(
-      {  sub: { id: environmentUserData.environmentUserId, role: 'FREQUENTER' } },
+      { sub: { id: environmentUserData.environmentUserId, role: 'FREQUENTER' } },
       this.jwtAccessSecret,
       { expiresIn: seconds }
     )
@@ -511,7 +523,7 @@ export class AppService {
       return { isAuthorized: true, userId: decodeToken.sub }
     } catch (error) {
       console.log(error);
-      
+
       throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
     }
   }

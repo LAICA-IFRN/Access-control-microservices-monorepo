@@ -6,7 +6,7 @@ import { FindAllDto } from 'src/utils/find-all.dto';
 
 @Controller('mobile')
 export class MobileController {
-  constructor(private readonly mobileService: MobileService) {}
+  constructor(private readonly mobileService: MobileService) { }
 
   @Post()
   create(@Body() createMobileDto: CreateMobileDto, @Query('userId') userId: string) {
@@ -17,7 +17,12 @@ export class MobileController {
   findAll(@Body() findAllDto: FindAllDto) {
     return this.mobileService.findAll(findAllDto);
   }
-  
+
+  @Get('has-mobile')
+  hasMobile(@Query('userId') userId: string) {
+    return this.mobileService.hasMobile(userId);
+  }
+
   @Get()
   getEnvironments(@Query('id') id: number, @Query('userId') userId: string) {
     return this.mobileService.getEnvironments(+id, userId);

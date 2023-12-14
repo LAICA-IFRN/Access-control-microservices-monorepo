@@ -40,6 +40,20 @@ export class MobileService {
     return mobile.id;
   }
 
+  async hasMobile(userId: string) {
+    const mobile = await this.prismaService.mobile.findFirst({
+      where: {
+        user_id: userId,
+        active: true,
+      }
+    });
+
+    return {
+      hasMobile: !!mobile,
+      mobileId: mobile?.id
+    };
+  }
+
   // async getEnvironments(id: number, userId: string) {
   //   const mobile = await this.prismaService.mobile.findFirst({
   //     where: {
@@ -57,7 +71,7 @@ export class MobileService {
   //     this.httpService.get(this.environmentsServiceUrl + '/env-access/user/' + userId).pipe(
   //       catchError((error) => {
   //         console.log(error);
-          
+
   //         this.errorLogger.error(error);
   //         throw new HttpException(error.response.data.message, error.response.data.statusCode);
   //       })
@@ -84,7 +98,7 @@ export class MobileService {
       this.httpService.get(`${this.getUserRolesUrl}/${userId}/all`).pipe(
         catchError((error) => {
           console.log(error);
-          
+
           this.errorLogger.error(error);
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
@@ -111,7 +125,7 @@ export class MobileService {
       }).pipe(
         catchError((error) => {
           console.log(error.response.data.message);
-          
+
           this.errorLogger.error(error);
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
@@ -149,7 +163,7 @@ export class MobileService {
           orderBy: order,
           where: filter,
         }),
-        
+
         this.prismaService.mobile.count({
           where: filter
         })
@@ -162,6 +176,6 @@ export class MobileService {
         total,
         data: mobiles
       };
-    } catch (error) {}
+    } catch (error) { }
   }
 }

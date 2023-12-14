@@ -254,7 +254,7 @@ export class AppService {
       })
 
     if (!mobileData.hasMobile) {
-      const mobile = await lastValueFrom(
+      const mobileId = await lastValueFrom(
         this.httpService.post(`${this.devicesServiceUrl}/mobile?userId=${data.userId}`)
       )
         .then((response) => response.data)
@@ -263,7 +263,7 @@ export class AppService {
           throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
         })
 
-      response.mobileId = mobile.id;
+      response.mobileId = mobileId;
     }
 
     await lastValueFrom(

@@ -6,7 +6,7 @@ import { FindAllDto } from 'src/utils/find-all.dto';
 
 @Controller('microcontrollers')
 export class MicrocontrollersController {
-  constructor(private readonly microcontrollersService: MicrocontrollersService) {}
+  constructor(private readonly microcontrollersService: MicrocontrollersService) { }
 
   @Post()
   async create(@Body() createMicrocontrollerDto: CreateMicrocontrollerDto) {
@@ -40,7 +40,6 @@ export class MicrocontrollersController {
 
   @Get('remote-access/:id')
   searchRemoteAccess(@Param('id') id: number) {
-    console.log('searchRemoteAccess');
     return this.microcontrollersService.searchRemoteAccess(+id);
   }
 

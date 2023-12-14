@@ -9,7 +9,7 @@ export class MobileController {
   constructor(private readonly mobileService: MobileService) { }
 
   @Post()
-  create(@Body() createMobileDto: CreateMobileDto, @Query('userId') userId: string) {
+  create(@Query('userId') userId: string) { //@Body() createMobileDto: CreateMobileDto, @Query('userId') userId: string) {
     return this.mobileService.create(userId); //createMobileDto, userId);
   }
 

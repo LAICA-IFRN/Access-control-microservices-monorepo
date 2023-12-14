@@ -241,7 +241,7 @@ export class AppService {
 
     const response = {
       accessToken: token,
-      mobileId: 0
+      mobileId: "0"
     }
 
     const mobileData = await lastValueFrom(
@@ -263,7 +263,7 @@ export class AppService {
           throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
         })
 
-      response.mobileId = mobileId;
+      response.mobileId = mobileId.toString();
     }
 
     await lastValueFrom(

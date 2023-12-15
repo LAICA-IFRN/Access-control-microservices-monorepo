@@ -794,6 +794,7 @@ export class EnvironmentService {
               active: true,
               environment: {
                 select: {
+                  id: true,
                   name: true,
                   user_name: true,
                   description: true
@@ -813,6 +814,7 @@ export class EnvironmentService {
           envsUser.forEach(envUser => {
             envs.push({
               envType: 2,
+              id: envUser.environment.id,
               created_by: envUser.environment.user_name,
               name: envUser.environment.name,
               description: envUser.environment.description,
@@ -849,6 +851,7 @@ export class EnvironmentService {
               }
             },
             select: {
+              id: true,
               user_name: true,
               name: true,
               created_at: true,
@@ -876,6 +879,7 @@ export class EnvironmentService {
           environments.forEach(environment => {
             envs.push({
               envType: 3,
+              id: environment.id,
               name: environment.name,
               created_at: environment.created_at,
               created_by: environment.user_name,

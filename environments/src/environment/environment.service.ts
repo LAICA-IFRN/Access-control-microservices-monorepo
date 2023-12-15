@@ -831,7 +831,8 @@ export class EnvironmentService {
             );
           }
         }
-      } else if (body.roleKeys.includes(3)) {
+      }
+      if (body.roleKeys.includes(3)) {
         try {
           const environments = await this.prisma.environment.findMany({
             where: {

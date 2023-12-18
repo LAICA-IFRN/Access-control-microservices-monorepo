@@ -33,18 +33,19 @@ model user_role {
 }
 
 model user {
-  id               String        @id @default(uuid())
-  name             String
-  email            String        @unique
-  password         String
+  id               String         @id @default(uuid())
+  name             String?
+  email            String         @unique
+  password         String?
   pin              String?
-  active           Boolean
+  active           Boolean        @default(false)
+  pending          Boolean        @default(true)
   created_by       String?
-  created_at       DateTime      @default(now())
-  updated_at       DateTime      @updatedAt
-  document         String
-  document_type    document_type @relation(fields: [document_type_id], references: [id])
-  document_type_id Int
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  document         String?
+  document_type    document_type? @relation(fields: [document_type_id], references: [id])
+  document_type_id Int?
   user_image       user_image?
   user_role        user_role[]
 }

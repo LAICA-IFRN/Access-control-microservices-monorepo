@@ -1324,8 +1324,6 @@ export class EnvironmentService {
     )
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error);
-
         this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
         throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
       });

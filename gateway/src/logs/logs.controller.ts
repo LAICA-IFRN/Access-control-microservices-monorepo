@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Request, Get } from '@nestjs/common';
 import { LogsService } from './logs.service';
 
 @Controller('logs')
@@ -13,5 +13,12 @@ export class LogsController {
   @Post('access')
   getAccessLogs(@Body() body: any) {
     return this.logsService.getAccessLogs(body);
+  }
+
+  @Get('free-palestine')
+  getFreePalestine(
+    req: Request
+  ) {
+    console.log(req.);
   }
 }

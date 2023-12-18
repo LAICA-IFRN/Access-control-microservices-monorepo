@@ -1,11 +1,27 @@
 import { AuditLog } from "./audit-log.service";
 
 export class AuditConstants {
-  public static sendInviteEmailOk(metaData: object): AuditLog {
+  public static sendInviteEmailOk(
+    invitedBy: string,
+    metaData: any
+  ): AuditLog {
     return {
       topic: "Usuários",
       type: "Info",
-      message: 'E-mail de convite enviado com sucesso',
+      message: `${invitedBy} enviou convite para ${metaData.email} para auto cadastro de usuário interno`,
+      meta: metaData
+    };
+  }
+
+  public static sendInviteEmailError(
+    invitedBy: string,
+    email: string,
+    metaData: any
+  ): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Error",
+      message: `${invitedBy} tentou enviar convite para ${email} para auto cadastro de usuário interno, mas ocorreu um erro`,
       meta: metaData
     };
   }
@@ -14,7 +30,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao gerar token para cadastrar usuário: credenciais inválidas',
+      message: 'Falha ao gerar token para cadastrar usuário, credenciais inválidas',
       meta: metaData
     };
   }
@@ -23,7 +39,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar dados para cadastrar usuário: token inválido ou expirado',
+      message: 'Falha ao buscar dados para cadastrar usuário, token inválido ou expirado',
       meta: metaData
     };
   }
@@ -32,16 +48,33 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao criar usuário: conflito com registro existente',
+      message: 'Falha ao criar usuário, conflito com registro existente',
       meta: metaData
     };
   }
 
-  public static createUserOk(metaData: object): AuditLog {
+  public static createExternalUserOk(
+    userName: string,
+    createdBy: string,
+    metaData: any
+  ): AuditLog {
     return {
       topic: "Usuários",
       type: "Info",
-      message: 'Usuário criado com sucesso',
+      message: `${createdBy} cadastrou o usuário externo ${userName}`,
+      meta: metaData
+    };
+  }
+  
+  public static createInternalUserOk(
+    userName: string,
+    createdBy: string,
+    metaData: any
+  ): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: `${userName} se cadastrou como usuário interno após receber convite de ${createdBy}`,
       meta: metaData
     };
   }
@@ -50,7 +83,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao criar usuário: usuário admin não pode ter outros papéis',
+      message: 'Falha ao criar usuário, usuário admin não pode ter outros papéis',
       meta: metaData
     };
   }
@@ -59,7 +92,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao criar usuário: erro interno, verificar logs de erro do serviço',
+      message: 'Falha ao criar usuário, erro interno, verificar logs de erro do serviço',
       meta: metaData
     };
   }
@@ -68,7 +101,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao criar papés de usuário: erro interno, verificar logs de erro do serviço',
+      message: 'Falha ao criar papés de usuário, erro interno, verificar logs de erro do serviço',
       meta: metaData
     };
   }
@@ -77,7 +110,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar foto de usuário: id inválido',
+      message: 'Falha ao buscar foto de usuário, id inválido',
       meta: metaData
     }
   }
@@ -86,7 +119,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar foto de usuário: usuário não encontrado',
+      message: 'Falha ao buscar foto de usuário, usuário não encontrado',
       meta: metaData
     }
   }
@@ -95,7 +128,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar usuário: id inválido',
+      message: 'Falha ao buscar usuário, id inválido',
       meta: metaData
     }
   }
@@ -104,7 +137,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao usuário: usuário não encontrado',
+      message: 'Falha ao usuário, usuário não encontrado',
       meta: metaData
     }
   }
@@ -113,7 +146,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar usuário durante acesso: usuário não encontrado',
+      message: 'Falha ao buscar usuário durante acesso, usuário não encontrado',
       meta: metaData
     }
   }
@@ -122,7 +155,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar usuário durante acesso: senha incorreta',
+      message: 'Falha ao buscar usuário durante acesso, senha incorreta',
       meta: metaData
     }
   }
@@ -131,7 +164,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar usuário durante criação de token: usuário não encontrado',
+      message: 'Falha ao buscar usuário durante criação de token, usuário não encontrado',
       meta: metaData
     }
   }
@@ -140,7 +173,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar usuário durante criação de token: senha incorreta',
+      message: 'Falha ao buscar usuário durante criação de token, senha incorreta',
       meta: metaData
     }
   }
@@ -149,7 +182,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao buscar usuários: um erro inesperado ocorreu, necessário verificar logs de erro do serviço',
+      message: 'Falha ao buscar usuários, um erro inesperado ocorreu necessário verificar logs de erro do serviço',
       meta: metaData
     }
   }
@@ -158,7 +191,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao atualizar status de usuário: id inválido',
+      message: 'Falha ao atualizar status de usuário, id inválido',
       meta: metaData
     }
   }

@@ -86,7 +86,6 @@ export class DevicesController {
 
   @Get('microcontrollers/keep-alive')
   getMicrocontrollerInfo(@Query('id') id: number) {
-    console.log('getMicrocontrollerInfo');
     return this.devicesService.getMicrocontrollerInfo(id);
   }
 

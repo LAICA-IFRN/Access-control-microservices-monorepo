@@ -174,8 +174,6 @@ export class MicrocontrollersService {;
     )
     .then(response => response.data)
     .catch(error => {
-      console.log(error);
-      
       this.errorLogger.error('Erro ao buscar acesso remoto', error);
       throw new HttpException('Erro ao buscar acesso remoto', HttpStatus.INTERNAL_SERVER_ERROR);
     })
@@ -630,8 +628,6 @@ export class MicrocontrollersService {;
     )
     .then((response) => response.data)
     .catch((error) => {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
       throw new HttpException('Internal server error when search user', HttpStatus.INTERNAL_SERVER_ERROR);
     });
@@ -645,8 +641,6 @@ export class MicrocontrollersService {;
     )
     .then((response) => response.data)
     .catch((error) => {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao se conectar com o serviço de ambientes (500)', error);
       throw new HttpException('Internal server error when search environments', HttpStatus.INTERNAL_SERVER_ERROR);
     });

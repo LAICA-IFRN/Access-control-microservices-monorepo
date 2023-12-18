@@ -1,4 +1,4 @@
-import { IsEmail, IsString } from "class-validator";
+import { IsEmail, IsOptional, IsString, IsUUID } from "class-validator";
 
 export class InviteEmail {
   @IsEmail()
@@ -6,4 +6,8 @@ export class InviteEmail {
 
   @IsString()
   path: string;
+
+  @IsUUID()
+  @IsOptional()
+  invitedBy?: string;
 }

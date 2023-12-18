@@ -2,8 +2,8 @@ import { HttpService } from '@nestjs/axios';
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { AccessByMicrocontrollerDeviceDto } from './dto/access-by-microcontroller-device.dto';
 import { catchError, lastValueFrom } from 'rxjs';
-import * as fs from 'fs';
-import { randomUUID } from 'crypto';
+// import * as fs from 'fs';
+// import { randomUUID } from 'crypto';
 import { AccessLogService } from './providers/audit-log/audit-log.service';
 import { AccessLogConstants } from './providers/audit-log/audit-contants';
 import { AccessByType, Roles } from './providers/constants';
@@ -180,9 +180,6 @@ export class AppService {
       throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
 
-    console.log(esp);
-    
-
     const roles: string[] = await lastValueFrom(
       this.httpService.get(`${this.tempGetRolesUrl}/${accessDto.userId}/all`)
     )
@@ -209,7 +206,7 @@ export class AppService {
         throw new HttpException(error.response.data.message, error.response.data.statusCode);
       })
 
-      this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+      //this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
 
       if (data.access) {
         await this.sendRemoteAccessRequest(data.environmentId, esp.id, accessDto.userId);
@@ -230,7 +227,7 @@ export class AppService {
         throw new HttpException(error.response.data.message, error.response.data.statusCode);
       })
 
-      this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+      //this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
 
       if (data.access) {
         await this.sendRemoteAccessRequest(data.environmentId, esp.id, accessDto.userId);

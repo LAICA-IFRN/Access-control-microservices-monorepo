@@ -52,10 +52,7 @@ export class UserService {
   
     try {
       createdUser = await this.prismaService.user.create(this.factoryCreateUser(createUserDto, hashedPassword));
-      console.log(createdUser);
-      
     } catch (error) {
-      console.log(error);
       if (error.code === 'P2002') {
         this.auditLogService.create(AuditConstants.createUserConflict({target: error.meta.target, statusCode: 409}));
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
@@ -83,7 +80,7 @@ export class UserService {
       }));
     }
 
-    this.auditLogService.create(AuditConstants.createUserOk({userId: createdUser.id, author: createUserDto.createdBy, statusCode: 201}));
+    this.sendLogWhenExternalUserCreated(createdUser.name, createUserDto.createdBy, createUserDto);
 
     let mobileDevice: any
     if (createUserDto.mac) {}
@@ -128,18 +125,60 @@ export class UserService {
     };
   }
 
+  async sendLogWhenExternalUserCreated(userName: string, createdBy: string, meta: any) {
+    const author = await this.prismaService.user.findFirst({
+      where: { id: createdBy }
+    });
+
+    this.auditLogService.create(AuditConstants.createExternalUserOk(userName, author.name, meta));
+  }
+
   async sendInviteEmail(inviteEmail: InviteEmail) {
+    if (!inviteEmail.invitedBy) {
+      inviteEmail.invitedBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+    }
+
+    let user: user;
+
+    try {
+      user = await this.prismaService.user.create({
+        data: {
+          email: inviteEmail.email,
+          created_by: inviteEmail.invitedBy
+        }
+      })
+    } catch (error) {
+      if (error.code === 'P2002') {
+        this.sendInviteEmailError(inviteEmail.invitedBy, inviteEmail.email, error);
+        throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
+      } else {
+        this.sendInviteEmailError(inviteEmail.invitedBy, inviteEmail.email, error);
+        throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    }
+
     const { email, path } = inviteEmail;
     try {
       await this.emailService.sendMail(email, path);
 
-      this.auditLogService.create(AuditConstants.sendInviteEmailOk({email, statusCode: 200}))
+      this.auditLogService.create(AuditConstants.sendInviteEmailOk(user.name, inviteEmail));
 
       return { message: 'E-mail sent successfully' };
     } catch (error) {
+      await this.prismaService.user.delete({
+        where: { id: user.id }
+      });
       this.errorLogger.error('Falha ao enviar e-mail', error);
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
+  }
+
+  async sendInviteEmailError(invetedBy: string, inviteEmail: string, meta: any) {
+    const user = await this.prismaService.user.findFirst({
+      where: { id: invetedBy }
+    });
+
+    this.auditLogService.create(AuditConstants.sendInviteEmailError(user.name, inviteEmail, meta));
   }
 
   async createUserByInvitation(createUserByInvitationDto: CreateUserByInvitationDto) {
@@ -183,10 +222,14 @@ export class UserService {
     try {
       const hashedPassword = await bcrypt.hash(createUserByInvitationDto.password, this.roundsOfHashing);
 
-      const createdUser = await this.prismaService.user.create({
+      const user = await this.prismaService.user.findFirstOrThrow({
+        where: { email }
+      });
+
+      const createdUser = await this.prismaService.user.update({
+        where: { id: user.id },
         data: {
           name: nome_usual,
-          email,
           password: hashedPassword,
           active: true,
           user_image: {
@@ -204,7 +247,28 @@ export class UserService {
         }
       });
 
-      this.auditLogService.create(AuditConstants.createUserOk({userId: createdUser.id, statusCode: 201}))
+      // const createdUser = await this.prismaService.user.create({
+      //   data: {
+      //     name: nome_usual,
+      //     email,
+      //     password: hashedPassword,
+      //     active: true,
+      //     user_image: {
+      //       create: {
+      //         encoded: createUserByInvitationDto.encodedUserImage
+      //       }
+      //     },
+      //     document_type: { connect: { name: DocumentTypesConstants.REGISTRATION } },
+      //     document: matricula,
+      //     user_role: {
+      //       create: {
+      //         role: { connect: { name: RolesConstants.FREQUENTER } }
+      //       }
+      //     }
+      //   }
+      // });
+
+      this.auditLogService.create(AuditConstants.createExternalUserOk({userId: createdUser.id, statusCode: 201}))
 
       return createdUser;
     } catch (error) {
@@ -216,6 +280,14 @@ export class UserService {
         throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
+  }
+
+  async sendLogWhenInternalUserCreated(userName: string, createdBy: string, meta: any) {
+    const author = await this.prismaService.user.findFirst({
+      where: { id: createdBy }
+    });
+
+    this.auditLogService.create(AuditConstants.createInternalUserOk(userName, author.name, meta));
   }
 
   async dashboardConsultData() {

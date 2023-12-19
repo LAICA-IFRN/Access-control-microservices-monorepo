@@ -18,11 +18,12 @@ export class EmailService {
     });
   }
 
-  async sendMail(to: string, host: string) {
+  async sendMail(to: string, host: string, userId: string) {
     const subject = process.env.EMAIL_ACCOUNT_SUBJECT;
-    const path = host + '?to=' + to
+    const path = `${process.env.OAUTH_SUAP_URL}&redirect_uri=${process.env.OAUTH_SUAP_URL_REDIRECT}?id=${userId}`
+    
     try {
-      await this.transporter.sendMail({
+      const something = await this.transporter.sendMail({
         from: process.env.EMAIL_ACCOUNT_FROM,
         to,
         subject,
@@ -47,6 +48,7 @@ export class EmailService {
         `,
       });
     } catch (error) {
+      console.log(error);
       throw new Error(error);
     }
   }

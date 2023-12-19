@@ -14,11 +14,4 @@ export class LogsController {
   getAccessLogs(@Body() body: any) {
     return this.logsService.getAccessLogs(body);
   }
-
-  @Get('free-palestine')
-  getFreePalestine(
-    req: Request
-  ) {
-    console.log(req.);
-  }
 }

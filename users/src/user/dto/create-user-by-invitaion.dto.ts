@@ -1,10 +1,10 @@
-import { IsBase64, IsString } from "class-validator"
+import { IsBase64, IsNumber, IsString, IsUUID } from "class-validator"
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateUserByInvitationDto {
   @ApiProperty()
-  @IsString()
-  registration: string
+  @IsNumber()
+  pin: number
 
   @ApiProperty()
   @IsString()
@@ -13,4 +13,12 @@ export class CreateUserByInvitationDto {
   @IsBase64()
   @ApiProperty()
   encodedUserImage: string
+
+  @ApiProperty()
+  @IsUUID()
+  userId: string
+
+  @ApiProperty()
+  @IsString()
+  token: string
 }

@@ -12,7 +12,7 @@ export class UserEntity implements user {
   document: string;
 
   @ApiProperty()
-  pin: string;
+  pin: number;
 
   @ApiProperty()
   document_type_id: number;
@@ -23,8 +23,11 @@ export class UserEntity implements user {
   @ApiProperty()
   password: string;
 
-  @ApiProperty({ default: true })
+  @ApiProperty({ default: false })
   active: boolean;
+
+  @ApiProperty({ default: true })
+  pending: boolean;
 
   @ApiProperty()
   created_at: Date;

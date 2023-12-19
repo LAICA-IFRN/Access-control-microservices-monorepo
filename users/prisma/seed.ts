@@ -97,7 +97,7 @@ async function createUsers() {
       email: 'hilquias.abias@email.com',
       password: await bcrypt.hash('password', roundsOfHashing),
       name: 'Hilquias Abias',
-      pin: '123456',
+      pin: 123456,
       document: '973.493.560-72',
       document_type_id: 2,
       active: true,

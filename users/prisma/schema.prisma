@@ -37,7 +37,7 @@ model user {
   name             String?
   email            String         @unique
   password         String?
-  pin              String?
+  pin              Int?
   active           Boolean        @default(false)
   pending          Boolean        @default(true)
   created_by       String?

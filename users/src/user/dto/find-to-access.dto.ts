@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsOptional, IsString } from "class-validator"
+import { IsNumber, IsOptional, IsString } from "class-validator"
 
 export class FindToAccess {
     @IsString()
@@ -7,8 +7,8 @@ export class FindToAccess {
     @ApiProperty({ required: false})
     document?: string
 
-    @IsString()
+    @IsNumber()
     @IsOptional()
     @ApiProperty({ required: false})
-    pin?: string
+    pin?: number
 }

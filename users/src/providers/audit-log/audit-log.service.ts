@@ -16,9 +16,9 @@ export class AuditLogService {
   
   constructor () {}
 
-  create(log: AuditLog) {
+  async create(log: AuditLog) {
     try {
-      this.httpService.post(this.createAuditLogUrl, log);
+      await lastValueFrom(this.httpService.post(this.createAuditLogUrl, log));
     } catch (error) {
       this.errorLogger.error('Falha ao enviar log', error);
     }

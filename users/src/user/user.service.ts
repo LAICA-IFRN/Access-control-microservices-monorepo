@@ -144,7 +144,15 @@ export class UserService {
       user = await this.prismaService.user.create({
         data: {
           email: inviteEmail.email,
-          created_by: inviteEmail.invitedBy
+          created_by: inviteEmail.invitedBy,
+          document_type: { connect: { name: DocumentTypesConstants.REGISTRATION } },
+          user_role: {
+            create: inviteEmail.rolesToAdd.map((role) => {
+              return {
+                role: { connect: { name: role } }
+              }
+            })
+          }
         }
       })
     } catch (error) {
@@ -159,9 +167,9 @@ export class UserService {
 
     const { email, path } = inviteEmail;
     try {
-      await this.emailService.sendMail(email, path);
+      await this.emailService.sendMail(email, path, user.id);
 
-      this.auditLogService.create(AuditConstants.sendInviteEmailOk(user.name, inviteEmail));
+      this.sendInviteEmailOk(inviteEmail)
 
       return { message: 'E-mail sent successfully' };
     } catch (error) {
@@ -173,6 +181,14 @@ export class UserService {
     }
   }
 
+  async sendInviteEmailOk(meta: any) {
+    const user = await this.prismaService.user.findFirst({
+      where: { id: meta.invitedBy }
+    });
+
+    this.auditLogService.create(AuditConstants.sendInviteEmailOk(user.name, meta));
+  }
+
   async sendInviteEmailError(invetedBy: string, inviteEmail: string, meta: any) {
     const user = await this.prismaService.user.findFirst({
       where: { id: invetedBy }
@@ -182,27 +198,10 @@ export class UserService {
   }
 
   async createUserByInvitation(createUserByInvitationDto: CreateUserByInvitationDto) {
-    const accessToken = await lastValueFrom(
-      this.httpService.post(this.generateSuapTokenUrl, {
-        username: createUserByInvitationDto.registration,
-        password: createUserByInvitationDto.password
-      }).pipe(
-        catchError((error) => {
-          if (error.response.status === 401) {
-            this.auditLogService.create(AuditConstants.createUserByInvitationUnauthorizedCredencials({statusCode: 401}))
-            throw new HttpException('Invalid credentials', HttpStatus.UNAUTHORIZED);
-          } else {
-            this.errorLogger.error('Falha ao gerar token para criar usuário', error);
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
-        })
-      )
-    ).then((response) => response.data);
-    
     const userData = await lastValueFrom(
       this.httpService.get(this.getSuapUserDataUrl, {
         headers: {
-          Authorization: `Bearer ${accessToken.access}`
+          Authorization: `Bearer ${createUserByInvitationDto.token}`
         }
       }).pipe(
         catchError((error) => {
@@ -222,53 +221,25 @@ export class UserService {
     try {
       const hashedPassword = await bcrypt.hash(createUserByInvitationDto.password, this.roundsOfHashing);
 
-      const user = await this.prismaService.user.findFirstOrThrow({
-        where: { email }
-      });
-
       const createdUser = await this.prismaService.user.update({
-        where: { id: user.id },
+        where: { id: createUserByInvitationDto.userId, pending: true },
         data: {
           name: nome_usual,
           password: hashedPassword,
+          pin: createUserByInvitationDto.pin,
+          email,
           active: true,
+          pending: false,
           user_image: {
             create: {
               encoded: createUserByInvitationDto.encodedUserImage
             }
           },
-          document_type: { connect: { name: DocumentTypesConstants.REGISTRATION } },
           document: matricula,
-          user_role: {
-            create: {
-              role: { connect: { name: RolesConstants.FREQUENTER } }
-            }
-          }
         }
       });
 
-      // const createdUser = await this.prismaService.user.create({
-      //   data: {
-      //     name: nome_usual,
-      //     email,
-      //     password: hashedPassword,
-      //     active: true,
-      //     user_image: {
-      //       create: {
-      //         encoded: createUserByInvitationDto.encodedUserImage
-      //       }
-      //     },
-      //     document_type: { connect: { name: DocumentTypesConstants.REGISTRATION } },
-      //     document: matricula,
-      //     user_role: {
-      //       create: {
-      //         role: { connect: { name: RolesConstants.FREQUENTER } }
-      //       }
-      //     }
-      //   }
-      // });
-
-      this.auditLogService.create(AuditConstants.createExternalUserOk({userId: createdUser.id, statusCode: 201}))
+      this.sendLogWhenInternalUserCreated(createdUser.name, createdUser.created_by, createUserByInvitationDto)
 
       return createdUser;
     } catch (error) {

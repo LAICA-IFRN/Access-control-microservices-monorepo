@@ -8,7 +8,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Info",
-      message: `${invitedBy} enviou convite para ${metaData.email} para auto cadastro de usuário interno`,
+      message: `${invitedBy} enviou convite ao email ${metaData.email} para auto cadastro de usuário interno`,
       meta: metaData
     };
   }

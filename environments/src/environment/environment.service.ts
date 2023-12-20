@@ -748,6 +748,8 @@ export class EnvironmentService {
             description: true,
             id: true,
             name: true,
+            latitude: true,
+            longitude: true,
             environment_user: {
               select: {
                 user_name: true
@@ -769,6 +771,8 @@ export class EnvironmentService {
             created_at: environment.created_at,
             description: environment.description,
             id: environment.id,
+            latitude: environment.latitude,
+            longitude: environment.longitude,
             name: environment.name,
             frequenters: environment.environment_user,
             managers: environment.environment_manager,
@@ -794,6 +798,8 @@ export class EnvironmentService {
               active: true,
               environment: {
                 select: {
+                  latitude: true,
+                  longitude: true,
                   id: true,
                   name: true,
                   user_name: true,
@@ -817,6 +823,8 @@ export class EnvironmentService {
               id: envUser.environment.id,
               created_by: envUser.environment.user_name,
               name: envUser.environment.name,
+              latitude: envUser.environment.latitude,
+              longitude: envUser.environment.longitude,
               description: envUser.environment.description,
               created_at: envUser.created_at,
               startPeriod: envUser.start_period,
@@ -852,6 +860,8 @@ export class EnvironmentService {
             },
             select: {
               id: true,
+              latitude: true,
+              longitude: true,
               user_name: true,
               name: true,
               created_at: true,
@@ -881,6 +891,8 @@ export class EnvironmentService {
               envType: 3,
               id: environment.id,
               name: environment.name,
+              latitude: environment.latitude,
+              longitude: environment.longitude,
               created_at: environment.created_at,
               created_by: environment.user_name,
               description: environment.description,

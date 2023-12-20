@@ -27,11 +27,11 @@ export class AppService {
 
   private readonly tempGetRolesUrl = process.env.TEMP_GET_ROLES;
   private readonly tempGetEsp = process.env.TEMP_GET_ESP;
-  
+
   constructor(
     private readonly httpService: HttpService,
     private readonly accessLogService: AccessLogService
-  ) {}
+  ) { }
 
   // async accessByMicrocontrollerDevice(accessDto: AccessByMicrocontrollerDeviceDto) {
   //   const esp32 = await this.getEsp32(accessDto.mac);
@@ -44,7 +44,7 @@ export class AppService {
   //   const { environmentId } = esp32;
   //   const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
   //   const userRoles: string[] = await this.getUserRoles(userData.userId);
-    
+
   //   if (userRoles.includes(Roles.ADMIN)) {
   //     return await this.handleAdminFacialRecognition(userData, environmentId, accessDto)
   //   }
@@ -77,7 +77,7 @@ export class AppService {
   //     this.errorLogger.error('Falha ao verificar token', error);
   //     throw new HttpException(error.response.data.message, error.response.data.statusCode);
   //   })
-    
+
   //   const { id, role } = tokenData;
 
   //   if (role === 'ADMIN') {
@@ -147,7 +147,7 @@ export class AppService {
     const { environmentId } = esp32;
     const userData = await this.getUserIdAndAccessType(accessDto, environmentId);
     const userRoles: string[] = await this.getUserRoles(userData.userId);
-    
+
     if (userRoles.includes(Roles.ADMIN)) {
       this.handleLogAdminFacialRecognitionWeb(userData, { result: true }, environmentId, accessDto);
       return { access: true };
@@ -174,23 +174,23 @@ export class AppService {
     const esp = await lastValueFrom(
       this.httpService.get(`${this.tempGetEsp}/${accessDto.environmentId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar esp', error);
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar esp', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     const roles: string[] = await lastValueFrom(
       this.httpService.get(`${this.tempGetRolesUrl}/${accessDto.userId}/all`)
     )
-    .then((response) => response.data.roles)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar papéis do usuário', error);
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+      .then((response) => response.data.roles)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar papéis do usuário', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     if (roles.includes('ADMIN')) {
-      this.handleLogAdminFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, {result:true}, esp.environment_id, accessDto);
+      this.handleLogAdminFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, { result: true }, esp.environment_id, accessDto);
 
       await this.sendRemoteAccessRequest(esp.environment_id, esp.id, accessDto.userId);
       return { access: true };
@@ -200,11 +200,11 @@ export class AppService {
       const data: any = await lastValueFrom(
         this.httpService.get(`${this.searchFrequenterMobileAccessUrl}/${accessDto.userId}`)
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar acesso de frequenter', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao buscar acesso de frequenter', error);
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
 
       //this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
 
@@ -213,19 +213,19 @@ export class AppService {
         return { access: true };
       }
 
-      this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-      return { access: false };
+      // this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+      // return { access: false };
     }
 
     if (roles.includes('ENVIRONMENT_MANAGER')) {
       const data: any = await lastValueFrom(
         this.httpService.get(`${this.searchManagerMobileAccessUrl}/${accessDto.userId}`)
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
 
       //this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
 
@@ -253,7 +253,7 @@ export class AppService {
 
   async searchEnvironmentByQRCode(qrCode: string) {
     const id = qrCode.slice(-1);
-    
+
     const data: any = await lastValueFrom(
       this.httpService.get(`${this.searchEspInMobileAccessUrl}/${id}`).pipe(
         catchError((error) => {
@@ -337,11 +337,11 @@ export class AppService {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar usuário', error);
-    })
-    
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar usuário', error);
+      })
+
 
     if (facialRecognition.result === false) {
       this.accessLogService.create(
@@ -361,7 +361,7 @@ export class AppService {
     }
   }
 
-  private async handleLogAdminFacialRecognitionWeb(userData: any,facialRecognition: any, environmentId: string, accessDto: any) {
+  private async handleLogAdminFacialRecognitionWeb(userData: any, facialRecognition: any, environmentId: string, accessDto: any) {
     const environment = await this.getEnvironmentDataToLog(environmentId);
     const environmentDataForLog = {
       environmentId,
@@ -403,17 +403,17 @@ export class AppService {
       userData.accessType = AccessByType.rfid;
     } else {
       const response: any = await this.getUserIdByDocumentAndPin(accessDto.document, accessDto.pin);
-      
+
       if (response.statusCode === 404) {
         this.sendLogWhenUserDocumentNotFound(accessDto, environmentId);
         throw new HttpException('Usuário não encontrado', HttpStatus.NOT_FOUND);
       }
-  
+
       if (response.statusCode === 401) {
         this.sendLogWhenUserPinIsNotValid(accessDto, environmentId, response.userName, response.userId);
         throw new HttpException('PIN inválido', HttpStatus.UNAUTHORIZED);
       }
-  
+
       userData.userId = response.userId;
       userData.accessType = AccessByType.document;
       userData.userName = response.userName;
@@ -433,7 +433,7 @@ export class AppService {
         })
       )
     ).then((response) => response.data)
-    
+
     return esp32;
   }
 
@@ -476,7 +476,7 @@ export class AppService {
 
     return data;
   }
-  
+
   async searchFrequenterAccess(userData: any, environmentId: string, accessDto: any) {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchFrequenterAccessUrl, {
@@ -499,11 +499,11 @@ export class AppService {
         }
       })
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     return data;
   }
@@ -575,7 +575,7 @@ export class AppService {
   //       )
 
   //       this.errorLogger.error('Falha na escrita da imagem ao tentar acesso', err);
-        
+
   //       throw err;
   //     }
   //   });
@@ -621,10 +621,10 @@ export class AppService {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar usuário', error);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar usuário', error);
+      })
 
     this.accessLogService.create(
       AccessLogConstants.accessOkWhenUserHasAccess(
@@ -644,10 +644,10 @@ export class AppService {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar usuário', error);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar usuário', error);
+      })
 
     const environment = await this.getEnvironmentDataToLog(envId);
 
@@ -669,10 +669,10 @@ export class AppService {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar usuário', error);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar usuário', error);
+      })
 
     this.accessLogService.create(
       AccessLogConstants.accessDeniedWhenEnvironmentAccessNotFound(
@@ -692,10 +692,10 @@ export class AppService {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.SERVICE_USERS_URL}/${userData.userId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar usuário', error);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar usuário', error);
+      })
 
     this.accessLogService.create(
       AccessLogConstants.accessDeniedWhenFacialRecognitionIsNotValid(

@@ -55,18 +55,18 @@ async function createRoles() {
 async function createAdmins() {
   await prisma.user.create({
     data: {
-      email: 'evandro.lima@email.com',
+      email: 'ivanilson.junior@ifrn.edu.br',
       password: await bcrypt.hash('password', roundsOfHashing),
-      name: 'Evandro Lima',
-      document: '416.415.950-27',
-      document_type_id: 2,
+      name: 'Ivanilson Junior',
+      document: '2568824',
+      document_type_id: 1,
       active: true,
     },
   })
 
   const admin1 = await prisma.user.findUnique({
     where: {
-      email: 'evandro.lima@email.com',
+      email: 'ivanilson.junior@ifrn.edu.br',
     },
   })
 
@@ -76,6 +76,14 @@ async function createAdmins() {
       role_id: 1,
     },
   });
+}
+
+async function setAdminImage() {
+  const admin1 = await prisma.user.findUnique({
+    where: {
+      email: 'ivanilson.junior@ifrn.edu.br',
+    },
+  })
 
   await prisma.user_image.create({
     data: {
@@ -458,7 +466,8 @@ async function createUsers() {
   });
 }
 
-createDocumentTypes().catch((error) => {console.error(error); process.exit(1);})
-createRoles().catch((error) => {console.error(error);process.exit(1);})
-//createAdmins().catch((error) => {console.error(error);process.exit(1);})
-//createUsers().catch((error) => {console.error(error);process.exit(1);})
+// createDocumentTypes().catch((error) => {console.error(error); process.exit(1);})
+// createRoles().catch((error) => {console.error(error);process.exit(1);})
+// createAdmins().catch((error) => {console.error(error);process.exit(1);})
+
+// setAdminImage().catch((error) => {console.error(error);process.exit(1);})

@@ -5,8 +5,6 @@ const port = 3008;
 require('dotenv').config();
 
 app.get('/', (req, res) => {
-  console.log(req.query);
-  console.log(req.params);
   res.send(`
     <!DOCTYPE html>
     <html lang="en">

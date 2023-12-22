@@ -35,7 +35,7 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto) {
     if (!createUserDto.createdBy) {
-      createUserDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      createUserDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     if (
@@ -135,7 +135,7 @@ export class UserService {
 
   async sendInviteEmail(inviteEmail: InviteEmail) {
     if (!inviteEmail.invitedBy) {
-      inviteEmail.invitedBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      inviteEmail.invitedBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     let user: user;

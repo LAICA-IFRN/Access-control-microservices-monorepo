@@ -20,7 +20,7 @@ export class RfidService {
 
   async create(createRfidDto: CreateRfidDto) {
     if (!createRfidDto.createdBy) {
-      createRfidDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      createRfidDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     const findUserEndpoint = `${this.usersServiceUrl}/${createRfidDto.userId}`
@@ -297,7 +297,7 @@ export class RfidService {
 
   async updateStatus(updateStatusRfidDto: UpdateStatusRfidDto) {
     if (!updateStatusRfidDto.updatedBy) {
-      updateStatusRfidDto.updatedBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      updateStatusRfidDto.updatedBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     try {
@@ -375,7 +375,7 @@ export class RfidService {
 
   async remove(id: number, deletedBy?: string) {
     if (!deletedBy) {
-      deletedBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      deletedBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
     
     if (isNaN(id)) {

@@ -229,7 +229,7 @@ export class MicrocontrollersService {;
 
   async activateMicrocontroller (id: number, environmentId: string, userId?: string) {
     if (!userId) {
-      userId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      userId = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     if(isNaN(id)) {
@@ -548,7 +548,7 @@ export class MicrocontrollersService {;
 
   async updateStatus(id: number, status: boolean, userId?: string) {
     if (!userId) {
-      userId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      userId = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     if(isNaN(id)) {

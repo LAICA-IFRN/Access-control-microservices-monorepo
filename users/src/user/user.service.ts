@@ -17,6 +17,7 @@ import { DocumentTypesConstants, RolesConstants } from 'src/utils/database-const
 import { FindAllDto } from './dto/find-all.dto';
 import { userFieldsToSelect } from 'src/utils/types';
 import { InviteEmail } from './dto/invite-email.dto';
+import { UserStatusDto } from './dto/status-user.dto';
 
 @Injectable()
 export class UserService {
@@ -511,7 +512,11 @@ export class UserService {
     }
   }
 
-  async updateStatus(id: string, status: boolean, userId: string) {
+  async updateStatus(id: string, body: UserStatusDto) {
+    if (!body.requestUserId) {
+      body.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
+    }
+    
     if (!isUUID(id)) {
       this.auditLogService.create(AuditConstants.updateStatusBadRequest({userId: id, statusCode: 400}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
@@ -521,11 +526,11 @@ export class UserService {
       const user = await this.prismaService.user.update({
         where: { id },
         data: { 
-          active: status, 
+          active: body.status, 
           user_role: {
             updateMany: {
               where: { user_id: id },
-              data: { active: status }
+              data: { active: body.status }
             },
           }
         },
@@ -534,11 +539,11 @@ export class UserService {
         }
       });
 
-      this.auditLogService.create(AuditConstants.updateStatusOk({userId: id, name: user.name, active: user.active}))
-      // TODO: inativar tag, mac e relações com ambientes em seus respectivos serviços
+      this.sendLogWhenUserStatusUpdated(id, user.name, body.status, body.requestUserId, body);
+
     } catch (error) {
       if (error.code === 'P2025') {
-        this.auditLogService.create(AuditConstants.updateStatusNotFound({userId, statusCode: 404}))
+        this.auditLogService.create(AuditConstants.updateStatusNotFound({id, statusCode: 404}))
         throw new HttpException('User not found',  HttpStatus.NOT_FOUND);
       } else {
         this.auditLogService.create(AuditConstants.updateStatusNotFound({context: error, statusCode: 422}))
@@ -547,10 +552,30 @@ export class UserService {
     }
   }
 
+  async sendLogWhenUserStatusUpdated(userId: string, userName: string, status: boolean, authorId: string, meta?: any) {
+    const author = await this.prismaService.user.findFirst({
+      where: { id: authorId, active: true }
+    });
+
+    this.auditLogService.create(AuditConstants.updateStatusOk(
+      userName,
+      author.name,
+      status,
+      { 
+        ...meta,
+        userId
+      }
+    ));
+  }
+
   // TODO: testar
-  async update(id: string, updateUserDataDto: UpdateUserDataDto, userId: string) {
+  async update(id: string, updateUserDataDto: UpdateUserDataDto) {
+    if (!updateUserDataDto.requestUserId) {
+      updateUserDataDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
+    }
+
     if (!isUUID(id)) {
-      this.auditLogService.create(AuditConstants.updateBadRequest({userId: id, author: userId}))
+      this.auditLogService.create(AuditConstants.updateBadRequest({userId: id, author: updateUserDataDto.requestUserId}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -570,19 +595,35 @@ export class UserService {
         where: { id }
       })
 
-      this.auditLogService.create(AuditConstants.updateOk({userId: id, author: userId}))
+      this.sendLogWhenUserUpdated(id, user.name, updateUserDataDto);
+
       return user;
     } catch (error) {
       if (error.code === 'P2025') {
         this.auditLogService.create(AuditConstants.updateNotFound({userId: id, statusCode: 404}))
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else if (error.code === 'P2002') {
-        this.auditLogService.create(AuditConstants.updateNotFound({userId: id, statusCode: 409, author: userId, target: error.meta.target}))
+        this.auditLogService.create(AuditConstants.updateNotFound({userId: id, statusCode: 409, author: updateUserDataDto.requestUserId, target: error.meta.target}))
         throw new HttpException('Already exists', HttpStatus.CONFLICT);
       } else {
-        this.auditLogService.create(AuditConstants.updateError({statusCode: 422, author: userId, target: error.meta.target}))
+        this.auditLogService.create(AuditConstants.updateError({statusCode: 422, author: updateUserDataDto.requestUserId, target: error.meta.target}))
         throw new HttpException("Can't update user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
+  }
+
+  async sendLogWhenUserUpdated(userId: string, userName: string, meta: any) {
+    const author = await this.prismaService.user.findFirst({
+      where: { id: meta.requestUserId, active: true }
+    });
+
+    this.auditLogService.create(AuditConstants.updateOk(
+      userName,
+      author.name,
+      { 
+        ...meta,
+        userId
+      }
+    ));
   }
 }

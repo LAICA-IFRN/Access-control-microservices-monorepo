@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, Length } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUUID, Length } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsCPFOrCNPJ } from 'src/decorators/cpf-or-cnpj.decorator';
 
@@ -24,4 +24,9 @@ export class UpdateUserDataDto {
   @IsOptional()
   @ApiProperty({ required: false})
   password?: string
+
+  @ApiProperty()
+  @IsUUID()
+  @IsOptional()
+  requestUserId?: string
 }

@@ -8,6 +8,8 @@ import { RoleStatusDto } from './dto/status-role.dto';
 import { HttpService } from '@nestjs/axios';
 import { lastValueFrom } from 'rxjs';
 import { UserRoles } from 'src/utils/types';
+import { AuditLogService } from 'src/providers/audit-log/audit-log.service';
+import { AuditConstants } from 'src/providers/audit-log/audit-contants';
 
 @Injectable()
 export class RolesService {
@@ -16,27 +18,17 @@ export class RolesService {
   
   constructor(
     private prisma: PrismaService,
-    private httpService: HttpService
+    private httpService: HttpService,
+    private readonly auditLogService: AuditLogService
   ) {}
 
   async create(createRoleDto: CreateRoleDto, userId: string) {
-    if (!isUUID(userId)) {
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Error",
-          message: 'Falha ao criar papel de usuário: id inválido',
-          meta: {
-            target: userId,
-            statusCode: 400
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+    if (!createRoleDto.requestUserId) {
+      createRoleDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
+    }
 
+    if (!isUUID(userId)) {
+      this.auditLogService.create(AuditConstants.createRolesBadRequest({statusCode: 400, userId, meta: createRoleDto}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -90,22 +82,7 @@ export class RolesService {
         }
       }
 
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: "Usuários",
-          type: "Info",
-          message: 'Papel(éis) de usuário criado(s)',
-          meta: {
-            roles: rolesToAdd,
-            target: userId,
-            statusCode: 201
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+      this.sendLogWhenCreateRolesOk(userId, createRoleDto);
 
     } catch (error) {
       if (error.code === 'P2002') {
@@ -191,6 +168,15 @@ export class RolesService {
     }
 
     return roles;
+  }
+
+  async sendLogWhenCreateRolesOk(userId: string, createRoleDto: CreateRoleDto) {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, active: true } })
+    const author = await this.prisma.user.findFirst({ where: { id: createRoleDto.requestUserId, active: true } })
+
+    const roles = createRoleDto.rolesToAdd.map((role) => role.toLowerCase()).join(', ')
+
+    this.auditLogService.create(AuditConstants.createRolesOk(user.name, author.name, roles, createRoleDto));
   }
 
   async findRoles() {
@@ -329,6 +315,10 @@ export class RolesService {
   }
 
   async changeStatus(userId: string, roleId: string, roleStatusDto: RoleStatusDto) {
+    if (!roleStatusDto.requestUserId) {
+      roleStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
+    }
+
     if (!isUUID(userId) || !isUUID(roleId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -352,13 +342,22 @@ export class RolesService {
     try {
       const user = await this.prisma.user.findFirstOrThrow({ where: { id: userId } })
 
-      return await this.prisma.user_role.update({
+      const role = await this.prisma.user_role.update({
         where: { 
           id: roleId, 
           user_id: user.id 
         },
-        data: { active: roleStatusDto.status }
+        data: { active: roleStatusDto.status },
+        select: {
+          role: true,
+          active: true,
+          user_id: true
+        }
       })
+
+      this.sendLogWhenChangeStatusOk(userId, roleId, role.role.name, roleStatusDto);
+
+      return role;
     } catch (error) {
       if (error.code === 'P2025') {
         await lastValueFrom(
@@ -385,7 +384,18 @@ export class RolesService {
     }
   }
 
+  async sendLogWhenChangeStatusOk(userId: string, roleId: string, role: string, roleStatusDto: RoleStatusDto) {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, active: true } })
+    const author = await this.prisma.user.findFirst({ where: { id: roleStatusDto.requestUserId, active: true } })
+
+    this.auditLogService.create(AuditConstants.updateRoleStatusOk(user.name, author.name, role, {...roleStatusDto, roleId}));
+  }
+
   async remove(userId: string, deleteRoleDto: DeleteRoleDto) {
+    if (!deleteRoleDto.requestUserId) {
+      deleteRoleDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
+    }
+
     if (!isUUID(userId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -537,5 +547,14 @@ export class RolesService {
     }
 
     return roles;
+  }
+
+  async sendLogWhenDeleteRolesOk(userId: string, deleteRoleDto: DeleteRoleDto) {
+    const user = await this.prisma.user.findFirst({ where: { id: userId, active: true } })
+    const author = await this.prisma.user.findFirst({ where: { id: deleteRoleDto.requestUserId, active: true } })
+
+    const roles = deleteRoleDto.rolesToDelete.map((role) => role.toLowerCase()).join(', ')
+
+    this.auditLogService.create(AuditConstants.deleteRolesOk(user.name, author.name, roles, deleteRoleDto));
   }
 }

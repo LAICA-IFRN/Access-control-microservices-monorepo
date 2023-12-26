@@ -137,7 +137,7 @@ export class UserController {
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: UserStatusDto) {
-    return this.userService.updateStatus(id, body.status, '');
+    return this.userService.updateStatus(id, body);
   }
 
   @ApiOperation({ description: 'Endpoint para atualizar os dados de um usuário' })
@@ -146,6 +146,6 @@ export class UserController {
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: UpdateUserDataDto) {
-    return this.userService.update(id, body, '');
+    return this.userService.update(id, body);
   }
 }

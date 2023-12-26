@@ -196,11 +196,16 @@ export class AuditConstants {
     }
   }
 
-  public static updateStatusOk(metaData: any): AuditLog {
+  public static updateStatusOk(
+    userName: string,
+    updatedBy: string,
+    active: boolean,
+    metaData: any
+  ): AuditLog {
     return {
       topic: "Usuários",
       type: "Info",
-      message: `Status de usuário atualizado: ${metaData.name} - ${metaData.active ? 'Ativo' : 'Inativo'}`,
+      message: `${updatedBy} atualizou status de ${userName} para ${ active ? 'ativo' : 'inativo' }`,
       meta: metaData
     }
   }
@@ -209,7 +214,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao atualizar status de usuário: id inválido',
+      message: 'Falha ao atualizar status de usuário, id inválido',
       meta: metaData
     }
   }
@@ -218,7 +223,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao atualizar status de usuário: erro interno, verificar logs de erro do serviço',
+      message: 'Falha ao atualizar status de usuário, erro interno verificar logs de erro do serviço',
       meta: metaData
     }
   }
@@ -227,16 +232,20 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao atualizar usuário: id inválido',
+      message: 'Falha ao atualizar usuário, id inválido',
       meta: metaData
     }
   }
 
-  public static updateOk(metaData: object): AuditLog {
+  public static updateOk(
+    userName: string,
+    updatedBy: string,
+    metaData: any
+  ): AuditLog {
     return {
       topic: "Usuários",
       type: "Info",
-      message: 'Falha ao atualizar usuário: id inválido',
+      message: `${updatedBy} atualizou dados de ${userName}`,
       meta: metaData
     }
   }
@@ -245,7 +254,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao atualizar usuário: usuário não encontrado',
+      message: 'Falha ao atualizar usuário, usuário não encontrado',
       meta: metaData
     }
   }
@@ -254,7 +263,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao atualizar usuário: conflito com registro existente',
+      message: 'Falha ao atualizar usuário, conflito com registro existente',
       meta: metaData
     }
   }
@@ -263,7 +272,67 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao atualizar usuário: erro interno, verificar logs de erro do serviço',
+      message: 'Falha ao atualizar usuário, erro interno verificar logs de erro do serviço',
+      meta: metaData
+    }
+  }
+
+  public static updateRolesBadRequest(metaData: object): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Error",
+      message: 'Falha ao atualizar papéis de usuário, id inválido',
+      meta: metaData
+    }
+  }
+
+  public static createRolesOk(
+    userName: string,
+    updatedBy: string,
+    roles: string,
+    metaData: any
+  ): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: `${updatedBy} adcionou os papéis ${roles} a ${userName}`,
+      meta: metaData
+    }
+  }
+
+  public static createRolesBadRequest(metaData: object): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Error",
+      message: 'Falha ao adicionar papéis de usuário, id inválido',
+      meta: metaData
+    }
+  }
+
+  public static updateRoleStatusOk(
+    userName: string,
+    updatedBy: string,
+    role: string,
+    metaData: any
+  ): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: `${updatedBy} atualizou status do papel ${role} de ${userName} para ${metaData.active ? 'ativo' : 'inativo'}`,
+      meta: metaData
+    }
+  }
+
+  public static deleteRolesOk(
+    userName: string,
+    updatedBy: string,
+    roles: string,
+    metaData: any
+  ): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: `${updatedBy} removeu os papéis ${roles} de ${userName}`,
       meta: metaData
     }
   }

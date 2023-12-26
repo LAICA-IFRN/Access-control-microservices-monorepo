@@ -179,7 +179,7 @@ export class AppService {
         this.errorLogger.error('Falha ao buscar esp', error);
         throw new HttpException(error.response.data.message, error.response.data.statusCode);
       })
-
+      
     const roles: string[] = await lastValueFrom(
       this.httpService.get(`${this.tempGetRolesUrl}/${accessDto.userId}/all`)
     )
@@ -205,7 +205,6 @@ export class AppService {
           this.errorLogger.error('Falha ao buscar acesso de frequenter', error);
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
-
       //this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
 
       if (data.access) {

@@ -65,13 +65,16 @@ async function rfid() {
 }
 
 async function main() {
-  await prisma.mobile.delete({
+  await prisma.microcontroller.update({
     where: {
-      user_id: 'c8539e33-8373-4af1-95bb-e31bb9d52885'
+      id: 5
+    },
+    data: {
+      environment_id: ''
     }
   })
 }
-main().catch((error) => { console.error(error); process.exit(1); })
+//main().catch((error) => { console.error(error); process.exit(1); })
 
 //createMicrocontrollerType().catch((error) => {console.error(error);process.exit(1);})
 //createMicrocontrollers().catch((error) => {console.error(error);process.exit(1);})

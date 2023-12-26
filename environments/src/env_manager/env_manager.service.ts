@@ -346,8 +346,6 @@ export class EnvManagerService {
 
   async hasEnvAccessOnEnv(userId: string, environmentId: string) {
     if (!isUUID(userId) || !isUUID(environmentId)) {
-      console.log('if !isUUID');
-      
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Ambientes',
@@ -460,9 +458,6 @@ export class EnvManagerService {
         }
       }
     });
-
-    console.log('envManager');
-    console.log(envManager);
     
     const response = { access: false, environmentName: envManager.environment.name };
 

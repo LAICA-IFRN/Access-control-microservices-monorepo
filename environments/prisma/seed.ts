@@ -87,5 +87,15 @@ async function createEnvironmentUser() {
   });
 }
 
+async function getEnvUsers() {
+  const environment = await prisma.environment.delete({
+    where: {
+      id: 'f1fe2cc1-d8da-4c44-b5f6-8561e2d36415'
+    }
+  });
+  console.log(environment);
+}
+//getEnvUsers().catch((error) => {console.error(error);process.exit(1);})
+
 //main().catch((error) => {console.error(error);process.exit(1);})
 //createEnvironmentUser().catch((error) => {console.error(error);process.exit(1);})

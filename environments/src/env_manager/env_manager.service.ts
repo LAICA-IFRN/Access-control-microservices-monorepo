@@ -21,7 +21,7 @@ export class EnvManagerService {
 
   async create(createEnvManagerDto: CreateEnvManagerDto) {
     if (!createEnvManagerDto.createdBy) {
-      createEnvManagerDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      createEnvManagerDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     const isEnvManager = await lastValueFrom(
@@ -278,7 +278,7 @@ export class EnvManagerService {
 
     const log = {
       type: 'Info',
-      message: `${createdByUser.name} vinculou ${user.name} como o gestor no ambiente ${environment.name}`,
+      message: `${createdByUser.name} vinculou ${user.name} como o supervisor no ambiente ${environment.name}`,
       topic: 'Ambientes',
       meta: {
         target: [userId, environmentId, createdBy],
@@ -643,7 +643,7 @@ export class EnvManagerService {
 
   async updateStatus(id: string, envManagerStatusDto: EnvManagerStatusDto) {
     if (!envManagerStatusDto.requestUserId) {
-      envManagerStatusDto.requestUserId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      envManagerStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     if (!isUUID(id)) {
@@ -677,22 +677,6 @@ export class EnvManagerService {
         data: {
           active: envManagerStatusDto.status,
         },
-      });
-
-      await lastValueFrom(
-        this.httpService.post(this.createAuditLogUrl, {
-          topic: 'Ambientes',
-          type: 'Info',
-          message: 'Status do gestor de ambiente atualizado com sucesso',
-          meta: {
-            target: [envManager.id, envManager.user_id, envManager.environment_id],
-            statusCode: 200
-          }
-        })
-      )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
       });
 
       this.sendLogWhenEnvironmentManagerIsUpdated(
@@ -758,7 +742,7 @@ export class EnvManagerService {
     userName: string,
     createdBy: string,
     environmentId: string,
-    meta?: object,
+    meta?: any,
   ) {
     const created_by_user = await this.findUserForLog(createdBy);
     const environment = await this.prisma.environment.findFirst({
@@ -772,8 +756,8 @@ export class EnvManagerService {
 
     await this.auditLogService.create({
       topic: 'Ambientes',
-      type: 'info',
-      message: `${created_by_user.name} atualizou o vinculo do gestor ${userName} no ambiente ${environment.name}`,
+      type: 'Info',
+      message: `${created_by_user.name} atualizou status do vinculo do supervisor ${userName} no ambiente ${environment.name} para ${meta.status ? 'ativo' : 'inativo'}`,
       meta: meta,
     });
   }

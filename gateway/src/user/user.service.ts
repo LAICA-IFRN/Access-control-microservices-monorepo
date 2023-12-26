@@ -26,8 +26,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.userRoutes.create(), body).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 409) {
@@ -48,8 +46,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.userRoutes.createByInvitation(), body).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 409) {
@@ -70,8 +66,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.userRoutes.sendInviteEmail(), body).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 409) {
@@ -92,8 +86,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.userRoutes.findDocumentTypes()).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {
@@ -107,12 +99,9 @@ export class UserService {
   }
 
   async findAll(body: any) {
-    console.log(body);
     const { data } = await lastValueFrom(
       this.httpService.post(this.userRoutes.findAllPaginated(), body).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 409) {
@@ -133,8 +122,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.userRoutes.findUserImage(id)).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 409) {
@@ -173,8 +160,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.userRoutes.findAllFrequenters()).pipe(
         catchError((error) => {
-          console.log(error);
-          
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 404) {
@@ -299,8 +284,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.userRoutes.findRolesTypes()).pipe(
         catchError((error) => {
-          console.log(error);
-
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {
@@ -333,8 +316,6 @@ export class UserService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.userRoutes.changeRoleStatus(id, roleId), body).pipe(
         catchError((error) => {
-          console.log(error);
-
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else {

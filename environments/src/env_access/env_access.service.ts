@@ -23,7 +23,7 @@ export class EnvAccessService {
 
   async create(createEnvAccessDto: CreateEnvAccessDto) {
     if (!createEnvAccessDto.createdBy) {
-      createEnvAccessDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      createEnvAccessDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     const isFrequenter = await lastValueFrom(
@@ -463,8 +463,8 @@ export class EnvAccessService {
 
     await this.auditLogService.create({
       topic: 'Ambientes',
-      type: 'info',
-      message: `${created_by_user.name} criou acesso para ${user.name} no ambiente ${environment.name}`,
+      type: 'Info',
+      message: `${created_by_user.name} vinculou ${user.name} como frequentador no ambiente ${environment.name}`,
       meta: meta,
     });
   }
@@ -1079,7 +1079,7 @@ export class EnvAccessService {
 
   async updateStatus(id: string, envAccessStatusDto: EnvAccessStatusDto) {
     if (!envAccessStatusDto.requestUserId) {
-      envAccessStatusDto.requestUserId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      envAccessStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     if (!isUUID(id)) {
@@ -1224,22 +1224,22 @@ export class EnvAccessService {
 
     await this.auditLogService.create({
       topic: 'Ambientes',
-      type: 'info',
-      message: `${created_by_user.name} atualizou status de acesso de ${user.name} no ambiente ${environment.name} para ${status ? 'ativo' : 'inativo'}`,
+      type: 'Info',
+      message: `${created_by_user.name} atualizou status do vinculo do frequentador ${user.name} no ambiente ${environment.name} para ${status ? 'ativo' : 'inativo'}`,
       meta: meta,
     });
   }
 
   async update(id: string, updateEnvAccessDto: UpdateEnvAccessDto) {
     if (!updateEnvAccessDto.requestUserId) {
-      updateEnvAccessDto.requestUserId = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      updateEnvAccessDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
-          type: 'Info',
+          type: 'Error',
           message: 'Falha ao atualizar acesso à ambiente, id inválido',
           meta: {
             target: [id],
@@ -1267,7 +1267,7 @@ export class EnvAccessService {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
-          type: 'Info',
+          type: 'Error',
           message: 'Falha ao atualizar acesso à ambiente, registro não encontrado',
           meta: {
             target: [id],
@@ -1299,7 +1299,7 @@ export class EnvAccessService {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
           topic: 'Acesso de ambiente',
-          type: 'Info',
+          type: 'Error',
           message: 'Falha ao atualizar acesso à ambiente, período de início maior ou igual ao período de término',
           meta: {
             target: [id, {startPeriod: updateEnvAccessDto.startPeriod, endPeriod: updateEnvAccessDto.endPeriod}],
@@ -1332,7 +1332,7 @@ export class EnvAccessService {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
-            type: 'Info',
+            type: 'Error',
             message: 'Falha ao atualizar acesso à ambiente, registro não encontrado',
             meta: {
               target: [id],
@@ -1352,7 +1352,7 @@ export class EnvAccessService {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
-            type: 'Info',
+            type: 'Error',
             message: 'Falha ao atualizar acesso à ambiente, conflito com registro existente',
             meta: {
               target: [id],
@@ -1372,7 +1372,7 @@ export class EnvAccessService {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
             topic: 'Acesso de ambiente',
-            type: 'Info',
+            type: 'Error',
             message: 'Falha ao atualizar acesso à ambiente, erro interno verificar os logs de erro do serviço',
             meta: {
               target: [id],
@@ -1504,7 +1504,7 @@ export class EnvAccessService {
 
         this.sendLogWhenEnvironmentAccessIsUpdated(
           envAccess.user_id,
-          envAccess.created_by ? envAccess.created_by : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+          envAccess.created_by ? envAccess.created_by : '0f3c5449-9192-452e-aeb9-503778709f3e',
           envAccess.environment_id,
           {
             updateEnvAccessDto,
@@ -1597,8 +1597,8 @@ export class EnvAccessService {
 
     await this.auditLogService.create({
       topic: 'Ambientes',
-      type: 'info',
-      message: `${created_by_user.name} atualizou acesso para ${user.name} no ambiente ${environment.name}`,
+      type: 'Info',
+      message: `${created_by_user.name} atualizou o vinculo do frequentador ${user.name} no ambiente ${environment.name}`,
       meta: meta,
     });
   }
@@ -1664,7 +1664,7 @@ export class EnvAccessService {
 
       this.sendLogWhenEnvironmentAccessIsRemoved(
         envAccess.user_id,
-        requestUserId ? requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
         envAccess.environment_id,
         {
           envAccess,
@@ -1738,7 +1738,7 @@ export class EnvAccessService {
 
     await this.auditLogService.create({
       topic: 'Ambientes',
-      type: 'info',
+      type: 'Info',
       message: `${created_by_user.name} removeu acesso de ${user.name} no ambiente ${environment.name}`,
       meta: meta,
     });

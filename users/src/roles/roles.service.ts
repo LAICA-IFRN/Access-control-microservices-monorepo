@@ -174,7 +174,15 @@ export class RolesService {
     const user = await this.prisma.user.findFirst({ where: { id: userId, active: true } })
     const author = await this.prisma.user.findFirst({ where: { id: createRoleDto.requestUserId, active: true } })
 
-    const roles = createRoleDto.rolesToAdd.map((role) => role.toLowerCase()).join(', ')
+    const roles = createRoleDto.rolesToAdd.map((role) => {
+      if (role === 'ADMIN') {
+        return 'Administrador'
+      } else if (role === 'FREQUENTER') {
+        return 'Frequentador'
+      } else {
+        return 'Supervisor'
+      }
+    }).join(', ')
 
     this.auditLogService.create(AuditConstants.createRolesOk(user.name, author.name, roles, createRoleDto));
   }
@@ -388,6 +396,14 @@ export class RolesService {
     const user = await this.prisma.user.findFirst({ where: { id: userId, active: true } })
     const author = await this.prisma.user.findFirst({ where: { id: roleStatusDto.requestUserId, active: true } })
 
+    if (role === 'ADMIN') {
+      role = 'Administrador'
+    } else if (role === 'FREQUENTER') {
+      role = 'Frequentador'
+    } else {
+      role = 'Supervisor'
+    }
+
     this.auditLogService.create(AuditConstants.updateRoleStatusOk(user.name, author.name, role, {...roleStatusDto, roleId}));
   }
 
@@ -546,6 +562,8 @@ export class RolesService {
       }
     }
 
+    this.sendLogWhenDeleteRolesOk(userId, deleteRoleDto);
+
     return roles;
   }
 
@@ -553,7 +571,15 @@ export class RolesService {
     const user = await this.prisma.user.findFirst({ where: { id: userId, active: true } })
     const author = await this.prisma.user.findFirst({ where: { id: deleteRoleDto.requestUserId, active: true } })
 
-    const roles = deleteRoleDto.rolesToDelete.map((role) => role.toLowerCase()).join(', ')
+    const roles = deleteRoleDto.rolesToDelete.map((role) => {
+      if (role === 'ADMIN') {
+        return 'Administrador'
+      } else if (role === 'FREQUENTER') {
+        return 'Frequentador'
+      } else {
+        return 'Supervisor'
+      }
+    }).join(', ')
 
     this.auditLogService.create(AuditConstants.deleteRolesOk(user.name, author.name, roles, deleteRoleDto));
   }

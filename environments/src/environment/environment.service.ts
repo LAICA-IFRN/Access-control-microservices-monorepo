@@ -61,7 +61,7 @@ export class EnvironmentService {
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
     if (!createEnvironmentDto.createdBy) {
-      createEnvironmentDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      createEnvironmentDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     const user: any = await lastValueFrom(
@@ -213,7 +213,7 @@ export class EnvironmentService {
 
   async createTemporaryAccess(createTemporaryAccessDto: CreateTemporaryAccessDto) {
     if (!createTemporaryAccessDto.createdBy) {
-      createTemporaryAccessDto.createdBy = '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      createTemporaryAccessDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
     const isAdmin = await lastValueFrom(
@@ -322,7 +322,7 @@ export class EnvironmentService {
           start_period: startPeriod,
           end_period: endPeriod,
           description: createTemporaryAccessDto.description,
-          created_by: createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+          created_by: createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '0f3c5449-9192-452e-aeb9-503778709f3e',
           user_name: createTemporaryAccessDto.userName,
           environment_id: createTemporaryAccessDto.environmentId,
           user_id: createTemporaryAccessDto.userId,
@@ -487,7 +487,7 @@ export class EnvironmentService {
     createTemporaryAccessDto: CreateTemporaryAccessDto
   ) {
     const createdByUser: any = await this.findUserForLog(
-      createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '8ffa136c-2055-4c63-b255-b876d0a2accf'
+      createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '0f3c5449-9192-452e-aeb9-503778709f3e'
     );
     const environment = await this.prisma.environment.findFirst({
       where: { id: environmentId }
@@ -1035,7 +1035,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentUpdated(
         environment.name,
         environment.id,
-        updateEnvironmentDto.requestUserId ? updateEnvironmentDto.requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+        updateEnvironmentDto.requestUserId ? updateEnvironmentDto.requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
         updateEnvironmentDto
       );
 
@@ -1162,7 +1162,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentStatusChanged(
         environment.name,
         environment.id,
-        requestUserId ? requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf',
+        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
         status
       );
 
@@ -1262,7 +1262,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentRemoved(
         environment.name,
         environment.id,
-        requestUserId ? requestUserId : '8ffa136c-2055-4c63-b255-b876d0a2accf'
+        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e'
       );
 
       return environment

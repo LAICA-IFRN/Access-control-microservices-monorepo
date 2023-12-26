@@ -8,7 +8,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Info",
-      message: `${invitedBy} enviou convite ao email ${metaData.email} para auto cadastro de usuário interno`,
+      message: `${invitedBy} enviou convite ao email ${metaData.email} para autocadastro de usuário interno`,
       meta: metaData
     };
   }
@@ -21,7 +21,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: `${invitedBy} tentou enviar convite para ${email} para auto cadastro de usuário interno, mas ocorreu um erro`,
+      message: `${invitedBy} tentou enviar convite para ${email} para autocadastro de usuário interno, mas ocorreu um erro`,
       meta: metaData
     };
   }
@@ -137,7 +137,7 @@ export class AuditConstants {
     return {
       topic: "Usuários",
       type: "Error",
-      message: 'Falha ao usuário, usuário não encontrado',
+      message: 'Falha ao buscar usuário, usuário não encontrado',
       meta: metaData
     }
   }

@@ -87,5 +87,5 @@ async function createEnvironmentUser() {
   });
 }
 
-main().catch((error) => {console.error(error);process.exit(1);})
+//main().catch((error) => {console.error(error);process.exit(1);})
 //createEnvironmentUser().catch((error) => {console.error(error);process.exit(1);})

@@ -4,7 +4,7 @@ import { lastValueFrom } from "rxjs";
 
 export interface AuditLog {
   topic: 'Ambientes';
-  type: 'info' | 'error' | 'warn';
+  type: 'Info' | 'Error' | 'Warn';
   message: string;
   meta: object;
 }

@@ -9,7 +9,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// import { Cron, CronExpression } from '@nestjs/schedule';
 //import { randomUUID } from 'crypto';
 import { FindAllDto } from './dto/find-all.dto';
 import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
@@ -60,10 +60,6 @@ export class EnvironmentService {
   // } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-    if (!createEnvironmentDto.createdBy) {
-      createEnvironmentDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const user: any = await lastValueFrom(
       this.httpService.get(this.getUserEndpoint + createEnvironmentDto.createdBy).pipe(
         catchError((error) => {
@@ -212,10 +208,6 @@ export class EnvironmentService {
   }
 
   async createTemporaryAccess(createTemporaryAccessDto: CreateTemporaryAccessDto) {
-    if (!createTemporaryAccessDto.createdBy) {
-      createTemporaryAccessDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const isAdmin = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -322,7 +314,7 @@ export class EnvironmentService {
           start_period: startPeriod,
           end_period: endPeriod,
           description: createTemporaryAccessDto.description,
-          created_by: createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '0f3c5449-9192-452e-aeb9-503778709f3e',
+          created_by: createTemporaryAccessDto.createdBy,
           user_name: createTemporaryAccessDto.userName,
           environment_id: createTemporaryAccessDto.environmentId,
           user_id: createTemporaryAccessDto.userId,
@@ -486,9 +478,7 @@ export class EnvironmentService {
     userId: string,
     createTemporaryAccessDto: CreateTemporaryAccessDto
   ) {
-    const createdByUser: any = await this.findUserForLog(
-      createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '0f3c5449-9192-452e-aeb9-503778709f3e'
-    );
+    const createdByUser: any = await this.findUserForLog(createTemporaryAccessDto.createdBy);
     const environment = await this.prisma.environment.findFirst({
       where: { id: environmentId }
     })
@@ -616,7 +606,7 @@ export class EnvironmentService {
 
     const key = esp8266.id.toString();
     const cache = { value: true, remoteAccessType, userName: user.name, userId: user.id, environmentName: environment.name, environmentId: environment.id };
-    await this.cacheService.set(key, cache); // TODO: alterar o cache para salvar em arquivo em vez de memória
+    await this.cacheService.set(key, cache);
 
     if (remoteAccessType === 'web') {
       await this.sendAccessLogWhenWebRemoteAccessSuccess(
@@ -1035,7 +1025,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentUpdated(
         environment.name,
         environment.id,
-        updateEnvironmentDto.requestUserId ? updateEnvironmentDto.requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
+        updateEnvironmentDto.requestUserId,
         updateEnvironmentDto
       );
 
@@ -1162,7 +1152,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentStatusChanged(
         environment.name,
         environment.id,
-        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
+        requestUserId,
         status
       );
 
@@ -1262,12 +1252,15 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentRemoved(
         environment.name,
         environment.id,
-        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e'
+        requestUserId
       );
 
       return environment
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (error.response.status === 'ECONNREFUSED') {
+        this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+        throw new HttpException('Serviço fora do ar', HttpStatus.INTERNAL_SERVER_ERROR);
+      } else if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",

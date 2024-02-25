@@ -85,20 +85,21 @@ export class MicrocontrollersService {;
     const info: any = { healthCode };
 
     if (microcontroller.microcontroller_type.name === 'ESP8266') {
-      const getQRCodeUrl = `${this.environmentsServiceUrl}/env/${microcontroller.environment_id}/qr-code`;
-      const qrcodeData = await lastValueFrom(
-        this.httpService.get(getQRCodeUrl)
-      )
-      .then(response => response.data)
-      .catch(error => {
-        this.errorLogger.error('Erro ao buscar acesso remoto', error);
-      })
+      // const getQRCodeUrl = `${this.environmentsServiceUrl}/env/${microcontroller.environment_id}/qr-code`;
+      // const qrcodeData = await lastValueFrom(
+      //   this.httpService.get(getQRCodeUrl)
+      // )
+      // .then(response => response.data)
+      // .catch(error => {
+      //   this.errorLogger.error('Erro ao buscar acesso remoto', error);
+      // })
 
       info.doorStatus = doorStatus;
       
       await this.cacheService.set(key, info);
 
-      return { qrcode: qrcodeData };
+      //return { qrcode: qrcodeData };
+      return true;
     } else {
       await this.cacheService.set(key, info);
       return true;
@@ -228,10 +229,6 @@ export class MicrocontrollersService {;
   }
 
   async activateMicrocontroller (id: number, environmentId: string, userId?: string) {
-    if (!userId) {
-      userId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if(isNaN(id)) {
       this.auditLogService.create(AuditConstants.findOneMicrocontrollerBadRequest({ id }));
       throw new HttpException('Invalid microcontroller id', HttpStatus.BAD_REQUEST)
@@ -408,7 +405,6 @@ export class MicrocontrollersService {;
         where: { 
           mac: findOneByMac.mac,
           active: true,
-          //microcontroller_type_id: 1
         }
       })
 
@@ -547,10 +543,6 @@ export class MicrocontrollersService {;
   }
 
   async updateStatus(id: number, status: boolean, userId?: string) {
-    if (!userId) {
-      userId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if(isNaN(id)) {
       this.auditLogService.create(AuditConstants.findOneMicrocontrollerBadRequest({ id }));
       throw new HttpException('Invalid id', HttpStatus.BAD_REQUEST)

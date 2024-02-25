@@ -20,10 +20,6 @@ export class EnvManagerService {
   ) {}
 
   async create(createEnvManagerDto: CreateEnvManagerDto) {
-    if (!createEnvManagerDto.createdBy) {
-      createEnvManagerDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const isEnvManager = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -469,9 +465,9 @@ export class EnvManagerService {
   }
 
   async findAccessForMobileAccess(environmentManagerId: string) {
-    const envManager = await this.prisma.environment_manager.findFirst({ // findUnique
+    const envManager = await this.prisma.environment_manager.findFirst({
       where: {
-        user_id: environmentManagerId,//id: environmentManagerId,
+        user_id: environmentManagerId,
       },
       include: {
         environment: {
@@ -637,10 +633,6 @@ export class EnvManagerService {
   }
 
   async updateStatus(id: string, envManagerStatusDto: EnvManagerStatusDto) {
-    if (!envManagerStatusDto.requestUserId) {
-      envManagerStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {

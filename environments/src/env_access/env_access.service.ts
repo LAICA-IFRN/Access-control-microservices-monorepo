@@ -22,10 +22,6 @@ export class EnvAccessService {
   ) {}
 
   async create(createEnvAccessDto: CreateEnvAccessDto) {
-    if (!createEnvAccessDto.createdBy) {
-      createEnvAccessDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const isFrequenter = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -529,7 +525,6 @@ export class EnvAccessService {
         );
       }
 
-      // buscar conflito de horário e período
       const envAccesses = await this.prisma.environment_user.findMany({
         where: {
           user_id: createEnvAccessDto.userId,
@@ -776,7 +771,7 @@ export class EnvAccessService {
   async findAccessForMobileAccess(environmentUserId: string) {
     const environmentUser = await this.prisma.environment_user.findFirst({
       where: {
-        user_id: environmentUserId,//id: environmentUserId,
+        user_id: environmentUserId,
         active: true,
       },
       include: {
@@ -1078,7 +1073,7 @@ export class EnvAccessService {
   }
 
   async updateStatus(id: string, envAccessStatusDto: EnvAccessStatusDto) {
-    if (!envAccessStatusDto.requestUserId) {
+  if (!envAccessStatusDto.requestUserId) {
       envAccessStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
     }
 
@@ -1231,10 +1226,6 @@ export class EnvAccessService {
   }
 
   async update(id: string, updateEnvAccessDto: UpdateEnvAccessDto) {
-    if (!updateEnvAccessDto.requestUserId) {
-      updateEnvAccessDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -1504,7 +1495,7 @@ export class EnvAccessService {
 
         this.sendLogWhenEnvironmentAccessIsUpdated(
           envAccess.user_id,
-          envAccess.created_by ? envAccess.created_by : '0f3c5449-9192-452e-aeb9-503778709f3e',
+          envAccess.created_by,
           envAccess.environment_id,
           {
             updateEnvAccessDto,
@@ -1664,7 +1655,7 @@ export class EnvAccessService {
 
       this.sendLogWhenEnvironmentAccessIsRemoved(
         envAccess.user_id,
-        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
+        requestUserId,
         envAccess.environment_id,
         {
           envAccess,

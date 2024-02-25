@@ -35,10 +35,6 @@ export class UserService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    if (!createUserDto.createdBy) {
-      createUserDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (
       createUserDto.roles.includes(RolesConstants.ADMIN)
       && createUserDto.roles.length > 1
@@ -135,10 +131,6 @@ export class UserService {
   }
 
   async sendInviteEmail(inviteEmail: InviteEmail) {
-    if (!inviteEmail.invitedBy) {
-      inviteEmail.invitedBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     let user: user;
 
     try {
@@ -513,10 +505,6 @@ export class UserService {
   }
 
   async updateStatus(id: string, body: UserStatusDto) {
-    if (!body.requestUserId) {
-      body.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-    
     if (!isUUID(id)) {
       this.auditLogService.create(AuditConstants.updateStatusBadRequest({userId: id, statusCode: 400}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
@@ -570,10 +558,6 @@ export class UserService {
 
   // TODO: testar
   async update(id: string, updateUserDataDto: UpdateUserDataDto) {
-    if (!updateUserDataDto.requestUserId) {
-      updateUserDataDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(id)) {
       this.auditLogService.create(AuditConstants.updateBadRequest({userId: id, author: updateUserDataDto.requestUserId}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);

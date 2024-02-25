@@ -20,12 +20,11 @@ export class MobileService {
     private readonly httpService: HttpService,
   ) { }
 
-  async create(userId: string) { //createMobileDto: CreateMobileDto, userId: string) {
+  async create(userId: string) {
     let mobile: mobile;
     try {
       mobile = await this.prismaService.mobile.create({
         data: {
-          //...createMobileDto,
           user_id: userId,
         }
       });
@@ -53,33 +52,6 @@ export class MobileService {
       mobileId: mobile?.id
     };
   }
-
-  // async getEnvironments(id: number, userId: string) {
-  //   const mobile = await this.prismaService.mobile.findFirst({
-  //     where: {
-  //       id,
-  //       user_id: userId,
-  //       active: true,
-  //     }
-  //   });
-
-  //   if (!mobile) {
-  //     throw new HttpException('Mobile not found', HttpStatus.NOT_FOUND);
-  //   }
-
-  //   const environments = await lastValueFrom(
-  //     this.httpService.get(this.environmentsServiceUrl + '/env-access/user/' + userId).pipe(
-  //       catchError((error) => {
-  //         console.log(error);
-
-  //         this.errorLogger.error(error);
-  //         throw new HttpException(error.response.data.message, error.response.data.statusCode);
-  //       })
-  //     )
-  //   ).then((response) => response.data);
-
-  //   return environments;
-  // }
 
   async getEnvironments(id: number, userId: string) {
     const mobile = await this.prismaService.mobile.findFirst({

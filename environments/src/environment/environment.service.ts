@@ -17,6 +17,7 @@ import { environment_temporary_access, environment_user_access_control } from '@
 import { AuditLogService } from 'src/logs/audit-log.service';
 import { AuditLogConstants } from 'src/providers/audit-log/audit-log.constants';
 import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
+import { AuditConstants } from 'src/logs/audit-contants';
 
 @Injectable()
 export class EnvironmentService {
@@ -696,31 +697,54 @@ export class EnvironmentService {
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;
-    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
-    const filter = findAllDto.where ? findAllDto.where : {};
-    const select = findAllDto.select ? findAllDto.select : {};
+    const environmentFieldsToSelect = {
+      id: true,
+      name: true,
+      description: true,
+      created_at: true,
+      user_name: true,
+      latitude: true,
+      longitude: true,
+      environment_user: {
+        select: {
+          user_name: true
+        },
 
-    const [environments, total] = await this.prisma.$transaction([
-      this.prisma.environment.findMany({
-        skip: previousLenght,
-        take: nextLenght,
-        orderBy: order,
-        where: filter,
-        select: select
-      }),
+      },
+      environment_manager: {
+        select: {
+          user_name: true
+        }
+      },
+      environment_restriction_access: true
+    }
 
-      this.prisma.environment.count({
-        where: filter
-      })
-    ]);
+    try {
+      const [environments, total] = await this.prisma.$transaction([
+        this.prisma.environment.findMany({
+          skip: previousLenght,
+          take: nextLenght,
+          orderBy: findAllDto.orderBy ? findAllDto.orderBy : { created_at: 'desc' },
+          where: findAllDto.where,
+          select: findAllDto.select || environmentFieldsToSelect
+        }),
 
-    return {
-      pageSize: findAllDto.pageSize,
-      previous: findAllDto.previous,
-      next: findAllDto.next,
-      total,
-      data: environments
-    };
+        this.prisma.environment.count({
+          where: findAllDto.where,
+        })
+      ]);
+
+      return {
+        pageSize: findAllDto.pageSize,
+        previous: findAllDto.previous,
+        next: findAllDto.next,
+        total,
+        data: environments
+      };
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllError({ target: 'users', statusCode: 500 }))
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async getEnvironmentForMobile(body: MobileGetEnvironmentsDto) {

@@ -29,6 +29,8 @@ export class RolesGuard implements CanActivate {
     let response: any;
     
     if (authorizationType === AuthorizationTypeConstants.USER) {
+      console.log('verify user authorization');
+      
       response = await lastValueFrom(
         this.httpService.get(process.env.VERIFY_USER_AUTHORIZATION_URL, {
           data: {
@@ -84,6 +86,8 @@ export class RolesGuard implements CanActivate {
       });
     }
 
+    console.log(response);
+    
     request['userId'] = response.userId
 
     return response.isAuthorized;

@@ -13,8 +13,8 @@ export class UserController {
     return this.userService.dashboardConsultData();
   }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @UseGuards(RolesGuard)
   @Post()
   create(@Body() body: any) {
     return this.userService.create(body);

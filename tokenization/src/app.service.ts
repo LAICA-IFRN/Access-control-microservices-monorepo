@@ -454,10 +454,12 @@ export class AppService {
   }
 
   async authorizeUser(authorizationUserDto: AuthorizationUserDto) {
-    const decodedToken = jwt.verify(authorizationUserDto.token, this.jwtUserSecret)
-
-    if (!decodedToken) {
-      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED)
+    let decodedToken;
+    
+    try {
+      decodedToken = jwt.verify(authorizationUserDto.token, this.jwtUserSecret)
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.UNAUTHORIZED)
     }
 
     const isAuthorized = await lastValueFrom(
@@ -471,6 +473,8 @@ export class AppService {
         },
       ).pipe(
         catchError((error) => {
+          console.log(error);
+          
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {

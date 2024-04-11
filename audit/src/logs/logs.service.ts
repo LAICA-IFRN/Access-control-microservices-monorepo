@@ -25,6 +25,8 @@ export class LogsService {
 
       return log;
     } catch (error) {
+      console.log(error);
+      
       this.errorLogger.error('Falha ao criar log', error.meta);
     }
   }

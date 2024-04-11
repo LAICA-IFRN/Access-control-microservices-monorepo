@@ -61,6 +61,8 @@ export class EnvironmentService {
   // } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
+    console.log(createEnvironmentDto);
+    
     const user: any = await lastValueFrom(
       this.httpService.get(this.getUserEndpoint + createEnvironmentDto.createdBy).pipe(
         catchError((error) => {

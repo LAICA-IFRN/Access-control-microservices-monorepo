@@ -2,30 +2,38 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards, Re
 import { EnvironmentsService } from './environments.service';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { Roles } from 'src/decorators/roles.decorator';
-import { RolesConstants } from 'src/utils/constants';
+import { AuthorizationTypeConstants, RolesConstants } from 'src/utils/constants';
+import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
 
 @Controller('environments')
 export class EnvironmentsController {
   constructor(private readonly environmentsService: EnvironmentsService) { }
 
-  // @Roles(RolesConstants.ADMIN)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN)
+  @UseGuards(RolesGuard)
+  @AuthorizationType(AuthorizationTypeConstants.USER)
   @Post('env')
   create(@Body() createEnvironmentDto: any, @Req() request: Request) {
     const userId = request['userId'];
-    return this.environmentsService.create(createEnvironmentDto);
+    return this.environmentsService.create({ 
+      ...createEnvironmentDto, 
+      createdBy: userId
+    });
   }
 
-  // @Roles(RolesConstants.ADMIN)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN)
+  @UseGuards(RolesGuard)
   @Post('env/temporary-access')
   createTemporaryAccess(@Body() body: any, @Req() request: Request) {
     const userId = request['userId'];
-    return this.environmentsService.createTemporaryAccess(body); //{...body, requestUserId: userId}
+    return this.environmentsService.createTemporaryAccess({
+      ...body, 
+      createdBy: userId
+    });
   }
 
-  // @Roles(RolesConstants.ADMIN)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN)
+  @UseGuards(RolesGuard)
   @Post('remote-access')
   requestRemoteAccess(@Body() body: any) {
     const { environmentId, esp8266Id, type, userId } = body;

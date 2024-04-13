@@ -8,6 +8,7 @@ import { Request } from 'express';
 @Injectable()
 export class RolesGuard implements CanActivate {
   private readonly errorLogger = new Logger()
+  private readonly verifyUserAuthorizationUrl = process.env.VERIFY_USER_AUTHORIZATION_URL;
 
   constructor (
     private readonly reflector: Reflector, 
@@ -28,11 +29,11 @@ export class RolesGuard implements CanActivate {
 
     let response: any;
     
-    if (authorizationType === AuthorizationTypeConstants.USER) {
-      console.log('verify user authorization');
+    console.log("verifyUserAuthorizationUrl", this.verifyUserAuthorizationUrl);
+    if (authorizationType === AuthorizationTypeConstants.WEB) {
       
       response = await lastValueFrom(
-        this.httpService.get(process.env.VERIFY_USER_AUTHORIZATION_URL, {
+        this.httpService.get(this.verifyUserAuthorizationUrl, {
           data: {
             token,
             roles
@@ -75,8 +76,6 @@ export class RolesGuard implements CanActivate {
       )
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error);
-        
         this.errorLogger.error('Falha ao verificar autorização', error);
   
         throw new HttpException(
@@ -86,7 +85,8 @@ export class RolesGuard implements CanActivate {
       });
     }
 
-    console.log(response);
+    console.log("response", response);
+    
     
     request['userId'] = response.userId
 

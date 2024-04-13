@@ -10,7 +10,7 @@ import { TokenizeAccessDto } from './dto/tokenize-access.dto';
 export class AppController {
   constructor(private readonly appService: AppService) { }
 
-  @Post('tokenize/user')
+  @Post('tokenize/web')
   tokenizeUser(@Body() tokenizeUserDto: TokenizeUserDto) {
     return this.appService.tokenizeUser(tokenizeUserDto);
   }
@@ -30,8 +30,10 @@ export class AppController {
     return this.appService.authorizeAccess(token);
   }
 
-  @Get('authorize/user')
+  @Get('authorize/web')
   authorizeUser(@Body() authorizationUserDto: AuthorizationUserDto) {
+    console.log("authorizationUserDto");
+    
     return this.appService.authorizeUser(authorizationUserDto)
   }
 
@@ -40,7 +42,7 @@ export class AppController {
     return this.appService.authorizeMobile(authorizationMobileDto)
   }
 
-  @Get('verify/user')
+  @Get('verify/web')
   verifyUserToken(@Query('token') token: string) {
     return this.appService.verifyUserToken(token)
   }

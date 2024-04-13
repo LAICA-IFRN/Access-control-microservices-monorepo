@@ -1,6 +1,6 @@
 import { Controller, Post, Body, UseGuards, Req, Get, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginUserDto } from './dto/login-user.dto';
+import { LoginWebDto } from './dto/login-web.dto';
 import { LoginMobileDto } from './dto/login-mobile.dto';
 import { Roles } from 'src/decorators/roles.decorator';
 import { AuthorizationTypeConstants, RolesConstants } from 'src/utils/constants';
@@ -11,9 +11,9 @@ import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
-  @Post('user')
-  loginUser(@Body() loginUserDto: LoginUserDto) {
-    return this.authService.loginUser(loginUserDto);
+  @Post('web')
+  loginWeb(@Body() loginWebDto: LoginWebDto) {
+    return this.authService.loginWeb(loginWebDto);
   }
 
   @Post('mobile')

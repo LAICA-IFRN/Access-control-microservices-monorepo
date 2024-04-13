@@ -11,8 +11,8 @@ export class EnvironmentsController {
 
   @Roles(RolesConstants.ADMIN)
   @UseGuards(RolesGuard)
-  @AuthorizationType(AuthorizationTypeConstants.USER)
-  @Post('env')
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @Post()
   create(@Body() createEnvironmentDto: any, @Req() request: Request) {
     const userId = request['userId'];
     return this.environmentsService.create({ 
@@ -23,7 +23,7 @@ export class EnvironmentsController {
 
   @Roles(RolesConstants.ADMIN)
   @UseGuards(RolesGuard)
-  @Post('env/temporary-access')
+  @Post('temporary-access')
   createTemporaryAccess(@Body() body: any, @Req() request: Request) {
     const userId = request['userId'];
     return this.environmentsService.createTemporaryAccess({
@@ -49,35 +49,35 @@ export class EnvironmentsController {
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Post('env/paginate')
+  @Post('paginate')
   findAll(@Body() body: any) {
     return this.environmentsService.findAll(body);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Get('env/:id')
+  @Get('environment/:id')
   findOne(@Param('id') id: string) {
     return this.environmentsService.findOne(id);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Patch('env/:id')
+  @Patch('environment/:id')
   update(@Param('id') id: string, @Body() updateEnvironmentDto: any) {
     return this.environmentsService.update(id, updateEnvironmentDto);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Patch('env/:id/status')
+  @Patch('environment/:id/status')
   updateStatus(@Param('id') id: string, @Body() updateEnvironmentDto: any) {
     return this.environmentsService.updateStatus(id, updateEnvironmentDto);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Delete('env/:id')
+  @Delete('environment/:id')
   remove(@Param('id') id: string) {
     return this.environmentsService.remove(id);
   }
@@ -91,28 +91,28 @@ export class EnvironmentsController {
 
   // @Roles(RolesConstants.ADMIN)
   // @UseGuards(RolesGuard)
-  @Get('env-manager')
-  findAllManagers() {
-    return this.environmentsService.findAllManagers();
-  }
+  // @Get('env-manager')
+  // findAllManagers() {
+  //   return this.environmentsService.findAllManagers();
+  // }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Get('env-manager/:id')
-  findOneManager(@Param('id') id: string) {
-    return this.environmentsService.findOneManager(id);
-  }
+  // @Get('env-manager/:id')
+  // findOneManager(@Param('id') id: string) {
+  //   return this.environmentsService.findOneManager(id);
+  // }
 
-  // @Roles(RolesConstants.ADMIN)
-  // @UseGuards(RolesGuard)
-  @Get('env-manager/user/:id')
-  findAllManagerByUserId(@Param('id') id: string) {
+  @Roles(RolesConstants.ADMIN)
+  @UseGuards(RolesGuard)
+  @Get('env-manager')
+  findAllManagerByUserId(@Query('userId') id: string) {
     return this.environmentsService.findAllManagerByUserId(id);
   }
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Get('env-manager/env/:id')
+  @Get('environment/:id/env-manager')
   findAllManagerByEnvironmentId(@Param('id') id: string) {
     return this.environmentsService.findAllManagerByEnvironmentId(id);
   }
@@ -175,7 +175,7 @@ export class EnvironmentsController {
 
   // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   // @UseGuards(RolesGuard)
-  @Get(':id/env-access')
+  @Get('environment:id/env-access')
   findAllAccessByEnvironmentId(@Param('id') id: string) {
     return this.environmentsService.findAllAccessByEnvironmentId(id);
   }

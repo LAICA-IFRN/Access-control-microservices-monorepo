@@ -7,4 +7,5 @@ export class RolesConstants {
 export class AuthorizationTypeConstants {
     static readonly WEB = 'web'
     static readonly MOBILE = 'mobile'
+    static readonly ANY = 'any'
 }

@@ -64,7 +64,7 @@ export class EnvironmentService {
     console.log(createEnvironmentDto);
     
     const user: any = await lastValueFrom(
-      this.httpService.get(this.getUserEndpoint + createEnvironmentDto.createdBy).pipe(
+      this.httpService.get(this.getUserEndpoint + createEnvironmentDto.requestUserId).pipe(
         catchError((error) => {
           if (error.response.status === 'ECONNREFUSED') {
             this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
@@ -72,7 +72,7 @@ export class EnvironmentService {
           } else if (error.response.data.statusCode === 400) {
             this.auditLogService.create(
               AuditLogConstants.createEnvironmentVerifyRolesFailedById({
-                userId: createEnvironmentDto.createdBy,
+                userId: createEnvironmentDto.requestUserId,
                 error: error.response.data.message,
                 statusCode: 400
               })
@@ -82,7 +82,7 @@ export class EnvironmentService {
           } else if (error.response.data.statusCode === 404) {
             this.auditLogService.create(
               AuditLogConstants.createEnvironmentVerifyRolesFailedByUser({
-                userId: createEnvironmentDto.createdBy,
+                userId: createEnvironmentDto.requestUserId,
                 error: error.response.data.message,
                 statusCode: 404
               })
@@ -100,7 +100,7 @@ export class EnvironmentService {
     if (!user || user?.user_role?.lenght > 1 || user?.user_role[0]?.role_id !== 1) {
       this.auditLogService.create(
         AuditLogConstants.createEnvironmentVerifyRolesFailedByRole({
-          userId: createEnvironmentDto.createdBy,
+          userId: createEnvironmentDto.requestUserId,
           error: 'Usuário não é um admin',
           statusCode: 403
         })
@@ -114,7 +114,7 @@ export class EnvironmentService {
         data: {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
-          created_by: createEnvironmentDto.createdBy,
+          created_by: createEnvironmentDto.requestUserId,
           user_name: user.name,
           latitude: createEnvironmentDto.latitude,
           longitude: createEnvironmentDto.longitude,
@@ -124,7 +124,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentCreated(
         environment.name,
         environment.id,
-        createEnvironmentDto.createdBy,
+        createEnvironmentDto.requestUserId,
         createEnvironmentDto
       );
 
@@ -133,7 +133,7 @@ export class EnvironmentService {
       if (error.code === 'P2002') {
         this.auditLogService.create(
           AuditLogConstants.verifyRolesFailedByEnvironment({
-            createdBy: createEnvironmentDto.createdBy,
+            createdBy: createEnvironmentDto.requestUserId,
             target: error.meta.target,
             statusCode: 409
           })
@@ -151,7 +151,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao criar ambiente, usuário não encontrado',
             meta: {
-              createdBy: createEnvironmentDto.createdBy,
+              createdBy: createEnvironmentDto.requestUserId,
               target: error.meta.target,
               statusCode: 404
             }
@@ -173,7 +173,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao criar ambiente, erro interno verificar logs de erro do serviço',
             meta: {
-              createdBy: createEnvironmentDto.createdBy,
+              createdBy: createEnvironmentDto.requestUserId,
               context: error,
               statusCode: 403
             }
@@ -317,7 +317,7 @@ export class EnvironmentService {
           start_period: startPeriod,
           end_period: endPeriod,
           description: createTemporaryAccessDto.description,
-          created_by: createTemporaryAccessDto.createdBy,
+          created_by: createTemporaryAccessDto.requestUserId,
           user_name: createTemporaryAccessDto.userName,
           environment_id: createTemporaryAccessDto.environmentId,
           user_id: createTemporaryAccessDto.userId,
@@ -331,7 +331,7 @@ export class EnvironmentService {
             type: "Error",
             message: "Falha ao criar acesso temporário, conflito com registro existente",
             meta: {
-              createdBy: createTemporaryAccessDto.createdBy,
+              createdBy: createTemporaryAccessDto.requestUserId,
               target: error.meta.target,
               statusCode: 409
             }
@@ -421,7 +421,7 @@ export class EnvironmentService {
               type: "Error",
               message: 'Falha ao criar acesso temporário, conflito com registro existente',
               meta: {
-                createdBy: createTemporaryAccessDto.createdBy,
+                createdBy: createTemporaryAccessDto.requestUserId,
                 target: error.meta.target,
                 statusCode: 409
               }
@@ -442,7 +442,7 @@ export class EnvironmentService {
               type: "Error",
               message: 'Falha ao criar acesso temporário, erro interno verificar logs de erro do serviço',
               meta: {
-                createdBy: createTemporaryAccessDto.createdBy,
+                createdBy: createTemporaryAccessDto.requestUserId,
                 context: error,
                 statusCode: 403
               }
@@ -481,7 +481,7 @@ export class EnvironmentService {
     userId: string,
     createTemporaryAccessDto: CreateTemporaryAccessDto
   ) {
-    const createdByUser: any = await this.findUserForLog(createTemporaryAccessDto.createdBy);
+    const createdByUser: any = await this.findUserForLog(createTemporaryAccessDto.requestUserId);
     const environment = await this.prisma.environment.findFirst({
       where: { id: environmentId }
     })

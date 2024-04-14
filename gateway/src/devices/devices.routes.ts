@@ -20,8 +20,8 @@ export class DeviceRoutes {
     return `${this.deviceMicrocontrollerUrl}`;
   }
 
-  activeMicrocontroller(id: number, environmentId: string): string {
-    return `${this.deviceMicrocontrollerUrl}/activate?environmentId=${environmentId}&id=${id}`;
+  activeMicrocontroller(id: number, environmentId: string, userId: string): string {
+    return `${this.deviceMicrocontrollerUrl}/activate?environmentId=${environmentId}&id=${id}&userId=${userId}`;
   }
 
   keepAliveMicrocontroller(id: number, healthCode: number, doorStatus: boolean): string {
@@ -77,8 +77,8 @@ export class DeviceRoutes {
     return `${this.deviceRfidUrl}/status`;
   }
 
-  removeRfid(id: string): string {
-    return `${this.deviceRfidUrl}/${id}`;
+  removeRfid(id: string, userId: string): string {
+    return `${this.deviceRfidUrl}/${id}?userId=${userId}`;
   }
 
   createMobile(userId: string): string {

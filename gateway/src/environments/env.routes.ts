@@ -44,8 +44,8 @@ export class EnvRoutes {
     return `${this.envBaseUrl}/${id}/status`;
   }
 
-  remove(id: string): string {
-    return `${this.envBaseUrl}/${id}`;
+  remove(id: string, userId: string): string {
+    return `${this.envBaseUrl}/${id}?userId=${userId}`;
   }
 
   createManager(): string {

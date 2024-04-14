@@ -182,9 +182,9 @@ export class EnvironmentsService {
     return data;
   }
 
-  async remove(id: string) {
+  async remove(id: string, userId: string) {
     const { data } = await lastValueFrom(
-      this.httpService.delete(this.envRoutes.remove(id)).pipe(
+      this.httpService.delete(this.envRoutes.remove(id, userId)).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);

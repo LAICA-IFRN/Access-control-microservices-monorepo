@@ -4,49 +4,62 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthorizationTypeConstants, RolesConstants } from 'src/utils/constants';
 import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Devices')
 @Controller('devices')
 export class DevicesController {
   constructor(private readonly devicesService: DevicesService) { }
 
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Get('dashboard')
   dashboardConsultData() {
     return this.devicesService.dashboardConsultData();
   }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Post('rfid')
-  createRfid(@Body() createRfidDto: any) {
-    return this.devicesService.createRfid(createRfidDto);
+  createRfid(@Body() createRfidDto: any, @Req() request: Request) {
+    const userId = request['userId'];
+    return this.devicesService.createRfid({ ...createRfidDto, requestUserId: userId });
   }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Get('rfid/:id')
   findOneRfid(@Param('id') id: string) {
     return this.devicesService.findOneRfid(id);
   }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Post('rfid/paginate')
   findAllRfid(@Body() body: any) {
     return this.devicesService.findAllRfid(body);
   }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Patch('rfid/:id/status')
-  updateRfidStatus(@Param('id') id: string, @Body() updateRfidDto: any) {
-    return this.devicesService.updateRfidStatus(id, updateRfidDto);
+  updateRfidStatus(@Param('id') id: string, @Body() updateRfidDto: any, @Req() request: Request) {
+    const userId = request['userId'];
+    return this.devicesService.updateRfidStatus(id, { ...updateRfidDto, requestUserId: userId });
   }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Delete('rfid/:id')
-  removeRfid(@Param('id') id: string) {
-    return this.devicesService.removeRfid(id);
+  removeRfid(@Param('id') id: string, @Req() request: Request) {
+    const userId = request['userId'];
+    return this.devicesService.removeRfid(id, userId);
   }
 
   @Post('microcontrollers')
@@ -59,12 +72,17 @@ export class DevicesController {
     return this.devicesService.coldStartMicrocontroller(body.id);
   }
 
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Post('microcontrollers/activate')
   activeMicrocontroller(
     @Query('id') id: number,
-    @Query('environmentId') environmentId: string,
+    @Query('environmentId') environmentId: string, 
+    @Req() request: Request
   ) {
-    return this.devicesService.activeMicrocontroller(id, environmentId);
+    const userId = request['userId'];
+    return this.devicesService.activeMicrocontroller(id, environmentId, userId);
   }
 
   @Post('microcontrollers/keep-alive')
@@ -83,12 +101,14 @@ export class DevicesController {
     return this.devicesService.searchRemoteAccess(id);
   }
 
-
   @Get('microcontrollers/keep-alive')
   getMicrocontrollerInfo(@Query('id') id: number) {
     return this.devicesService.getMicrocontrollerInfo(id);
   }
 
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Post('microcontrollers/paginate')
   findAllMicrocontroller(@Body() body: any) {
     return this.devicesService.findAllMicrocontroller(body);
@@ -116,22 +136,27 @@ export class DevicesController {
     );
   }
 
-  @Patch('microcontrollers/:id')
-  updateMicrocontroller(
-    @Param('id') id: number,
-    @Body() updateMicrocontrollerDto: any,
-  ) {
-    return this.devicesService.updateMicrocontroller(id, updateMicrocontrollerDto);
-  }
+  // @Patch('microcontrollers/:id')
+  // updateMicrocontroller(
+  //   @Param('id') id: number,
+  //   @Body() updateMicrocontrollerDto: any,
+  // ) {
+  //   return this.devicesService.updateMicrocontroller(id, updateMicrocontrollerDto);
+  // }
 
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Patch('microcontrollers/:id/status')
   updateMicrocontrollerStatus(
     @Param('id') id: number,
-    @Body() updateMicrocontrollerStatusDto: any,
+    @Body() updateMicrocontrollerStatusDto: any, 
+    @Req() request: Request
   ) {
+    const userId = request['userId'];
     return this.devicesService.updateMicrocontrollerStatus(
       id,
-      updateMicrocontrollerStatusDto,
+      { ...updateMicrocontrollerStatusDto, requestUserId: userId },
     );
   }
 
@@ -153,8 +178,9 @@ export class DevicesController {
     return this.devicesService.getMobileEnvironments(id, userId);
   }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Post('mobile/paginate')
   findAllMobile(@Body() body: any) {
     return this.devicesService.findAllMobile(body);

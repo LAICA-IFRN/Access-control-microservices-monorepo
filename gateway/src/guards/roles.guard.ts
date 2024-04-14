@@ -29,9 +29,10 @@ export class RolesGuard implements CanActivate {
 
     let response: any;
     
-    console.log("verifyUserAuthorizationUrl", this.verifyUserAuthorizationUrl);
-    if (authorizationType === AuthorizationTypeConstants.WEB) {
-      
+    if (
+      authorizationType === AuthorizationTypeConstants.WEB ||
+      authorizationType === AuthorizationTypeConstants.ANY
+    ) {
       response = await lastValueFrom(
         this.httpService.get(this.verifyUserAuthorizationUrl, {
           data: {
@@ -58,8 +59,11 @@ export class RolesGuard implements CanActivate {
         );
       });
     }
-
-    if (authorizationType === AuthorizationTypeConstants.MOBILE) {
+    
+    if (
+      authorizationType === AuthorizationTypeConstants.MOBILE ||
+      authorizationType === AuthorizationTypeConstants.ANY
+    ) {
       response = await lastValueFrom(
         this.httpService.get(process.env.VERIFY_MOBILE_AUTHORIZATION_URL, {
           data: {
@@ -84,9 +88,7 @@ export class RolesGuard implements CanActivate {
         );
       });
     }
-
-    console.log("response", response);
-    
+    console.log('response', response);
     
     request['userId'] = response.userId
 

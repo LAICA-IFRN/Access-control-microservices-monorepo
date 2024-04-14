@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsIn } from 'class-validator';
+import { ArrayNotEmpty, IsArray, IsIn, IsOptional, IsUUID } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateUserRolesDto {
@@ -13,4 +13,9 @@ export class UpdateUserRolesDto {
   @IsIn(['FREQUENTER', 'ENVIRONMENT_MANAGER'], { each: true })
   @ApiProperty()
   rolesToRemove?: string[];
+
+  @ApiProperty()
+  @IsUUID()
+  @IsOptional()
+  requestUserId?: string
 }

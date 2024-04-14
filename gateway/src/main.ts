@@ -12,9 +12,9 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('API Gateway')
     .setDescription(
-      'Gateway de acesso aos serviços do sistema de controle de acesso do Laica',
+      'Gateway de entrada do sistema de controle de acesso do Laica',
     )
-    .setVersion('0.1')
+    .setVersion('1.3')
     .build();
 
   //app.setGlobalPrefix('access-control/gateway');

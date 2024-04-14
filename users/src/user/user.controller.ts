@@ -52,6 +52,8 @@ export class UserController {
   @ApiOperation({ description: 'Endpoint para envio de email de convite' })
   @Post('invite')
   sendInviteEmail(@Body() body: InviteEmail) {
+    console.log(body);
+    
     return this.userService.sendInviteEmail(body);
   }
 

@@ -171,7 +171,7 @@ export class EnvAccessService {
           environment_id: createEnvAccessDto.environmentId,
           start_period: startPeriod,
           end_period: endPeriod,
-          created_by: createEnvAccessDto.createdBy,
+          created_by: createEnvAccessDto.requestUserId,
         },
       });
     } catch (error) {
@@ -427,7 +427,7 @@ export class EnvAccessService {
 
     this.sendLogWhenEnvironmentAccessIsCreated(
       createEnvAccessDto.userId,
-      createEnvAccessDto.createdBy,
+      createEnvAccessDto.requestUserId,
       environmentId,
       {
         createEnvAccessDto,
@@ -1073,10 +1073,6 @@ export class EnvAccessService {
   }
 
   async updateStatus(id: string, envAccessStatusDto: EnvAccessStatusDto) {
-  if (!envAccessStatusDto.requestUserId) {
-      envAccessStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {

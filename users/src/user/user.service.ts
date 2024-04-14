@@ -77,7 +77,7 @@ export class UserService {
       }));
     }
 
-    this.sendLogWhenExternalUserCreated(createdUser.name, createUserDto.createdBy, createUserDto);
+    this.sendLogWhenExternalUserCreated(createdUser.name, createUserDto.requestUserId, createUserDto);
 
     let mobileDevice: any
     if (createUserDto.mac) { }
@@ -117,7 +117,7 @@ export class UserService {
         },
         document_type: { connect: { name: createUserDto.documentType } },
         document: createUserDto.document,
-        created_by: createUserDto.createdBy
+        created_by: createUserDto.requestUserId
       }
     };
   }
@@ -137,7 +137,7 @@ export class UserService {
       user = await this.prismaService.user.create({
         data: {
           email: inviteEmail.email,
-          created_by: inviteEmail.invitedBy,
+          created_by: inviteEmail.requestUserId,
           document_type: { connect: { name: DocumentTypesConstants.REGISTRATION } },
           user_role: {
             create: inviteEmail.rolesToAdd.map((role) => {
@@ -150,10 +150,10 @@ export class UserService {
       })
     } catch (error) {
       if (error.code === 'P2002') {
-        this.sendInviteEmailError(inviteEmail.invitedBy, inviteEmail.email, error);
+        this.sendInviteEmailError(inviteEmail.requestUserId, inviteEmail.email, error);
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
       } else {
-        this.sendInviteEmailError(inviteEmail.invitedBy, inviteEmail.email, error);
+        this.sendInviteEmailError(inviteEmail.requestUserId, inviteEmail.email, error);
         throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
@@ -176,7 +176,7 @@ export class UserService {
 
   async sendInviteEmailOk(meta: any) {
     const user = await this.prismaService.user.findFirst({
-      where: { id: meta.invitedBy }
+      where: { id: meta.requestUserId }
     });
 
     this.auditLogService.create(AuditConstants.sendInviteEmailOk(user.name, meta));

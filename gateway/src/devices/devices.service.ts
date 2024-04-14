@@ -136,9 +136,9 @@ export class DevicesService {
     return data;
   }
 
-  async removeRfid(id: string) {
+  async removeRfid(id: string, userId: string) {
     const { data } = await lastValueFrom(
-      this.httpService.delete(this.deviceRoutes.removeRfid(id)).pipe(
+      this.httpService.delete(this.deviceRoutes.removeRfid(id, userId)).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 404) {
             throw new HttpException(
@@ -222,9 +222,9 @@ export class DevicesService {
     return data;
   }
 
-  async activeMicrocontroller(id: number, environmentId: string) {
+  async activeMicrocontroller(id: number, environmentId: string, userId: string) {
     const { data } = await lastValueFrom(
-      this.httpService.post(this.deviceRoutes.activeMicrocontroller(id, environmentId)).pipe(
+      this.httpService.post(this.deviceRoutes.activeMicrocontroller(id, environmentId, userId)).pipe(
         catchError((error) => {
           if (error.response.data.statusCode === 404) {
             throw new HttpException(

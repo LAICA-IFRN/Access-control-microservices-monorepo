@@ -107,7 +107,7 @@ export class EnvManagerService {
       throw new HttpException('User is not a enviroment manager', HttpStatus.FORBIDDEN);
     }
 
-    const { userId, environmentId, createdBy } = createEnvManagerDto;
+    const { userId, environmentId, requestUserId: createdBy } = createEnvManagerDto;
     const hasEnvAccess = await this.hasEnvAccessOnEnv(userId, environmentId)
       .then((response) => response)
       .catch((error) => {

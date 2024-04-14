@@ -37,7 +37,7 @@ export class CreateTemporaryAccessDto {
   @ApiProperty()
   @IsUUID()
   @IsOptional()
-  createdBy?: string;
+  requestUserId?: string;
 
   @ApiProperty()
   @IsArray()

@@ -6,7 +6,9 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { AuthorizationTypeConstants, RolesConstants } from 'src/utils/constants';
 import { RolesGuard } from 'src/guards/roles.guard';
 import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Auth')
 @Controller('tokenize')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }

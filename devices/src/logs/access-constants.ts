@@ -9,7 +9,7 @@ export class AccessConstants {
     metaData: any
   ): AccessLog {
     return {
-      type: "info",
+      type: "Info",
       message: `${type} de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pelo sistema web ao ambiente ${environmentName}`,
       meta: metaData
     };
@@ -23,7 +23,7 @@ export class AccessConstants {
     metaData: any
   ): AccessLog {
     return {
-      type: "info",
+      type: "Info",
       message: `${type} de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pelo dispositivo móvel ao ambiente ${environmentName}`,
       meta: metaData
     };

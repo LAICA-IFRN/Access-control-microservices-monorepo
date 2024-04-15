@@ -35,7 +35,7 @@ export class AppService {
           data: tokenizeUserDto,
         },
       ).pipe(
-        catchError((error) => {
+        catchError((error) => { // TODO: criar funções de log para cada tipo de erro
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
@@ -122,22 +122,29 @@ export class AppService {
       { expiresIn: this.jwtUserExpirationTime }
     )
 
+    this.createLogWhenUserAuthenticates(data.userId, tokenizeUserDto.document);
+
+    return {
+      accessToken: token
+    }
+  }
+
+  async createLogWhenUserAuthenticates(userId: string, document: string) {
+    const user = await this.getUserData(userId);
+
     await lastValueFrom(
       this.httpService.post(this.createAuditLogUrl, {
         topic: 'Tokenização',
         type: 'Info',
-        message: 'Usuário validado com sucesso',
+        message: `Usuário validado: ${user.name} autenticou-se pela aplicação web`,
         meta: {
-          document: tokenizeUserDto.document,
+          document: document,
+          // TODO: adicionar IP do usuário e informações do navegador
         }
       })
     ).catch((error) => {
       this.errorLogger.error('Falha ao enviar log', error)
     })
-
-    return {
-      accessToken: token
-    }
   }
 
   async tokenizeMobile(tokenizeMobileDto: TokenizeMobileDto) {
@@ -280,11 +287,30 @@ export class AppService {
       this.errorLogger.error('Falha ao enviar log', error)
     })
 
+    this.createLogWhenMobileAuthenticates(data.userId);
+
     if (mobileData.hasMobile) {
       response.mobileId = mobileData.mobileId;
     }
 
     return response;
+  }
+
+  async createLogWhenMobileAuthenticates(userId: string) {
+    const user = await this.getUserData(userId);
+
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: 'Tokenização',
+        type: 'Info',
+        message: `Usuário validado: ${user.name} autenticou-se pelo dispositivo móvel`,
+        meta: {
+          userId: userId,
+        }
+      })
+    ).catch((error) => {
+      this.errorLogger.error('Falha ao enviar log', error)
+    })
   }
 
   async tokenizeAccess(tokenizeAccessDto: TokenizeAccessDto) {
@@ -451,6 +477,20 @@ export class AppService {
     ).then((response) => response.data)
 
     return data.roles;
+  }
+
+  async getUserData(userId: string) {
+    const getUserDataUrl = `${process.env.USERS_SERVICE_URL}/user/${userId}`;
+    const data = await lastValueFrom(
+      this.httpService.get(getUserDataUrl).pipe(
+        catchError((error) => {
+          this.errorLogger.error('Falha ao buscar dados do usuário', error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    return data;
   }
 
   async authorizeUser(authorizationUserDto: AuthorizationUserDto) {

@@ -45,6 +45,14 @@ export class EnvironmentsController {
     return this.environmentsService.requestRemoteAccess(environmentId, parseInt(esp8266Id), type, userId);
   }
 
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
+  @Get('dashboard')
+  dashboardConsultData() {
+    return this.environmentsService.dashboardConsultData();
+  }
+
   // @AuthorizationType(AuthorizationTypeConstants.MICROCONTROLLER) // TODO: autenticar microcontrolador
   // @UseGuards(RolesGuard)
   @Get('remote-access')

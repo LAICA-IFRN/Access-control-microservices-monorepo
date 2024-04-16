@@ -480,7 +480,7 @@ export class AppService {
   }
 
   async getUserData(userId: string) {
-    const getUserDataUrl = `${process.env.USERS_SERVICE_URL}/user/${userId}`;
+    const getUserDataUrl = `${process.env.USERS_SERVICE_URL}/${userId}`;
     const data = await lastValueFrom(
       this.httpService.get(getUserDataUrl).pipe(
         catchError((error) => {

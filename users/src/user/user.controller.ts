@@ -52,8 +52,6 @@ export class UserController {
   @ApiOperation({ description: 'Endpoint para envio de email de convite' })
   @Post('invite')
   sendInviteEmail(@Body() body: InviteEmail) {
-    console.log(body);
-    
     return this.userService.sendInviteEmail(body);
   }
 
@@ -69,7 +67,7 @@ export class UserController {
 
   @Post('paginate')
   findAll(@Body() body: FindAllDto) {
-    return this.userService.findAll(body);
+   return this.userService.findAll(body);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })

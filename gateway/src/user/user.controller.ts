@@ -70,26 +70,29 @@ export class UserController {
     return this.userService.findUserImage(id);
   }
 
-  // @Roles(RolesConstants.ADMIN)
-  // @UseGuards(RolesGuard)
-  // @Get('admin')
-  // findAllAdmins() {
-  //   return this.userService.findAllAdmins();
-  // }
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER, RolesConstants.FREQUENTER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
+  @Get('admin')
+  findAllAdmins() {
+    return this.userService.findAllAdmins();
+  }
 
-  // @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
-  // @UseGuards(RolesGuard)
-  // @Get('frequenter')
-  // findAllFrequenters() {
-  //   return this.userService.findAllFrequenters();
-  // }
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER, RolesConstants.FREQUENTER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
+  @Get('frequenter')
+  findAllFrequenters() {
+    return this.userService.findAllFrequenters();
+  }
 
-  // @Roles(RolesConstants.ADMIN)
-  // @UseGuards(RolesGuard)
-  // @Get('environment-manager')
-  // findAllEnvironmentManager() {
-  //   return this.userService.findAllEnvironmentManager();
-  // }
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER, RolesConstants.FREQUENTER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
+  @Get('environment-manager')
+  findAllEnvironmentManager() {
+    return this.userService.findAllEnvironmentManager();
+  }
 
   // @Roles(RolesConstants.ADMIN)
   // @UseGuards(RolesGuard)

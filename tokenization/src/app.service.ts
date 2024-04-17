@@ -248,52 +248,32 @@ export class AppService {
 
     const response = {
       accessToken: token,
-      mobileId: "0"
+      mobileId: false
     }
 
-    const mobileData = await lastValueFrom(
-      this.httpService.get(`${this.devicesServiceUrl}/mobile/has-mobile?userId=${data.userId}`)
+    if (tokenizeMobileDto.mobileId) {
+      const mobileData = await this.findMobileById(tokenizeMobileDto.mobileId);
+
+      if (mobileData) {
+        this.createLogWhenMobileAuthenticates(data.userId);
+        response.mobileId = true;
+      }
+    }
+    
+    return response;
+  }
+
+  private async findMobileById(mobileId: string) {
+    const mobile = await lastValueFrom(
+      this.httpService.get(`${this.devicesServiceUrl}/mobile/${mobileId}`)
     )
       .then((response) => response.data)
       .catch((error) => {
-        this.errorLogger.error('Falha ao obter dados do aparelho', error)
+        this.errorLogger.error('Falha ao buscar aparelho', error)
         throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
       })
 
-    if (!mobileData.hasMobile) {
-      const mobileId = await lastValueFrom(
-        this.httpService.post(`${this.devicesServiceUrl}/mobile?userId=${data.userId}`)
-      )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar aparelho', error)
-          throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-        })
-
-      response.mobileId = mobileId.toString();
-    }
-
-    await lastValueFrom(
-      this.httpService.post(this.createAuditLogUrl, {
-        topic: 'Tokenização',
-        type: 'Info',
-        message: 'Aparelho de usuário validado com sucesso',
-        meta: {
-          document: tokenizeMobileDto.document,
-          //mac: tokenizeMobileDto.mac,
-        }
-      })
-    ).catch((error) => {
-      this.errorLogger.error('Falha ao enviar log', error)
-    })
-
-    this.createLogWhenMobileAuthenticates(data.userId);
-
-    if (mobileData.hasMobile) {
-      response.mobileId = mobileData.mobileId;
-    }
-
-    return response;
+    return mobile;
   }
 
   async createLogWhenMobileAuthenticates(userId: string) {

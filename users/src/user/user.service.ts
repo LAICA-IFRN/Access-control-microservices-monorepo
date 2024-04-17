@@ -142,9 +142,10 @@ export class UserService {
           user_role: {
             create: inviteEmail.rolesToAdd.map((role) => {
               return {
-                role: { connect: { name: role } }
+                role: { connect: { name: role } },
+                created_by: inviteEmail.requestUserId
               }
-            })
+            }),
           }
         }
       })
@@ -319,8 +320,6 @@ export class UserService {
         data
       };
     } catch (error) {
-      console.log(error);
-
       this.auditLogService.create(AuditConstants.findAllError({ target: 'users', statusCode: 500 }))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }

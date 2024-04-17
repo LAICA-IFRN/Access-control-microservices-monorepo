@@ -9,7 +9,6 @@ import { FindAllDto } from 'src/utils/find-all.dto';
 
 @Injectable()
 export class MobileService {
-  private readonly tokenizationServiceUrl = process.env.TOKENIZATION_SERVICE_URL
   private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
   private readonly getUserRolesUrl = `${process.env.USERS_SERVICE_URL}/roles`
   private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
@@ -22,6 +21,27 @@ export class MobileService {
 
   async create(userId: string) {
     let mobile: mobile;
+
+    mobile = await this.prismaService.mobile.findFirst({
+      where: {
+        user_id: userId,
+        active: true,
+      }
+    });
+
+    if (mobile) {
+      await this.prismaService.mobile.update({
+        where: {
+          id: mobile.id
+        },
+        data: {
+          active: false
+        }
+      });
+
+      this.sendLogWhenMobileDeactivated(userId, mobile);
+    }
+
     try {
       mobile = await this.prismaService.mobile.create({
         data: {
@@ -36,7 +56,84 @@ export class MobileService {
       }
     }
 
+    if (mobile) {
+      this.sendLogWhenMobileCreated(userId, mobile);
+    }
+
     return mobile.id;
+  }
+
+  async sendLogWhenMobileCreated(userId: string, mobile: mobile) {
+    const userData = await this.getUserData(userId);
+
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: "Dispositivos",
+        type: "Info",
+        message: `Dispositivo mobile ${mobile.id} criado para o usuário ${userData.name}`,
+        meta: {
+          userId,
+          mobileId: mobile.id
+        }
+      })
+    )
+    .then(() => {})
+    .catch((error) => {
+      this.errorLogger.error("Falha ao criar log de auditoria", error);
+    });
+  }
+
+  async sendLogWhenMobileDeactivated(userId: string, mobile: mobile) {
+    const userData = await this.getUserData(userId);
+
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: "Dispositivos",
+        type: "Info",
+        message: `Dispositivo mobile ${mobile.id} do usuário ${userData.name} desativado`,
+        meta: {
+          userId,
+          mobileId: mobile.id
+        }
+      })
+    )
+    .then(() => {})
+    .catch((error) => {
+      this.errorLogger.error("Falha ao criar log de auditoria", error);
+    });
+  }
+
+  async getUserData(userId: string) {
+    const userData = await lastValueFrom(
+      this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`).pipe(
+        catchError(async (error) => {
+          this.errorLogger.error("Falha ao buscar dados do usuário", error);
+          await lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: "Dispositivos",
+              type: "Error",
+              message: "Falha ao buscar dados do usuário durante criação de log de auditoria",
+              meta: {
+                userId,
+                error: error
+              }
+            })
+          ).then(() => {});
+        })
+      )
+    ).then((response: any) => response.data);
+
+    return userData;
+  }
+
+  async findOne(id: string) {
+    const mobile = await this.prismaService.mobile.findFirst({
+      where: {
+        id
+      }
+    });
+
+    return mobile;
   }
 
   async hasMobile(userId: string) {
@@ -53,7 +150,7 @@ export class MobileService {
     };
   }
 
-  async getEnvironments(id: number, userId: string) {
+  async getEnvironments(id: string, userId: string) {
     const mobile = await this.prismaService.mobile.findFirst({
       where: {
         id,

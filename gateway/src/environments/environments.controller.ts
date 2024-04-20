@@ -35,7 +35,7 @@ export class EnvironmentsController {
     });
   }
 
-  @Roles(RolesConstants.ADMIN)
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   @AuthorizationType(AuthorizationTypeConstants.WEB)
   @UseGuards(RolesGuard)
   @Post('remote-access')

@@ -4,7 +4,7 @@ import { lastValueFrom } from "rxjs";
 
 
 export interface AccessLog {
-  type: 'info' | 'error' | 'warn';
+  type: 'Info' | 'Error' | 'Warn';
   message: string;
   meta?: object;
 }

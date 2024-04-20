@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger"
-import { IsIP, IsMACAddress, IsNotEmpty, IsOptional, IsString } from "class-validator"
+import { IsIP, IsMACAddress, IsNotEmpty, IsNumberString, IsOptional, IsString } from "class-validator"
 
 export class AccessByMicrocontrollerDeviceDto {
     
@@ -25,8 +25,8 @@ export class AccessByMicrocontrollerDeviceDto {
 
     @ApiProperty()
     @IsOptional()
-    @IsString()
-    pin?: string
+    @IsNumberString()
+    pin?: any
     
     @ApiProperty()
     @IsOptional()

@@ -646,6 +646,7 @@ export class EnvAccessService {
       const envsUser = await this.prisma.environment_user.findMany({
         where: {
           user_id: userId,
+          active: true,
         },
         select: {
           start_period: true,
@@ -768,10 +769,11 @@ export class EnvAccessService {
     }
   }
 
-  async findAccessForMobileAccess(environmentUserId: string) {
+  async findAccessByUser(userId: string, environmentId: string) {
     const environmentUser = await this.prisma.environment_user.findFirst({
       where: {
-        user_id: environmentUserId,
+        user_id: userId,
+        environment_id: environmentId,
         active: true,
       },
       include: {
@@ -791,107 +793,36 @@ export class EnvAccessService {
     const response = { access: false, environmentName: environmentUser.environment.name, environmentId: environmentUser.environment_id }
     const currentDate = new Date();
 
-    if (environmentUser.start_period <= currentDate && environmentUser.end_period >= currentDate) {
+    const startPeriod = new Date(environmentUser.start_period);
+    startPeriod.setHours(startPeriod.getHours() - 3);
+    const endPeriod = new Date(environmentUser.end_period);
+    endPeriod.setHours(endPeriod.getHours() - 3);
+
+    const currentDateLess3Hours = new Date(currentDate);
+    currentDateLess3Hours.setHours(currentDateLess3Hours.getHours() - 3);
+
+    if (startPeriod <= currentDateLess3Hours && endPeriod >= currentDateLess3Hours) {
       for (const accessControl of environmentUser.environment_user_access_control) {
-        if (accessControl.day !== currentDate.getDay()) {
+        if (
+          accessControl.day !== currentDate.getDay() ||
+          accessControl.active === false
+        ) {
           continue;
         }
 
         const startTime = accessControl.start_time.toLocaleTimeString();
         const endTime = accessControl.end_time.toLocaleTimeString();
         const currentTime = currentDate.toLocaleTimeString();
-
+        
         if (startTime <= currentTime && endTime >= currentTime) {
           response.access = true;
+          console.log('Acesso permitido');
+          
           break;
         }
       }
     }
     
-    return response;
-  }
-
-  async findAccessByUser(userId: string, environmentId: string) {
-    const environmentAccess = await this.prisma.environment_user.findFirst({
-      where: {
-        environment_id: environmentId,
-        user_id: userId,
-        active: true,
-      },
-      include: {
-        environment_user_access_control: true,
-        environment: {
-          select: {
-            name: true,
-          }
-        }
-      }
-    });
-
-    if (!environmentAccess) {
-      const tempAccess = await this.prisma.environment_temporary_access.findFirst({
-        where: {
-          environment_id: environmentId,
-          user_id: userId,
-        },
-        include: {
-          environment_user_access_control: true,
-          environment: {
-            select: {
-              name: true,
-            }
-          }
-        }
-      });
-
-      if (!tempAccess) {
-        return { access: false };
-      }
-
-      const response = { access: false, environmentName: tempAccess.environment.name }
-      const currentDate = new Date();
-
-      if (tempAccess.start_period <= currentDate && tempAccess.end_period >= currentDate) {
-        for (const accessControl of tempAccess.environment_user_access_control) {
-          if (accessControl.day !== currentDate.getDay()) {
-            continue;
-          }
-  
-          const startTime = accessControl.start_time.toLocaleTimeString();
-          const endTime = accessControl.end_time.toLocaleTimeString();
-          const currentTime = currentDate.toLocaleTimeString();
-  
-          if (startTime <= currentTime && endTime >= currentTime) {
-            response.access = true;
-            break;
-          }
-        }
-      }
-
-      return response;
-    }
-
-    const response = { access: false, environmentName: environmentAccess.environment.name }
-    
-    const currentDate = new Date();
-
-    if (environmentAccess.start_period <= currentDate && environmentAccess.end_period >= currentDate) {
-      for (const accessControl of environmentAccess.environment_user_access_control) {
-        if (accessControl.day !== currentDate.getDay()) {
-          continue;
-        }
-
-        const startTime = accessControl.start_time.toLocaleTimeString();
-        const endTime = accessControl.end_time.toLocaleTimeString();
-        const currentTime = currentDate.toLocaleTimeString();
-
-        if (startTime <= currentTime && endTime >= currentTime) {
-          response.access = true;
-          break;
-        }
-      }
-    }
-
     return response;
   }
 

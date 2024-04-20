@@ -78,7 +78,7 @@ export class RolesGuard implements CanActivate {
         )
       )
       .then((response) => response.data)
-      .catch((error) => {
+      .catch((error) => {        
         this.errorLogger.error('Falha ao verificar autorização', error);
   
         throw new HttpException(
@@ -87,8 +87,6 @@ export class RolesGuard implements CanActivate {
         );
       });
     }
-    console.log('response', response);
-    
     request['userId'] = response.userId
 
     return response.isAuthorized;

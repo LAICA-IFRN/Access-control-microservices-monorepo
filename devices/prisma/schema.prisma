@@ -42,7 +42,7 @@ model tag_rfid {
 
 model mobile {
   id         String   @id @default(uuid())
-  user_id    String   @unique
+  user_id    String   
   active     Boolean  @default(true)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt

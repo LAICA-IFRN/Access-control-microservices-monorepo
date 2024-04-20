@@ -76,6 +76,7 @@ export class UserController {
   @ApiUnauthorizedResponse({ type: UnauthorizedToAccess })
   @Get('access')
   findOneToAccess(@Body() findToAccess: FindToAccess) {
+    findToAccess.pin = parseInt(findToAccess.pin);
     return this.userService.findOneToAccess(findToAccess);
   }
 

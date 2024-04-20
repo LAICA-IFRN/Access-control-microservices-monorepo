@@ -50,7 +50,6 @@ export class UserController {
   @UseGuards(RolesGuard)
   @Post('paginate')
   findAll(@Body() body: any) {
-    console.log(body);
     return this.userService.findAll(body);
   }
 

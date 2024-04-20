@@ -18,10 +18,7 @@ export class AccessLogService {
   async create(log: AccessLog) {
     try {
       await lastValueFrom(this.httpService.post(this.createAccessLogUrl, log));
-      console.log('Access log created');
     } catch (error) {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao enviar log', error);
     }
   }

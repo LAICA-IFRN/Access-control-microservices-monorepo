@@ -13,6 +13,7 @@ import { lastValueFrom } from 'rxjs';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
 import { FindAllDto } from 'src/utils/find-all.dto';
+import { access } from 'fs';
 
 @Injectable()
 export class MicrocontrollersService {;
@@ -81,29 +82,18 @@ export class MicrocontrollersService {;
       }
     });
 
-    const key = id.toString();
-    const info: any = { healthCode };
-
-    if (microcontroller.microcontroller_type.name === 'ESP8266') {
-      // const getQRCodeUrl = `${this.environmentsServiceUrl}/env/${microcontroller.environment_id}/qr-code`;
-      // const qrcodeData = await lastValueFrom(
-      //   this.httpService.get(getQRCodeUrl)
-      // )
-      // .then(response => response.data)
-      // .catch(error => {
-      //   this.errorLogger.error('Erro ao buscar acesso remoto', error);
-      // })
-
-      info.doorStatus = doorStatus;
-      
-      await this.cacheService.set(key, info);
-
-      //return { qrcode: qrcodeData };
-      return true;
-    } else {
-      await this.cacheService.set(key, info);
-      return true;
+    if (!microcontroller) {
+      this.auditLogService.create(AuditConstants.findOneMicrotrollerNotFound({ id }));
+      throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)
     }
+
+    const key = id.toString();
+    const info: any = { healthCode, doorStatus };
+    await this.cacheService.set(key, info);
+    
+    const remoteAccess = await this.searchRemoteAccess(id);
+
+    return { access: remoteAccess }
   }
 
   async coldStartMicrocontroller (id: number) {
@@ -432,7 +422,7 @@ export class MicrocontrollersService {;
     }
 
     try {
-      return await this.prismaService.microcontroller.findFirst({
+      return await this.prismaService.microcontroller.findFirstOrThrow({
         where: {
           environment_id: environmentId,
           microcontroller_type_id: 2,
@@ -484,7 +474,7 @@ export class MicrocontrollersService {;
     }
 
     try {
-      return await this.prismaService.microcontroller.findFirst({
+      return await this.prismaService.microcontroller.findFirstOrThrow({
         where: {
           id,
           active: true

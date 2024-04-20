@@ -8,7 +8,7 @@ export class AccessConstants {
   ): AccessLog {
     return {
       type: "Info",
-      message: `${userName} solicitou acesso remoto ao ambiente ${environmentName} utilizando sistema web`,
+      message: `${userName} solicitou acesso remoto ao ambiente ${environmentName} utilizando aplicação web`,
       meta: metaData
     };
   }

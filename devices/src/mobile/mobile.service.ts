@@ -1,6 +1,4 @@
 import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
-import { CreateMobileDto } from './dto/create-mobile.dto';
-import { UpdateMobileDto } from './dto/update-mobile.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
@@ -11,7 +9,7 @@ import { FindAllDto } from 'src/utils/find-all.dto';
 export class MobileService {
   private readonly environmentsServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
   private readonly getUserRolesUrl = `${process.env.USERS_SERVICE_URL}/roles`
-  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly createAuditLogUrl = `${process.env.AUDIT_LOG_URL}`
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -60,7 +58,9 @@ export class MobileService {
       this.sendLogWhenMobileCreated(userId, mobile);
     }
 
-    return mobile.id;
+    return {
+      id: mobile.id
+    };
   }
 
   async sendLogWhenMobileCreated(userId: string, mobile: mobile) {
@@ -70,7 +70,7 @@ export class MobileService {
       this.httpService.post(this.createAuditLogUrl, {
         topic: "Dispositivos",
         type: "Info",
-        message: `Dispositivo mobile ${mobile.id} criado para o usuário ${userData.name}`,
+        message: `Dispositivo móvel ${mobile.id} criado para o usuário ${userData.name}`,
         meta: {
           userId,
           mobileId: mobile.id
@@ -90,7 +90,7 @@ export class MobileService {
       this.httpService.post(this.createAuditLogUrl, {
         topic: "Dispositivos",
         type: "Info",
-        message: `Dispositivo mobile ${mobile.id} do usuário ${userData.name} desativado`,
+        message: `Dispositivo móvel ${mobile.id} do usuário ${userData.name} desativado`,
         meta: {
           userId,
           mobileId: mobile.id
@@ -166,8 +166,6 @@ export class MobileService {
     const roles: string[] = await lastValueFrom(
       this.httpService.get(`${this.getUserRolesUrl}/${userId}/all`).pipe(
         catchError((error) => {
-          console.log(error);
-
           this.errorLogger.error(error);
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
@@ -193,8 +191,6 @@ export class MobileService {
         }
       }).pipe(
         catchError((error) => {
-          console.log(error.response.data.message);
-
           this.errorLogger.error(error);
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
@@ -205,19 +201,7 @@ export class MobileService {
       environments
     };
   }
-
-
-  async getByMac(mac: string) {
-    const mobile = await this.prismaService.mobile.findFirst({
-      where: {
-        mac,
-        active: true,
-      }
-    });
-
-    return mobile;
-  }
-
+  
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;

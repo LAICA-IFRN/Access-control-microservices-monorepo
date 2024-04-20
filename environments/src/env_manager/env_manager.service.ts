@@ -454,38 +454,12 @@ export class EnvManagerService {
         }
       }
     });
+
+    if (!envManager) {
+      return null;
+    }
     
-    const response = { access: false, environmentName: envManager.environment.name };
-
-    if (envManager) {
-      response.access = true;
-    }
-
-    return response;
-  }
-
-  async findAccessForMobileAccess(environmentManagerId: string) {
-    const envManager = await this.prisma.environment_manager.findFirst({
-      where: {
-        user_id: environmentManagerId,
-      },
-      include: {
-        environment: {
-          select: {
-            name: true,
-            id: true,
-          }
-        }
-      }
-    });
-
-    const response: any = { access: false, environmentName: envManager.environment.name, environmentId: envManager.environment.id };
-
-    if (envManager.active) {
-      response.access = true;
-    }
-
-    return response;
+    return { access: true, environmentName: envManager.environment.name };
   }
 
   async findOne(id: string) {

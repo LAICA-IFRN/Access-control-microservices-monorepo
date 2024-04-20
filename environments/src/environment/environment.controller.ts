@@ -23,7 +23,6 @@ export class EnvironmentController {
   @ApiBadRequestResponse({ type: CreateBadRequestResponseEntity})
   @Post()
   create(@Body() createEnvironmentDto: CreateEnvironmentDto) {
-    console.log('create');
     return this.environmentService.create(createEnvironmentDto);
   }
 
@@ -75,8 +74,6 @@ export class EnvironmentController {
   @ApiBadRequestResponse({ type: FindOneBadRequestResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
-    console.log('findOne');
-    
     return this.environmentService.findOne(id);
   }
 

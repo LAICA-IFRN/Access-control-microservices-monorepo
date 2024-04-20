@@ -27,27 +27,7 @@ export class DevicesService {
     const response = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.createRfid(), body).pipe(
         catchError((error) => {
-          if (error.response?.data?.statusCode === 404) {
-            throw new HttpException(
-              error.response?.data?.message,
-              error.response?.data?.statusCode,
-            );
-          } else if (error.response?.data?.statusCode === 400) {
-            throw new HttpException(
-              error.response?.data?.message,
-              error.response?.data?.statusCode,
-            );
-          } else if (error.response?.data?.statusCode === 409) {
-            throw new HttpException(
-              error.response?.data?.message,
-              error.response?.data?.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response?.data?.message,
-              error.response?.data?.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -59,22 +39,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.findOneRfid(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -86,22 +51,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.findAllRfid(), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -113,22 +63,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.deviceRoutes.updateRfidStatus(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -140,22 +75,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.delete(this.deviceRoutes.removeRfid(id, userId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -167,27 +87,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.createMicrocontroller(), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -199,22 +99,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.coldStartMicrocontroller(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode
-            );
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -226,17 +111,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.activeMicrocontroller(id, environmentId, userId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -248,17 +123,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.keepAliveMicrocontroller(id, healthCode, doorStatus)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -270,17 +135,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.getMicrocontrollerInfo(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -292,11 +147,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.searchRemoteAccess(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, error.response.data.statusCode);
-          } else {
-            throw new HttpException(error.response.data.message, error.response.data.statusCode);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -308,17 +159,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.findOneMicrocontroller(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -330,17 +171,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.findAllMicrocontroller(), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -352,17 +183,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.findAllMicrocontrollersInactives(skip, take)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -374,17 +195,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.deviceRoutes.findAllMicrocontrollersByEnvironmentId(environmentId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            );
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -396,22 +207,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.deviceRoutes.updateMicrocontroller(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            )
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            )
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode,
-            )
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -423,22 +219,7 @@ export class DevicesService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.deviceRoutes.updateMicrocontrollerStatus(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 404) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode
-            )
-          } else if (error.response.data.statusCode === 400) {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode
-            )
-          } else {
-            throw new HttpException(
-              error.response.data.message,
-              error.response.data.statusCode
-            )
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );

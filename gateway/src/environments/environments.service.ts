@@ -26,21 +26,8 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.create(), body).pipe(
         catchError((error) => {
-          console.log(error.response);
-          
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else {
-            throw new HttpException('Unable to create environment', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
-        }
-      )
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
     ));
 
     return data;
@@ -50,8 +37,6 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.createTemporaryAccess(), body).pipe(
         catchError((error) => {
-          console.log(error);
-          
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
@@ -64,22 +49,10 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.requestRemoteAccess(environmentId, esp8266Id, remoteAccessType, userId)).pipe(
         catchError((error) => {
-          console.log(error);
-          
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else {
-            throw new HttpException('Unable to request remote access', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
-        }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
       )
-    ));
+    );
 
     return data;
   }
@@ -88,22 +61,10 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findRemoteAccess(esp8266Id)).pipe(
         catchError((error) => {
-          console.log(error);
-          
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else {
-            throw new HttpException('Unable to request remote access', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
-        }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
       )
-    ));
+    );
 
     return data;
   }
@@ -112,13 +73,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findOne(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -130,11 +85,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.findAll(), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -146,15 +97,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.envRoutes.update(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
-          } else {
-            throw new HttpException('Unable to update environment', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -166,15 +109,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.envRoutes.updateStatus(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          } else {
-            throw new HttpException('Unable to update environment', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -186,15 +121,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.delete(this.envRoutes.remove(id, userId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          } else {
-            throw new HttpException('Unable to delete environment', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -206,22 +133,10 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.createManager(), body).pipe(
         catchError((error) => {
-          console.log(error);
-          
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT);
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else {
-            throw new HttpException('Unable to create environment manager', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
-        }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
       )
-    ));
+    );
 
     return data;
   }
@@ -230,13 +145,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findOneManager(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -248,11 +157,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findAllManager()).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -264,11 +169,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findAllManagerByUserId(userId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -280,11 +181,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findAllManagerByEnvironmentId(environmentId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -296,11 +193,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.searchAccessByUserAndEnv(userId, envId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message,HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -312,15 +205,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.envRoutes.updateManagerStatus(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND); 
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN); 
-          } else {
-            throw new HttpException('Unable to update environment manager', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -332,18 +217,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.post(this.envRoutes.createAccess(), body).pipe(
         catchError((error) => {
-          console.log(error);
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT); 
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN); 
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND); 
-          } else {
-            throw new HttpException('Unable to create environment access', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -357,11 +231,7 @@ export class EnvironmentsService {
         data: createAccessDto
       }).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -373,11 +243,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findAllAccess()).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -389,13 +255,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findOneAccess(id)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -407,11 +267,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findAllByFrequenter(frequenterId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -423,13 +279,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findAllInactives()).pipe(
         catchError((error) => {
-          console.log(error.response);
-          
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -441,13 +291,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findAllAccessByEnvironmentId(environmentId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message,HttpStatus.BAD_REQUEST); 
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND); 
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -459,11 +303,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.searchManagerByUserAndEnv(userId, envId)).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message,HttpStatus.BAD_REQUEST);
-          } else {
-            throw new HttpException('Unable to fetch data', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -475,15 +315,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.envRoutes.updateAccessStatus(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message,HttpStatus.BAD_REQUEST); 
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND); 
-          } else if (error.response.data.statusCode === 403) {
-            throw new HttpException(error.response.data.message, HttpStatus.FORBIDDEN); 
-          } else {
-            throw new HttpException('Unable to update environment access', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );
@@ -495,15 +327,7 @@ export class EnvironmentsService {
     const { data } = await lastValueFrom(
       this.httpService.patch(this.envRoutes.updateAccess(id), body).pipe(
         catchError((error) => {
-          if (error.response.data.statusCode === 400) {
-            throw new HttpException(error.response.data.message,HttpStatus.BAD_REQUEST); 
-          } else if (error.response.data.statusCode === 404) {
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND); 
-          } else if (error.response.data.statusCode === 409) {
-            throw new HttpException(error.response.data.message, HttpStatus.CONFLICT); 
-          } else {
-            throw new HttpException('Unable to update environment access', HttpStatus.INTERNAL_SERVER_ERROR);
-          }
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
     );

@@ -20,20 +20,18 @@ export class AppController {
     return this.appService.tokenizeMobile(tokenizeMobileDto);
   }
 
-  @Post('tokenize/access')
-  tokenizeAccess(@Body() tokenizeAccessDto: TokenizeAccessDto) {
-    return this.appService.tokenizeAccess(tokenizeAccessDto);
-  }
+  // @Post('tokenize/access')
+  // tokenizeAccess(@Body() tokenizeAccessDto: TokenizeAccessDto) {
+  //   return this.appService.tokenizeAccess(tokenizeAccessDto);
+  // }
 
-  @Get('authorize/access')
-  authorizeAccess(@Query('token') token: string) {
-    return this.appService.authorizeAccess(token);
-  }
+  // @Get('authorize/access')
+  // authorizeAccess(@Query('token') token: string) {
+  //   return this.appService.authorizeAccess(token);
+  // }
 
   @Get('authorize/web')
   authorizeUser(@Body() authorizationUserDto: AuthorizationUserDto) {
-    console.log("authorizationUserDto", authorizationUserDto);
-    
     return this.appService.authorizeUser(authorizationUserDto)
   }
 
@@ -52,8 +50,8 @@ export class AppController {
     return this.appService.verifyMobileToken(token)
   }
 
-  @Get('verify/access')
-  verifyAccessToken(@Query('token') token: string) {
-    return this.appService.verifyAccessToken(token)
-  }
+  // @Get('verify/access')
+  // verifyAccessToken(@Query('token') token: string) {
+  //   return this.appService.verifyAccessToken(token)
+  // }
 }

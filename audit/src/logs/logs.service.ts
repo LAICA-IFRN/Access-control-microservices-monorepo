@@ -25,15 +25,11 @@ export class LogsService {
 
       return log;
     } catch (error) {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao criar log', error.meta);
     }
   }
 
   async findAll(findAllDto: FindAllDto) {
-    console.log(findAllDto);
-    
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;
     const order = findAllDto.orderBy ? findAllDto.orderBy : {};
@@ -61,8 +57,6 @@ export class LogsService {
         data
       };
     } catch (error) {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao criar log', error.meta);
     }
   }

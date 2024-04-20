@@ -114,7 +114,7 @@ export class DevicesController {
     return this.devicesService.findAllMicrocontroller(body);
   }
 
-  @Get('microcontrollers/one/:id')
+  @Get('microcontrollers/:id')
   findOneMicrocontroller(@Param('id') id: number) {
     return this.devicesService.findOneMicrocontroller(id);
   }

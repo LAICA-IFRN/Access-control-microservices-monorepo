@@ -85,7 +85,7 @@ export class AuditConstants {
     return {
       topic: "Dispositivos",
       type: "Error",
-      message: `Microcontrolador ${metaData.type} não encontrado.`,
+      message: `Microcontrolador ${metaData.id} não encontrado.`,
       meta: metaData
     };
   }

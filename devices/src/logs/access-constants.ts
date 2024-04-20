@@ -10,7 +10,7 @@ export class AccessConstants {
   ): AccessLog {
     return {
       type: "Info",
-      message: `${type} de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pelo sistema web ao ambiente ${environmentName}`,
+      message: `${type} de mac ${microcontrollerMac} realizou acesso remoto do usuário ${userName} solicitado pela aplicação web ao ambiente ${environmentName}`,
       meta: metaData
     };
   }

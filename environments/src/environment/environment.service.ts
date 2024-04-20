@@ -61,8 +61,6 @@ export class EnvironmentService {
   // } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-    console.log(createEnvironmentDto);
-    
     const user: any = await lastValueFrom(
       this.httpService.get(this.getUserEndpoint + createEnvironmentDto.requestUserId).pipe(
         catchError((error) => {
@@ -548,6 +546,9 @@ export class EnvironmentService {
       throw new HttpException('Environment not found', HttpStatus.NOT_FOUND);
     }
 
+    console.log('environment', environment);
+    
+
     const esp8266 = await lastValueFrom(
       this.httpService.get(`${this.getEsp8266Endpoint}/microcontrollers/one/${esp8266Id}`).pipe(
         catchError((error) => {
@@ -620,6 +621,7 @@ export class EnvironmentService {
         user.id
       );
     } else {
+      
       await this.sendAccessLogWhenMobileRemoteAccessSuccess(
         environment.name,
         environment.id,
@@ -637,7 +639,7 @@ export class EnvironmentService {
     const value = await this.cacheService.get(key);
     await this.cacheService.set(key, { value: false });
 
-    return value;
+    return value === undefined ? { value: false } : value;
   }
 
   async sendAccessLogWhenWebRemoteAccessSuccess(
@@ -647,8 +649,6 @@ export class EnvironmentService {
     userName: string,
     userId: string
   ) {
-
-
     await this.accessLogService.create(AccessConstants.webRemoteAccessSuccess(
       environmentName,
       userName,

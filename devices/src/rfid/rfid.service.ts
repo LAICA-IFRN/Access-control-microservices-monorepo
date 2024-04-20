@@ -24,8 +24,6 @@ export class RfidService {
       this.httpService.get(findUserEndpoint)
         .pipe(
           catchError((error) => {
-            console.log(error);
-
             if (error.code === 'ECONNREFUSED') {
               lastValueFrom(
                 this.httpService.post(this.createAuditLogUrl, {
@@ -463,8 +461,6 @@ export class RfidService {
     )
     .then((response) => response.data)
     .catch((error) => {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
       throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
     });

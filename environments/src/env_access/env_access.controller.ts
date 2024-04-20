@@ -58,11 +58,6 @@ export class EnvAccessController {
     return this.envAccessService.verifyAccessByUser(userId, envId);
   }
 
-  @Get('environment-user/:id')
-  findAccessForMobileAccess(@Param('id') id: string) {
-    return this.envAccessService.findAccessForMobileAccess(id);
-  }
-
   @Get('access')
   findAccessByUser(@Body() findAccessDto: FindAccessDto) {
     const { userId, environmentId } = findAccessDto;

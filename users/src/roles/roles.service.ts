@@ -23,10 +23,6 @@ export class RolesService {
   ) {}
 
   async create(createRoleDto: CreateRoleDto, userId: string) {
-    if (!createRoleDto.requestUserId) {
-      createRoleDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(userId)) {
       this.auditLogService.create(AuditConstants.createRolesBadRequest({statusCode: 400, userId, meta: createRoleDto}))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
@@ -323,10 +319,6 @@ export class RolesService {
   }
 
   async changeStatus(userId: string, roleId: string, roleStatusDto: RoleStatusDto) {
-    if (!roleStatusDto.requestUserId) {
-      roleStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(userId) || !isUUID(roleId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -408,10 +400,6 @@ export class RolesService {
   }
 
   async remove(userId: string, deleteRoleDto: DeleteRoleDto) {
-    if (!deleteRoleDto.requestUserId) {
-      deleteRoleDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(userId)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {

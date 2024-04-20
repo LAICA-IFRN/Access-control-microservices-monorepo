@@ -4,7 +4,9 @@ import { Roles } from 'src/decorators/roles.decorator';
 import { AuthorizationType } from 'src/decorators/authorization-type.decorator';
 import { AuthorizationTypeConstants, RolesConstants } from 'src/utils/constants';
 import { RolesGuard } from 'src/guards/roles.guard';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Access')
 @Controller('access')
 export class AccessController {
   constructor(private readonly accessService: AccessService) {}

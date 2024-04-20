@@ -17,6 +17,11 @@ export class MobileController {
   findAll(@Body() findAllDto: FindAllDto) {
     return this.mobileService.findAll(findAllDto);
   }
+  
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.mobileService.findOne(id);
+  }
 
   @Get('has-mobile')
   hasMobile(@Query('userId') userId: string) {
@@ -24,12 +29,7 @@ export class MobileController {
   }
 
   @Get()
-  getEnvironments(@Query('id') id: number, @Query('userId') userId: string) {
-    return this.mobileService.getEnvironments(+id, userId);
-  }
-
-  @Get('mac/:mac')
-  getByMac(@Param('mac') mac: string) {
-    return this.mobileService.getByMac(mac);
+  getEnvironments(@Query('id') id: string, @Query('userId') userId: string) {
+    return this.mobileService.getEnvironments(id, userId);
   }
 }

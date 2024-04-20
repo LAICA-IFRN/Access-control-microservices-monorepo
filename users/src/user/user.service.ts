@@ -12,7 +12,7 @@ import { AuditLogService } from 'src/providers/audit-log/audit-log.service';
 import { AuditConstants } from 'src/providers/audit-log/audit-contants';
 import { EmailService } from 'src/providers/mail-sender/mail-provider.service';
 import { CreateUserByInvitationDto } from './dto/create-user-by-invitaion.dto';
-import { catchError, lastValueFrom } from 'rxjs';
+import { catchError, find, lastValueFrom } from 'rxjs';
 import { DocumentTypesConstants, RolesConstants } from 'src/utils/database-constants';
 import { FindAllDto } from './dto/find-all.dto';
 import { userFieldsToSelect } from 'src/utils/types';
@@ -26,39 +26,35 @@ export class UserService {
   private readonly getSuapUserDataUrl = process.env.GET_SUAP_USER_DATA_URL
   private readonly errorLogger = new Logger()
   private readonly roundsOfHashing = 10
-  
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly httpService: HttpService,
     private readonly auditLogService: AuditLogService,
     private readonly emailService: EmailService
-  ) {}
+  ) { }
 
   async create(createUserDto: CreateUserDto) {
-    if (!createUserDto.createdBy) {
-      createUserDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (
       createUserDto.roles.includes(RolesConstants.ADMIN)
       && createUserDto.roles.length > 1
     ) {
-      this.auditLogService.create(AuditConstants.createUserBadRequest({target: createUserDto, statusCode: 400}));
+      this.auditLogService.create(AuditConstants.createUserBadRequest({ target: createUserDto, statusCode: 400 }));
       throw new HttpException('Admin user cannot have other roles', HttpStatus.BAD_REQUEST);
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, this.roundsOfHashing);
 
     let createdUser: user;
-  
+
     try {
       createdUser = await this.prismaService.user.create(this.factoryCreateUser(createUserDto, hashedPassword));
     } catch (error) {
       if (error.code === 'P2002') {
-        this.auditLogService.create(AuditConstants.createUserConflict({target: error.meta.target, statusCode: 409}));
+        this.auditLogService.create(AuditConstants.createUserConflict({ target: error.meta.target, statusCode: 409 }));
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
       } else {
-        this.auditLogService.create(AuditConstants.createUserError({context: error, statusCode: 422}));
+        this.auditLogService.create(AuditConstants.createUserError({ context: error, statusCode: 422 }));
         throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
@@ -75,16 +71,16 @@ export class UserService {
 
     if (roles.length !== createUserDto.roles.length) {
       this.auditLogService.create(AuditConstants.createUserRolesError({
-        expected: createUserDto.roles, 
-        created: roles.map((role) => role.Role.name), 
+        expected: createUserDto.roles,
+        created: roles.map((role) => role.Role.name),
         statusCode: 403
       }));
     }
 
-    this.sendLogWhenExternalUserCreated(createdUser.name, createUserDto.createdBy, createUserDto);
+    this.sendLogWhenExternalUserCreated(createdUser.name, createUserDto.requestUserId, createUserDto);
 
     let mobileDevice: any
-    if (createUserDto.mac) {}
+    if (createUserDto.mac) { }
 
     let tag: any
     if (createUserDto.tag) {
@@ -99,7 +95,7 @@ export class UserService {
         this.errorLogger.error('Falha ao criar tag', error);
       }
     }
-    
+
     return {
       createdUser,
       mobileDevice,
@@ -121,7 +117,7 @@ export class UserService {
         },
         document_type: { connect: { name: createUserDto.documentType } },
         document: createUserDto.document,
-        created_by: createUserDto.createdBy
+        created_by: createUserDto.requestUserId
       }
     };
   }
@@ -135,33 +131,30 @@ export class UserService {
   }
 
   async sendInviteEmail(inviteEmail: InviteEmail) {
-    if (!inviteEmail.invitedBy) {
-      inviteEmail.invitedBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     let user: user;
 
     try {
       user = await this.prismaService.user.create({
         data: {
           email: inviteEmail.email,
-          created_by: inviteEmail.invitedBy,
+          created_by: inviteEmail.requestUserId,
           document_type: { connect: { name: DocumentTypesConstants.REGISTRATION } },
           user_role: {
             create: inviteEmail.rolesToAdd.map((role) => {
               return {
-                role: { connect: { name: role } }
+                role: { connect: { name: role } },
+                created_by: inviteEmail.requestUserId
               }
-            })
+            }),
           }
         }
       })
     } catch (error) {
       if (error.code === 'P2002') {
-        this.sendInviteEmailError(inviteEmail.invitedBy, inviteEmail.email, error);
+        this.sendInviteEmailError(inviteEmail.requestUserId, inviteEmail.email, error);
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
       } else {
-        this.sendInviteEmailError(inviteEmail.invitedBy, inviteEmail.email, error);
+        this.sendInviteEmailError(inviteEmail.requestUserId, inviteEmail.email, error);
         throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
@@ -184,7 +177,7 @@ export class UserService {
 
   async sendInviteEmailOk(meta: any) {
     const user = await this.prismaService.user.findFirst({
-      where: { id: meta.invitedBy }
+      where: { id: meta.requestUserId }
     });
 
     this.auditLogService.create(AuditConstants.sendInviteEmailOk(user.name, meta));
@@ -207,7 +200,7 @@ export class UserService {
       }).pipe(
         catchError((error) => {
           if (error.response.status === 401) {
-            this.auditLogService.create(AuditConstants.createUserByInvitationUnauthorizedToken({statusCode: 401}))
+            this.auditLogService.create(AuditConstants.createUserByInvitationUnauthorizedToken({ statusCode: 401 }))
             throw new HttpException('Token is invalid or expired', HttpStatus.UNAUTHORIZED);
           } else {
             this.errorLogger.error('Falha ao buscar dados do usuário', error);
@@ -245,10 +238,10 @@ export class UserService {
       return createdUser;
     } catch (error) {
       if (error.code === 'P2002') {
-        this.auditLogService.create(AuditConstants.createUserConflict({target: error.meta.target, statusCode: 409}))
+        this.auditLogService.create(AuditConstants.createUserConflict({ target: error.meta.target, statusCode: 409 }))
         throw new HttpException(`Already exists: ${error.meta.target}`, HttpStatus.CONFLICT);
       } else {
-        this.auditLogService.create(AuditConstants.createUserError({context: error, statusCode: 422}))
+        this.auditLogService.create(AuditConstants.createUserError({ context: error, statusCode: 422 }))
         throw new HttpException("Can't create user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
@@ -290,29 +283,33 @@ export class UserService {
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;
-    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
-    const filter = findAllDto.where ? findAllDto.where : {};
+    const userFieldsToSelect = {
+      id: true,
+      name: true,
+      active: true,
+      document_type_id: true,
+      created_at: true,
+      updated_at: true,
+    }
+
+    if (findAllDto.select?.password) {
+      if (Object.keys(findAllDto.select).length === 1) {
+        findAllDto.select = userFieldsToSelect
+      }
+      findAllDto.select.password = false;
+    }
 
     try {
-      let data: userFieldsToSelect[];
-
-      data = await this.prismaService.user.findMany({
+      const data = await this.prismaService.user.findMany({
         skip: previousLenght,
         take: nextLenght,
-        orderBy: order,
-        where: filter,
-        select: {
-          id: true,
-          name: true,
-          active: true,
-          document_type_id: true,
-          created_at: true,
-          updated_at: true,
-        }
+        orderBy: findAllDto.orderBy ? findAllDto.orderBy : { created_at: 'desc' },
+        where: findAllDto.where,
+        select: findAllDto.select ? findAllDto.select : userFieldsToSelect
       });
 
       const total = await this.prismaService.user.count({
-        where: filter,
+        where: findAllDto.where,
       });
 
       return {
@@ -323,14 +320,14 @@ export class UserService {
         data
       };
     } catch (error) {
-      this.auditLogService.create(AuditConstants.findAllError({target: 'users', statusCode: 500}))
+      this.auditLogService.create(AuditConstants.findAllError({ target: 'users', statusCode: 500 }))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async findUserImage(userId: string) {
     if (!isUUID(userId)) {
-      this.auditLogService.create(AuditConstants.findUserImageBadRequest({userId, statusCode: 400}))
+      this.auditLogService.create(AuditConstants.findUserImageBadRequest({ userId, statusCode: 400 }))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -340,7 +337,7 @@ export class UserService {
       });
 
       if (!userImage) {
-        this.auditLogService.create(AuditConstants.findUserImageBadRequest({userId, statusCode: 404}))
+        this.auditLogService.create(AuditConstants.findUserImageBadRequest({ userId, statusCode: 404 }))
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       }
 
@@ -353,7 +350,7 @@ export class UserService {
 
   async findOne(userId: string) {
     if (!isUUID(userId)) {
-      this.auditLogService.create(AuditConstants.findOneBadRequest({userId, statusCode: 400}))
+      this.auditLogService.create(AuditConstants.findOneBadRequest({ userId, statusCode: 400 }))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -370,7 +367,7 @@ export class UserService {
       });
     } catch (error) {
       if (error.code === 'P2025') {
-        this.auditLogService.create(AuditConstants.findOneNotFound({userId, statusCode: 404}))
+        this.auditLogService.create(AuditConstants.findOneNotFound({ userId, statusCode: 404 }))
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else {
         this.errorLogger.error('Falha do sistema (500)', error.response);
@@ -413,16 +410,16 @@ export class UserService {
         active: true
       }
     });
-    
+
     if (!user) {
-      this.auditLogService.create(AuditConstants.validateToTokenNotFound({document: user.document, statusCode: 404}))
+      this.auditLogService.create(AuditConstants.validateToTokenNotFound({ document: user.document, statusCode: 404 }))
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 
     const passwordMatch = await bcrypt.compare(validateToToken.password, user.password);
 
     if (!passwordMatch) {
-      this.auditLogService.create(AuditConstants.validateToTokenUnauthorizhed({userId: user.id, statusCode: 401}))
+      this.auditLogService.create(AuditConstants.validateToTokenUnauthorizhed({ userId: user.id, statusCode: 401 }))
       throw new HttpException('Incorrect password', HttpStatus.UNAUTHORIZED);
     }
 
@@ -445,7 +442,7 @@ export class UserService {
         }
       });
     } catch (error) {
-      this.auditLogService.create(AuditConstants.findAllError({target: 'frequenters', statusCode: 500}))
+      this.auditLogService.create(AuditConstants.findAllError({ target: 'frequenters', statusCode: 500 }))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -466,7 +463,7 @@ export class UserService {
         }
       });
     } catch (error) {
-      this.auditLogService.create(AuditConstants.findAllError({target: 'admins', statusCode: 500}))
+      this.auditLogService.create(AuditConstants.findAllError({ target: 'admins', statusCode: 500 }))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -487,7 +484,7 @@ export class UserService {
         }
       });
     } catch (error) {
-      this.auditLogService.create(AuditConstants.findAllError({target: 'environment_managers', statusCode: 500}))
+      this.auditLogService.create(AuditConstants.findAllError({ target: 'environment_managers', statusCode: 500 }))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
@@ -507,26 +504,22 @@ export class UserService {
         }
       });
     } catch (error) {
-      this.auditLogService.create(AuditConstants.findAllError({target: 'inactives', statusCode: 500}))
+      this.auditLogService.create(AuditConstants.findAllError({ target: 'inactives', statusCode: 500 }))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
   async updateStatus(id: string, body: UserStatusDto) {
-    if (!body.requestUserId) {
-      body.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-    
     if (!isUUID(id)) {
-      this.auditLogService.create(AuditConstants.updateStatusBadRequest({userId: id, statusCode: 400}))
+      this.auditLogService.create(AuditConstants.updateStatusBadRequest({ userId: id, statusCode: 400 }))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
     try {
       const user = await this.prismaService.user.update({
         where: { id },
-        data: { 
-          active: body.status, 
+        data: {
+          active: body.status,
           user_role: {
             updateMany: {
               where: { user_id: id },
@@ -543,10 +536,10 @@ export class UserService {
 
     } catch (error) {
       if (error.code === 'P2025') {
-        this.auditLogService.create(AuditConstants.updateStatusNotFound({id, statusCode: 404}))
-        throw new HttpException('User not found',  HttpStatus.NOT_FOUND);
+        this.auditLogService.create(AuditConstants.updateStatusNotFound({ id, statusCode: 404 }))
+        throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else {
-        this.auditLogService.create(AuditConstants.updateStatusNotFound({context: error, statusCode: 422}))
+        this.auditLogService.create(AuditConstants.updateStatusNotFound({ context: error, statusCode: 422 }))
         throw new HttpException("Can't update user status", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
@@ -561,7 +554,7 @@ export class UserService {
       userName,
       author.name,
       status,
-      { 
+      {
         ...meta,
         userId
       }
@@ -570,12 +563,8 @@ export class UserService {
 
   // TODO: testar
   async update(id: string, updateUserDataDto: UpdateUserDataDto) {
-    if (!updateUserDataDto.requestUserId) {
-      updateUserDataDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(id)) {
-      this.auditLogService.create(AuditConstants.updateBadRequest({userId: id, author: updateUserDataDto.requestUserId}))
+      this.auditLogService.create(AuditConstants.updateBadRequest({ userId: id, author: updateUserDataDto.requestUserId }))
       throw new HttpException('Invalid id entry', HttpStatus.BAD_REQUEST);
     }
 
@@ -600,13 +589,13 @@ export class UserService {
       return user;
     } catch (error) {
       if (error.code === 'P2025') {
-        this.auditLogService.create(AuditConstants.updateNotFound({userId: id, statusCode: 404}))
+        this.auditLogService.create(AuditConstants.updateNotFound({ userId: id, statusCode: 404 }))
         throw new HttpException('User not found', HttpStatus.NOT_FOUND);
       } else if (error.code === 'P2002') {
-        this.auditLogService.create(AuditConstants.updateNotFound({userId: id, statusCode: 409, author: updateUserDataDto.requestUserId, target: error.meta.target}))
+        this.auditLogService.create(AuditConstants.updateNotFound({ userId: id, statusCode: 409, author: updateUserDataDto.requestUserId, target: error.meta.target }))
         throw new HttpException('Already exists', HttpStatus.CONFLICT);
       } else {
-        this.auditLogService.create(AuditConstants.updateError({statusCode: 422, author: updateUserDataDto.requestUserId, target: error.meta.target}))
+        this.auditLogService.create(AuditConstants.updateError({ statusCode: 422, author: updateUserDataDto.requestUserId, target: error.meta.target }))
         throw new HttpException("Can't update user", HttpStatus.UNPROCESSABLE_ENTITY);
       }
     }
@@ -620,7 +609,7 @@ export class UserService {
     this.auditLogService.create(AuditConstants.updateOk(
       userName,
       author.name,
-      { 
+      {
         ...meta,
         userId
       }

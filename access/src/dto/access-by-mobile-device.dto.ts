@@ -4,9 +4,9 @@ import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, IsUUID } from "c
 export class AccessByMobileDeviceDto {
 
     @ApiProperty()
-    @IsString()
+    @IsUUID()
     @IsNotEmpty()
-    environmentId: number
+    environmentId: string
     
     // @ApiProperty()
     // @IsString()
@@ -27,4 +27,9 @@ export class AccessByMobileDeviceDto {
     @IsUUID()
     @IsNotEmpty()
     userId: string
+
+    @ApiProperty()
+    @IsUUID()
+    @IsNotEmpty()
+    mobileId: string
 }

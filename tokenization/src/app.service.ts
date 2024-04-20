@@ -35,13 +35,13 @@ export class AppService {
           data: tokenizeUserDto,
         },
       ).pipe(
-        catchError((error) => {
+        catchError((error) => { // TODO: criar funções de log para cada tipo de erro
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
-                message: 'Falha ao validar usuário: serviço indisponível',
+                message: 'Falha ao validar usuário, serviço de usuários indisponível',
                 meta: {
                   document: tokenizeUserDto.document,
                 }
@@ -57,9 +57,9 @@ export class AppService {
           if (error.response?.status === 404) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
-                message: 'Falha ao validar usuário: usuário não encontrado',
+                message: 'Falha ao validar usuário, usuário não encontrado',
                 meta: {
                   document: tokenizeUserDto.document,
                 }
@@ -74,9 +74,9 @@ export class AppService {
           } else if (error.response?.status === 401) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
-                message: 'Falha ao validar usuário: senha incorreta',
+                message: 'Falha ao validar usuário, senha incorreta',
                 meta: {
                   document: tokenizeUserDto.document,
                 }
@@ -91,9 +91,9 @@ export class AppService {
           } else {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
-                message: 'Falha ao validar usuário: erro interno, verificar logs de erro do serviço',
+                message: 'Falha ao validar usuário, erro inesperado verifique os logs de erro no serviço',
                 meta: {
                   document: tokenizeUserDto.document,
                 }
@@ -122,22 +122,29 @@ export class AppService {
       { expiresIn: this.jwtUserExpirationTime }
     )
 
+    this.createLogWhenUserAuthenticates(data.userId, tokenizeUserDto.document);
+
+    return {
+      accessToken: token
+    }
+  }
+
+  async createLogWhenUserAuthenticates(userId: string, document: string) {
+    const user = await this.getUserData(userId);
+
     await lastValueFrom(
       this.httpService.post(this.createAuditLogUrl, {
-        topic: 'Tokenização',
+        topic: 'Autenticação',
         type: 'Info',
-        message: 'Usuário validado com sucesso',
+        message: `Usuário validado, ${user.name} autenticou-se pela aplicação web`,
         meta: {
-          document: tokenizeUserDto.document,
+          document: document,
+          // TODO: adicionar IP do usuário e informações do navegador
         }
       })
     ).catch((error) => {
       this.errorLogger.error('Falha ao enviar log', error)
     })
-
-    return {
-      accessToken: token
-    }
   }
 
   async tokenizeMobile(tokenizeMobileDto: TokenizeMobileDto) {
@@ -155,9 +162,9 @@ export class AppService {
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
-                message: 'Falha ao validar usuário: serviço indisponível',
+                message: 'Falha ao validar usuário, serviço de usuários indisponível',
                 meta: {
                   document: tokenizeMobileDto.document,
                 }
@@ -173,9 +180,9 @@ export class AppService {
           if (error.response?.status === 404) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
-                message: 'Falha ao validar usuário: usuário não encontrado',
+                message: 'Falha ao validar usuário, registro não encontrado',
                 meta: {
                   document: tokenizeMobileDto.document,
                 }
@@ -190,9 +197,9 @@ export class AppService {
           } else if (error.response?.status === 401) {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
-                message: 'Falha ao validar usuário: senha incorreta',
+                message: 'Falha ao validar usuário, senha incorreta',
                 meta: {
                   document: tokenizeMobileDto.document,
                 }
@@ -207,7 +214,7 @@ export class AppService {
           } else {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
-                topic: 'Tokenização',
+                topic: 'Autenticação',
                 type: 'Error',
                 message: 'Falha ao validar usuário: erro interno, verificar logs de erro do serviço',
                 meta: {
@@ -227,8 +234,6 @@ export class AppService {
     )
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error);
-
         this.errorLogger.error('Falha ao validar usuário', error)
         throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
       })
@@ -241,223 +246,239 @@ export class AppService {
 
     const response = {
       accessToken: token,
-      mobileId: "0"
+      mobileId: false
     }
 
-    const mobileData = await lastValueFrom(
-      this.httpService.get(`${this.devicesServiceUrl}/mobile/has-mobile?userId=${data.userId}`)
+    if (tokenizeMobileDto.mobileId) {
+      const mobileData = await this.findMobileById(tokenizeMobileDto.mobileId);
+
+      if (mobileData) {
+        this.createLogWhenMobileAuthenticates(data.userId, tokenizeMobileDto.mobileId);
+        response.mobileId = true;
+      }
+    }
+    
+    return response;
+  }
+
+  private async findMobileById(mobileId: string) {
+    const mobile = await lastValueFrom(
+      this.httpService.get(`${this.devicesServiceUrl}/mobile/${mobileId}`)
     )
       .then((response) => response.data)
       .catch((error) => {
-        this.errorLogger.error('Falha ao obter dados do aparelho', error)
+        this.errorLogger.error('Falha ao buscar aparelho', error)
         throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
       })
 
-    if (!mobileData.hasMobile) {
-      const mobileId = await lastValueFrom(
-        this.httpService.post(`${this.devicesServiceUrl}/mobile?userId=${data.userId}`)
-      )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar aparelho', error)
-          throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-        })
+    return mobile;
+  }
 
-      response.mobileId = mobileId.toString();
-    }
+  async createLogWhenMobileAuthenticates(userId: string, mobileId: string) {
+    const user = await this.getUserData(userId);
 
     await lastValueFrom(
       this.httpService.post(this.createAuditLogUrl, {
-        topic: 'Tokenização',
+        topic: 'Autenticação',
         type: 'Info',
-        message: 'Aparelho de usuário validado com sucesso',
+        message: `Usuário validado, ${user.name} autenticou-se pelo dispositivo móvel`,
         meta: {
-          document: tokenizeMobileDto.document,
-          //mac: tokenizeMobileDto.mac,
+          userId: userId,
+          mobileId: mobileId,
         }
       })
     ).catch((error) => {
       this.errorLogger.error('Falha ao enviar log', error)
     })
-
-    if (mobileData.hasMobile) {
-      response.mobileId = mobileData.mobileId;
-    }
-
-    return response;
   }
 
-  async tokenizeAccess(tokenizeAccessDto: TokenizeAccessDto) {
-    const microcontroller = await lastValueFrom(
-      this.httpService.get(`${this.getMicrocontrollerUrl}/one/${tokenizeAccessDto.microcontrollerId}`)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao obter dados do ambiente', error)
+  // async tokenizeAccess(tokenizeAccessDto: TokenizeAccessDto) {
+  //   const microcontroller = await lastValueFrom(
+  //     this.httpService.get(`${this.getMicrocontrollerUrl}/one/${tokenizeAccessDto.microcontrollerId}`)
+  //   )
+  //     .then((response) => response.data)
+  //     .catch((error) => {
+  //       this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-      })
+  //       throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+  //     })
 
-    const qrcode = await lastValueFrom(
-      this.httpService.get(`${this.environmentServiceUrl}/env/${microcontroller.environment_id}/qr-code`)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao obter dados do ambiente', error)
+  //   const qrcode = await lastValueFrom(
+  //     this.httpService.get(`${this.environmentServiceUrl}/env/${microcontroller.environment_id}/qr-code`)
+  //   )
+  //     .then((response) => response.data)
+  //     .catch((error) => {
+  //       this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-      })
+  //       throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+  //     })
 
-    if (tokenizeAccessDto.qrcode !== qrcode) {
-      throw new HttpException('Invalid QR Code', HttpStatus.BAD_REQUEST)
-    }
+  //   if (tokenizeAccessDto.qrcode !== qrcode) {
+  //     throw new HttpException('Invalid QR Code', HttpStatus.BAD_REQUEST)
+  //   }
 
-    const userRoles = await this.getUserRoles(tokenizeAccessDto.userId);
+  //   const userRoles = await this.getUserRoles(tokenizeAccessDto.userId);
 
-    if (userRoles.includes('FREQUENTER')) {
-      return this.handleFrequenterTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
-    }
+  //   if (userRoles.includes('FREQUENTER')) {
+  //     return this.handleFrequenterTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
+  //   }
 
-    if (userRoles.includes('ENVIRONMENT_MANAGER')) {
-      return this.handleManagerTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
-    }
+  //   if (userRoles.includes('ENVIRONMENT_MANAGER')) {
+  //     return this.handleManagerTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
+  //   }
 
-    return this.handleAdminTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
-  }
+  //   return this.handleAdminTokenizationAccess(microcontroller.environment_id, tokenizeAccessDto.userId);
+  // }
 
-  private async handleAdminTokenizationAccess(environmentId: string, userId: string) {
-    const environmentData: any = await lastValueFrom(
-      this.httpService.get(`${this.environmentServiceUrl}/env/${environmentId}`)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao obter dados do ambiente', error)
-        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-      })
+  // private async handleAdminTokenizationAccess(environmentId: string, userId: string) {
+  //   const environmentData: any = await lastValueFrom(
+  //     this.httpService.get(`${this.environmentServiceUrl}/env/${environmentId}`)
+  //   )
+  //     .then((response) => response.data)
+  //     .catch((error) => {
+  //       this.errorLogger.error('Falha ao obter dados do ambiente', error)
+  //       throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+  //     })
 
-    const now = new Date();
+  //   const now = new Date();
 
-    const endOfTheDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const difference = endOfTheDay.getTime() - now.getTime();
-    const seconds = Math.floor(difference / 1000);
+  //   const endOfTheDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  //   const difference = endOfTheDay.getTime() - now.getTime();
+  //   const seconds = Math.floor(difference / 1000);
 
-    const token = jwt.sign(
-      { sub: { id: userId, role: 'ADMIN', env: environmentId } },
-      this.jwtAccessSecret,
-      { expiresIn: seconds }
-    )
+  //   const token = jwt.sign(
+  //     { sub: { id: userId, role: 'ADMIN', env: environmentId } },
+  //     this.jwtAccessSecret,
+  //     { expiresIn: seconds }
+  //   )
 
-    return {
-      token: token,
-      latitude: environmentData.latitude,
-      longitude: environmentData.longitude,
-      name: environmentData.name,
-    }
-  }
+  //   return {
+  //     token: token,
+  //     latitude: environmentData.latitude,
+  //     longitude: environmentData.longitude,
+  //     name: environmentData.name,
+  //   }
+  // }
 
-  private async handleManagerTokenizationAccess(environmentId: string, userId: string) {
-    const searchEnvironmentUserData = `${this.environmentServiceUrl}/env-manager/environment/${environmentId}/user/${userId}`;
-    const environmentUserData = await lastValueFrom(
-      this.httpService.get(searchEnvironmentUserData)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao obter dados do ambiente', error)
+  // private async handleManagerTokenizationAccess(environmentId: string, userId: string) {
+  //   const searchEnvironmentUserData = `${this.environmentServiceUrl}/env-manager/environment/${environmentId}/user/${userId}`;
+  //   const environmentUserData = await lastValueFrom(
+  //     this.httpService.get(searchEnvironmentUserData)
+  //   )
+  //     .then((response) => response.data)
+  //     .catch((error) => {
+  //       this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
-      })
+  //       throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+  //     })
 
-    if (!environmentUserData) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND)
-    }
+  //   if (!environmentUserData) {
+  //     throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+  //   }
 
-    const now = new Date();
-    const endOfTheDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const difference = endOfTheDay.getTime() - now.getTime();
-    const seconds = Math.floor(difference / 1000);
+  //   const now = new Date();
+  //   const endOfTheDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  //   const difference = endOfTheDay.getTime() - now.getTime();
+  //   const seconds = Math.floor(difference / 1000);
 
-    const token = jwt.sign(
-      { sub: { id: environmentUserData.environmentUserId, role: 'ENVIRONMENT_MANAGER' } },
-      this.jwtAccessSecret,
-      { expiresIn: seconds }
-    )
+  //   const token = jwt.sign(
+  //     { sub: { id: environmentUserData.environmentUserId, role: 'ENVIRONMENT_MANAGER' } },
+  //     this.jwtAccessSecret,
+  //     { expiresIn: seconds }
+  //   )
 
-    return {
-      token: token,
-      latitude: environmentUserData.latitude,
-      longitude: environmentUserData.longitude,
-      name: environmentUserData.name,
-    }
-  }
+  //   return {
+  //     token: token,
+  //     latitude: environmentUserData.latitude,
+  //     longitude: environmentUserData.longitude,
+  //     name: environmentUserData.name,
+  //   }
+  // }
 
-  private async handleFrequenterTokenizationAccess(environmentId: string, userId: string) {
-    const searchEnvironmentUserData = `${this.environmentServiceUrl}/env-access/environment/${environmentId}/user/${userId}`;
-    const environmentUserData = await lastValueFrom(
-      this.httpService.get(searchEnvironmentUserData)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao obter dados do ambiente', error)
+  // private async handleFrequenterTokenizationAccess(environmentId: string, userId: string) {
+  //   const searchEnvironmentUserData = `${this.environmentServiceUrl}/env-access/environment/${environmentId}/user/${userId}`;
+  //   const environmentUserData = await lastValueFrom(
+  //     this.httpService.get(searchEnvironmentUserData)
+  //   )
+  //     .then((response) => response.data)
+  //     .catch((error) => {
+  //       this.errorLogger.error('Falha ao obter dados do ambiente', error)
 
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+  //       throw new HttpException(error.response.data.message, error.response.data.statusCode);
+  //     })
 
-    if (!environmentUserData) {
-      throw new HttpException('User not found', HttpStatus.NOT_FOUND)
-    }
+  //   if (!environmentUserData) {
+  //     throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+  //   }
 
-    const now = new Date();
+  //   const now = new Date();
 
-    if (!environmentUserData.days.includes(now.getDay())) {
-      throw new HttpException('User not allowed today', HttpStatus.UNAUTHORIZED)
-    }
+  //   if (!environmentUserData.days.includes(now.getDay())) {
+  //     throw new HttpException('User not allowed today', HttpStatus.UNAUTHORIZED)
+  //   }
 
-    const endOfTheDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
-    const difference = endOfTheDay.getTime() - now.getTime();
-    const seconds = Math.floor(difference / 1000);
+  //   const endOfTheDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+  //   const difference = endOfTheDay.getTime() - now.getTime();
+  //   const seconds = Math.floor(difference / 1000);
 
-    const token = jwt.sign(
-      { sub: { id: environmentUserData.environmentUserId, role: 'FREQUENTER' } },
-      this.jwtAccessSecret,
-      { expiresIn: seconds }
-    )
+  //   const token = jwt.sign(
+  //     { sub: { id: environmentUserData.environmentUserId, role: 'FREQUENTER' } },
+  //     this.jwtAccessSecret,
+  //     { expiresIn: seconds }
+  //   )
 
-    return {
-      token: token,
-      latitude: environmentUserData.latitude,
-      longitude: environmentUserData.longitude,
-      name: environmentUserData.name,
-    }
-  }
+  //   return {
+  //     token: token,
+  //     latitude: environmentUserData.latitude,
+  //     longitude: environmentUserData.longitude,
+  //     name: environmentUserData.name,
+  //   }
+  // }
 
-  async authorizeAccess(token: string) {
-    try {
-      const decodedToken = jwt.verify(token, this.jwtAccessSecret)
-      return decodedToken.sub
-    } catch (error) {
-      throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
-    }
-  }
+  // async authorizeAccess(token: string) {
+  //   try {
+  //     const decodedToken = jwt.verify(token, this.jwtAccessSecret)
+  //     return decodedToken.sub
+  //   } catch (error) {
+  //     throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
+  //   }
+  // }
 
-  private async getUserRoles(userId: string) {
-    const getUserRolesUrl = `${process.env.USERS_SERVICE_URL}/roles/${userId}/all`;
+  // private async getUserRoles(userId: string) {
+  //   const getUserRolesUrl = `${process.env.USERS_SERVICE_URL}/roles/${userId}/all`;
+  //   const data = await lastValueFrom(
+  //     this.httpService.get(getUserRolesUrl).pipe(
+  //       catchError((error) => {
+  //         this.errorLogger.error('Falha ao buscar papéis do usuário', error);
+  //         throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+  //       })
+  //     )
+  //   ).then((response) => response.data)
+
+  //   return data.roles;
+  // }
+
+  async getUserData(userId: string) {
+    const getUserDataUrl = `${process.env.USERS_SERVICE_URL}/${userId}`;
     const data = await lastValueFrom(
-      this.httpService.get(getUserRolesUrl).pipe(
+      this.httpService.get(getUserDataUrl).pipe(
         catchError((error) => {
-          this.errorLogger.error('Falha ao buscar papéis do usuário', error);
+          this.errorLogger.error('Falha ao buscar dados do usuário', error);
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
     ).then((response) => response.data)
 
-    return data.roles;
+    return data;
   }
 
   async authorizeUser(authorizationUserDto: AuthorizationUserDto) {
-    const decodedToken = jwt.verify(authorizationUserDto.token, this.jwtUserSecret)
-
-    if (!decodedToken) {
-      throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED)
+    let decodedToken;
+    
+    try {
+      decodedToken = jwt.verify(authorizationUserDto.token, this.jwtUserSecret)
+    } catch (error) {
+      throw new HttpException(error.message, HttpStatus.UNAUTHORIZED)
     }
 
     const isAuthorized = await lastValueFrom(
@@ -476,7 +497,7 @@ export class AppService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Autorização',
                 type: 'Error',
-                message: 'Falha ao autorizar usuário: serviço indisponível',
+                message: 'Falha ao autorizar usuário, serviço de usuários indisponível',
                 meta: {
                   userId: decodedToken.sub,
                   roles: authorizationUserDto.roles,
@@ -493,7 +514,7 @@ export class AppService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Autorização',
                 type: 'Error',
-                message: 'Falha ao autorizar usuário: usuário não encontrado',
+                message: 'Falha ao autorizar usuário, registro não encontrado',
                 meta: {
                   userId: decodedToken.sub,
                   roles: authorizationUserDto.roles,
@@ -511,7 +532,7 @@ export class AppService {
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Autorização',
                 type: 'Error',
-                message: 'Falha ao autorizar usuário: erro interno, verificar logs de erro do serviço',
+                message: 'Falha ao autorizar usuário, erro inesperado verifique os logs de erro no serviço',
                 meta: {
                   userId: decodedToken.sub,
                   roles: authorizationUserDto.roles,
@@ -529,10 +550,10 @@ export class AppService {
       )
     )
       .then((response) => response.data)
-
-    // if (!isAuthorized) {
-    //   throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
-    // }
+    
+    if (!isAuthorized) {
+      throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
+    }
 
     return { isAuthorized, userId: decodedToken.sub }
   }
@@ -542,8 +563,6 @@ export class AppService {
       const decodeToken = jwt.verify(authorizationMobileDto.token, this.jwtMobileSecret);
       return { isAuthorized: true, userId: decodeToken.sub }
     } catch (error) {
-      console.log(error);
-
       throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
     }
   }
@@ -568,13 +587,13 @@ export class AppService {
     }
   }
 
-  async verifyAccessToken(token: string) {
-    try {
-      jwt.verify(token, this.jwtAccessSecret);
-      return { isValid: true }
-    } catch (error) {
-      this.errorLogger.error('Falha ao validar token', error)
-      return { isValid: false }
-    }
-  }
+  // async verifyAccessToken(token: string) {
+  //   try {
+  //     jwt.verify(token, this.jwtAccessSecret);
+  //     return { isValid: true }
+  //   } catch (error) {
+  //     this.errorLogger.error('Falha ao validar token', error)
+  //     return { isValid: false }
+  //   }
+  // }
 }

@@ -48,7 +48,7 @@ export class CreateUserDto {
 
   @IsUUID()
   @IsOptional()
-  createdBy?: string
+  requestUserId?: string
 
   @IsArray()
   @ArrayNotEmpty()

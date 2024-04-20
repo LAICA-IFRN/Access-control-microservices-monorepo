@@ -19,5 +19,5 @@ export class InviteEmail {
 
   @IsUUID()
   @IsOptional()
-  invitedBy?: string;
+  requestUserId: string;
 }

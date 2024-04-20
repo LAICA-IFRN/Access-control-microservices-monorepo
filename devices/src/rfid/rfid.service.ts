@@ -19,17 +19,11 @@ export class RfidService {
   ) { }
 
   async create(createRfidDto: CreateRfidDto) {
-    if (!createRfidDto.createdBy) {
-      createRfidDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const findUserEndpoint = `${this.usersServiceUrl}/${createRfidDto.userId}`
     const findUser = await lastValueFrom(
       this.httpService.get(findUserEndpoint)
         .pipe(
           catchError((error) => {
-            console.log(error);
-
             if (error.code === 'ECONNREFUSED') {
               lastValueFrom(
                 this.httpService.post(this.createAuditLogUrl, {
@@ -279,7 +273,7 @@ export class RfidService {
     }
   }
 
-  async findOneByTag(tag: string) { // para uso do serviço de acesso
+  async findOneByTag(tag: string) {
     let response = { userId: null }
 
     const rfid = await this.prismaService.tag_rfid.findFirst({
@@ -296,10 +290,6 @@ export class RfidService {
   }
 
   async updateStatus(updateStatusRfidDto: UpdateStatusRfidDto) {
-    if (!updateStatusRfidDto.updatedBy) {
-      updateStatusRfidDto.updatedBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     try {
       const rfid = await this.prismaService.tag_rfid.update({
         where: {
@@ -374,10 +364,6 @@ export class RfidService {
   }
 
   async remove(id: number, deletedBy?: string) {
-    if (!deletedBy) {
-      deletedBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-    
     if (isNaN(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -475,8 +461,6 @@ export class RfidService {
     )
     .then((response) => response.data)
     .catch((error) => {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
       throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
     });

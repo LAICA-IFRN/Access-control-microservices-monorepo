@@ -40,10 +40,13 @@ export class MobileService {
       this.sendLogWhenMobileDeactivated(userId, mobile);
     }
 
+    const user = await this.getUserData(userId);
+
     try {
       mobile = await this.prismaService.mobile.create({
         data: {
           user_id: userId,
+          user_name: user.name,
         }
       });
     } catch (error) {

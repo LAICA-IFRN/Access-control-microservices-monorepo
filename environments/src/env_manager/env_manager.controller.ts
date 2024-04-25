@@ -25,6 +25,8 @@ export class EnvManagerController {
 
   @Get('access')
   findAccessByUser(@Body() findAccessDto: FindAccessDto) {
+    console.log("access");
+    
     const { userId, environmentId } = findAccessDto;
     return this.envManagerService.findAccessByUser(userId, environmentId);
   }
@@ -39,6 +41,7 @@ export class EnvManagerController {
 
   @Get('environment/:envId/user/:userId')
   getEnvironmentUserData(@Param('envId') envId: string, @Param('userId') userId: string) {
+    console.log("getEnvironmentUserData");
     return this.envManagerService.getEnvironmentUserData(userId, envId);
   }
 
@@ -47,12 +50,9 @@ export class EnvManagerController {
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('user/:userId/env/:envId/verify')
   verifyManagerByUser(@Param('userId') userId: string, @Param('envId') envId: string) {
+    console.log("verifyManagerByUser");
+    
     return this.envManagerService.verifyManagerByUser(userId, envId);
-  }
-
-  @Get('environment-manager/:id')
-  findAccessForMobileAccess(@Param('id') id: string) {
-    return this.envManagerService.findAccessForMobileAccess(id);
   }
 
   @ApiOperation({ description: 'Endpoint para listar um gestor de ambiente' })
@@ -62,6 +62,7 @@ export class EnvManagerController {
   @ApiNotFoundResponse({ type: swagger.EnvManagerNotFoundResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
+    console.log("findOne");
     return this.envManagerService.findOne(id);
   }
 
@@ -72,6 +73,8 @@ export class EnvManagerController {
   })
   @Get('user/:id')
   findAllByUserId(@Param('id') id: string) {
+    console.log("findAllByUserId");
+    
     return this.envManagerService.findAllByUserId(id);
   }
 

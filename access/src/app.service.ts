@@ -16,9 +16,7 @@ export class AppService {
   private readonly searchUserUrl = process.env.SEARCH_USER_URL
   private readonly searchMobileUrl = process.env.SEARCH_MOBILE_URL
   private readonly searchFrequenterAccessUrl = process.env.SEARCH_FREQUENTER_ACCESS
-  private readonly searchFrequenterMobileAccessUrl = process.env.SEARCH_FREQUENTER_MOBILE_ACCESS
   private readonly searchManagerAccessUrl = process.env.SEARCH_MANAGER_ACCESS
-  private readonly searchManagerMobileAccessUrl = process.env.SEARCH_MANAGER_MOBILE_ACCESS
   private readonly searchEspInMobileAccessUrl = process.env.SEARCH_ESP_IN_MOBILE_ACCESS
   private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly authorizeMobileAccessUrl = process.env.AUTHORIZE_MOBILE_ACCESS_URL
@@ -156,13 +154,13 @@ export class AppService {
     let userAccessData: any;
 
     if (userRoles.includes(Roles.FREQUENTER)) {
-      userAccessData = await this.searchFrequenterAccess(userData, environmentId, accessDto);
+      userAccessData = await this.searchFrequenterAccess(userData, environmentId);
       this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
       return { access: true };
     }
 
     if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
-      userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId, accessDto);
+      userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId);
       this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
       return { access: true };
     }
@@ -171,24 +169,46 @@ export class AppService {
   }
 
   async accessByMobileDeviceTEMP(accessDto: AccessByMobileDeviceDto) {
+    console.log('accessDto', accessDto);
+    
     const esp = await lastValueFrom(
       this.httpService.get(`${this.tempGetEsp}/${accessDto.environmentId}`)
     )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar esp', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar esp', error);
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    })
+
+    console.log('esp', esp);
+    
+
+    const mobile = await this.getMobileData(accessDto.mobileId);
+
+    if (!mobile.active) {
+      this.accessLogService.create({
+        type: 'Error',
+        message: 'Tentativa de acesso por um dispositivo móvel inativo',
+        meta: {
+          mobileId: accessDto.mobileId,
+          userId: accessDto.userId,
+        }
       })
+
+      throw new HttpException('Dispositivo móvel inativo', HttpStatus.FORBIDDEN);
+    }
       
     const roles: string[] = await lastValueFrom(
       this.httpService.get(`${this.tempGetRolesUrl}/${accessDto.userId}/all`)
     )
-      .then((response) => response.data.roles)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar papéis do usuário', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+    .then((response) => response.data.roles)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar papéis do usuário', error);
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    })
 
+    let userData: any;
+    
     if (roles.includes('ADMIN')) {
       this.handleLogAdminFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, { result: true }, esp.environment_id, accessDto);
 
@@ -197,45 +217,51 @@ export class AppService {
     }
 
     if (roles.includes('FREQUENTER')) {
-      const data: any = await lastValueFrom(
-        this.httpService.get(`${this.searchFrequenterMobileAccessUrl}/${accessDto.userId}`)
-      )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao buscar acesso de frequenter', error);
-          throw new HttpException(error.response.data.message, error.response.data.statusCode);
-        })
-      //this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
+      console.log('FREQUENTER');
+      
+      const data = await this.searchFrequenterAccess(accessDto.userId, accessDto.environmentId);
+      console.log('data', data);
 
-      if (data.access) {
-        await this.sendRemoteAccessRequest(data.environmentId, esp.id, accessDto.userId);
+      if (data) {
+        userData = data;
+      }
+      
+      if (data?.access) {
+        await this.sendRemoteAccessRequest(accessDto.environmentId, esp.id, accessDto.userId);
         return { access: true };
       }
-
-      // this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-      // return { access: false };
     }
-
+    
     if (roles.includes('ENVIRONMENT_MANAGER')) {
-      const data: any = await lastValueFrom(
-        this.httpService.get(`${this.searchManagerMobileAccessUrl}/${accessDto.userId}`)
-      )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
-          throw new HttpException(error.response.data.message, error.response.data.statusCode);
-        })
+      console.log('ENVIRONMENT_MANAGER');
+      const data = await this.searchEnvironmentManagerAccess(accessDto.userId, accessDto.environmentId);
+      console.log('data', data);
 
-      //this.sendLogWhenFacialRecognitionSucceeds({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-
-      if (data.access) {
-        await this.sendRemoteAccessRequest(data.environmentId, esp.id, accessDto.userId);
-        return { access: true };
+      if (data) {
+        userData = data;
       }
 
-      this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, data, accessDto);
-      return { access: false };
+      if (data?.access) {
+        await this.sendRemoteAccessRequest(accessDto.environmentId, esp.id, accessDto.userId);
+        return { access: true };
+      }
     }
+
+    this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, userData, accessDto);
+    return { access: false };
+}
+
+  private async getMobileData(mobileId: string) {
+    const data: any = await lastValueFrom(
+      this.httpService.get(`${this.searchMobileUrl}/${mobileId}`)
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar dispositivo móvel', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
+
+    return data;
   }
 
   private async sendRemoteAccessRequest(environmentId: string, esp8266Id: number, userId: string) {
@@ -269,19 +295,6 @@ export class AppService {
       qrCodeMatch: qrcodeWithoutId === data.qrcode,
       environmentId: data.environmentId
     };
-  }
-
-  async searchDeviceMobile(mac: string) {
-    const data: any = await lastValueFrom(
-      this.httpService.get(`${this.searchMobileUrl}/${mac}`).pipe(
-        catchError((error) => {
-          this.errorLogger.error('Falha ao buscar dispositivo mobile', error);
-          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
-        })
-      )
-    ).then((response) => response.data)
-
-    return data;
   }
 
   // private async handleUserFacialRecognitionDevice(userData: any, userAccessData: any, accessDto: any) {
@@ -476,33 +489,38 @@ export class AppService {
     return data;
   }
 
-  async searchFrequenterAccess(userData: any, environmentId: string, accessDto: any) {
+  async searchFrequenterAccess(userData: string, environmentId: string) {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchFrequenterAccessUrl, {
         data: {
-          userId: userData.userId,
-          environmentId
-        }
-      })
-    ).then((response) => response.data)
-
-    return data;
-  }
-
-  async searchEnvironmentManagerAccess(userData: any, environmentId: string, accessDto: any) {
-    const data: any = await lastValueFrom(
-      this.httpService.get(this.searchManagerAccessUrl, {
-        data: {
-          userId: userData.userId,
+          userId: userData,
           environmentId
         }
       })
     )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar acesso de frequentador', error);
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    })
+
+    return data;
+  }
+
+  async searchEnvironmentManagerAccess(userId: string, environmentId: string) {
+    const data: any = await lastValueFrom(
+      this.httpService.get(this.searchManagerAccessUrl, {
+        data: {
+          userId: userId,
+          environmentId
+        }
       })
+    )
+    .then((response) => response.data)
+    .catch((error) => {
+      this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
+      throw new HttpException(error.response.data.message, error.response.data.statusCode);
+    })
 
     return data;
   }

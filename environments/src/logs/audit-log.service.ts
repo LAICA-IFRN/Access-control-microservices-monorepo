@@ -20,8 +20,6 @@ export class AuditLogService {
     try {
       await lastValueFrom(this.httpService.post(this.createAuditLogUrl, log))
     } catch (error) {
-      console.log(error);
-      
       this.errorLogger.error('Falha ao enviar log', error);
     }
   }

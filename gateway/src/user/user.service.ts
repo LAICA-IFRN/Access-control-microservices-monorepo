@@ -8,7 +8,7 @@ export class UserService {
   constructor(
     private httpService: HttpService,
     private userRoutes: UserRoutes
-  ) {}
+  ) { }
 
   async dashboardConsultData() {
     const { data } = await lastValueFrom(
@@ -37,7 +37,7 @@ export class UserService {
           }
         })
       )
-    );  
+    );
 
     return data;
   }
@@ -57,7 +57,7 @@ export class UserService {
           }
         })
       )
-    );  
+    );
 
     return data;
   }
@@ -77,7 +77,7 @@ export class UserService {
           }
         })
       )
-    );  
+    );
 
     return data;
   }
@@ -93,7 +93,7 @@ export class UserService {
           }
         })
       )
-    );  
+    );
 
     return data;
   }
@@ -133,7 +133,7 @@ export class UserService {
           }
         })
       )
-    );  
+    );
 
     return data;
   }
@@ -228,10 +228,10 @@ export class UserService {
     return data;
   }
 
-  async updateStatus(id: string, status: boolean) {
+  async updateStatus(id: string, body: any) {
     const { data } = await lastValueFrom(
-      this.httpService.patch(this.userRoutes.updateStatus(id), { status }).pipe(
-        catchError((error) => {          
+      this.httpService.patch(this.userRoutes.updateStatus(id), body).pipe(
+        catchError((error) => {
           if (error.response.data.statusCode === 400) {
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 404) {

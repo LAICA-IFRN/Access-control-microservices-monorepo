@@ -27,7 +27,7 @@ export class CreateEnvAccessDto {
   @ApiProperty()
   @IsUUID()
   @IsOptional()
-  createdBy: string;
+  requestUserId: string;
 
   @ApiProperty()
   @IsArray()

@@ -1,5 +1,5 @@
-import { HttpException, Injectable } from '@nestjs/common';
-import { LoginUserDto } from './dto/login-user.dto';
+import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { LoginWebDto } from './dto/login-web.dto';
 import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { LoginMobileDto } from './dto/login-mobile.dto';
@@ -17,18 +17,18 @@ export class AuthService {
     private readonly httpService: HttpService,
   ) { }
 
-  async loginUser(loginUserDto: LoginUserDto) {
+  async loginWeb(loginWebDto: LoginWebDto) {
     const response = await lastValueFrom(
-      this.httpService.post(this.tokenizeUserUrl, loginUserDto).pipe(
+      this.httpService.post(this.tokenizeUserUrl, loginWebDto).pipe(
         catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        throw new HttpException(error.response, error.response.data.statusCode);
-      })
+    ).then((response) => response.data)
 
     return response;
   }
@@ -37,18 +37,14 @@ export class AuthService {
     const response = await lastValueFrom(
       this.httpService.post(this.tokenizeMobileUrl, loginMobileDto).pipe(
         catchError((error) => {
-          console.log(error);
-          
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        console.log(error);
-        
-        throw new HttpException(error.response, error.response.data.statusCode);
-      })
+    ).then((response) => response.data)
 
     return response;
   }
@@ -57,15 +53,15 @@ export class AuthService {
     const response = await lastValueFrom(
       this.httpService.post(this.tokenizeAccessUrl, { ...body, userId }).pipe(
         catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        throw new HttpException(error.response, error.status);
-      })
-    
+    ).then((response) => response.data)
+
     return response;
   }
 
@@ -73,14 +69,14 @@ export class AuthService {
     const response = await lastValueFrom(
       this.httpService.get(`${this.verifyUserUrl}${token}`).pipe(
         catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        throw new HttpException(error.response, error.response.data.statusCode);
-      })
+    ).then((response) => response.data)
 
     return response;
   }
@@ -89,14 +85,14 @@ export class AuthService {
     const response = await lastValueFrom(
       this.httpService.get(`${this.verifyMobileUrl}${token}`).pipe(
         catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        throw new HttpException(error.response, error.response.data.statusCode);
-      })
+    ).then((response) => response.data)
 
     return response;
   }
@@ -105,14 +101,14 @@ export class AuthService {
     const response = await lastValueFrom(
       this.httpService.get(`${this.verifyAccessUrl}${token}`).pipe(
         catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+
           throw new HttpException(error.response.data.message, error.response.data.statusCode);
         })
       )
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        throw new HttpException(error.response, error.response.data.statusCode);
-      })
+    ).then((response) => response.data)
 
     return response;
   }

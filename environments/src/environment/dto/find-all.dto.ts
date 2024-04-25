@@ -1,33 +1,35 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsNumber, IsObject, IsOptional } from "class-validator";
+import { IsNotEmptyObject, IsNumber, IsObject, IsOptional } from "class-validator";
 
 export class FindAllDto {
   @IsNumber()
   @IsOptional()
   @ApiProperty()
   previous?: number;
-  
+
   @IsNumber()
   @IsOptional()
   @ApiProperty()
   next?: number;
-  
+
   @IsNumber()
   @IsOptional()
   @ApiProperty()
   pageSize?: number;
-  
+
   @IsObject()
-  @IsOptional()
+  @IsNotEmptyObject()
   @ApiProperty()
+  @IsOptional()
   where?: any;
 
-  @IsObject()
-  @IsOptional()
   @ApiProperty()
-  select?: any;
-
+  @IsNotEmptyObject()
   @IsOptional()
-  @ApiProperty()
   orderBy?: any;
+
+  @ApiProperty()
+  @IsNotEmptyObject()
+  @IsOptional()
+  select?: any;
 }

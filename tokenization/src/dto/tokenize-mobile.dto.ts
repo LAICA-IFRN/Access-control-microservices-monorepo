@@ -1,5 +1,5 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsMACAddress, IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 export class TokenizeMobileDto {
 
@@ -11,7 +11,7 @@ export class TokenizeMobileDto {
   @IsString()
   password: string;
 
-  // @ApiProperty()
-  // @IsMACAddress()
-  // mac: string;
+  @ApiProperty()
+  @IsOptional()
+  mobileId?: string;
 }

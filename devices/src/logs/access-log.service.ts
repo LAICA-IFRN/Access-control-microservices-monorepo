@@ -3,7 +3,7 @@ import { Logger } from "@nestjs/common";
 import { lastValueFrom } from "rxjs";
 
 export interface AccessLog {
-  type: 'info' | 'error' | 'warn';
+  type: 'Info' | 'Error' | 'Warn';
   message: string;
   meta: object;
 }
@@ -19,7 +19,6 @@ export class AccessLogService {
     try {
       await lastValueFrom(this.httpService.post(this.createAccessLogUrl, log))
     } catch (error) {
-      console.log(error);
       this.errorLogger.error('Falha ao enviar log', error);
     }
   }

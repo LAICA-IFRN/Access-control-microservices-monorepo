@@ -20,5 +20,5 @@ export class CreateEnvManagerDto {
   @IsOptional()
   @IsUUID()
   @ApiProperty()
-  createdBy?: string;
+  requestUserId?: string;
 }

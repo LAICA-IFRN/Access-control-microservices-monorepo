@@ -67,7 +67,7 @@ export class UserController {
 
   @Post('paginate')
   findAll(@Body() body: FindAllDto) {
-    return this.userService.findAll(body);
+   return this.userService.findAll(body);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })
@@ -76,6 +76,7 @@ export class UserController {
   @ApiUnauthorizedResponse({ type: UnauthorizedToAccess })
   @Get('access')
   findOneToAccess(@Body() findToAccess: FindToAccess) {
+    findToAccess.pin = parseInt(findToAccess.pin);
     return this.userService.findOneToAccess(findToAccess);
   }
 

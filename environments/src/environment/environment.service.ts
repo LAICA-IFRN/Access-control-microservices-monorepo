@@ -9,7 +9,7 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
-import { Cron, CronExpression } from '@nestjs/schedule';
+// import { Cron, CronExpression } from '@nestjs/schedule';
 //import { randomUUID } from 'crypto';
 import { FindAllDto } from './dto/find-all.dto';
 import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
@@ -17,6 +17,7 @@ import { environment_temporary_access, environment_user_access_control } from '@
 import { AuditLogService } from 'src/logs/audit-log.service';
 import { AuditLogConstants } from 'src/providers/audit-log/audit-log.constants';
 import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
+import { AuditConstants } from 'src/logs/audit-contants';
 
 @Injectable()
 export class EnvironmentService {
@@ -60,12 +61,8 @@ export class EnvironmentService {
   // } 
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
-    if (!createEnvironmentDto.createdBy) {
-      createEnvironmentDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const user: any = await lastValueFrom(
-      this.httpService.get(this.getUserEndpoint + createEnvironmentDto.createdBy).pipe(
+      this.httpService.get(this.getUserEndpoint + createEnvironmentDto.requestUserId).pipe(
         catchError((error) => {
           if (error.response.status === 'ECONNREFUSED') {
             this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
@@ -73,7 +70,7 @@ export class EnvironmentService {
           } else if (error.response.data.statusCode === 400) {
             this.auditLogService.create(
               AuditLogConstants.createEnvironmentVerifyRolesFailedById({
-                userId: createEnvironmentDto.createdBy,
+                userId: createEnvironmentDto.requestUserId,
                 error: error.response.data.message,
                 statusCode: 400
               })
@@ -83,7 +80,7 @@ export class EnvironmentService {
           } else if (error.response.data.statusCode === 404) {
             this.auditLogService.create(
               AuditLogConstants.createEnvironmentVerifyRolesFailedByUser({
-                userId: createEnvironmentDto.createdBy,
+                userId: createEnvironmentDto.requestUserId,
                 error: error.response.data.message,
                 statusCode: 404
               })
@@ -101,7 +98,7 @@ export class EnvironmentService {
     if (!user || user?.user_role?.lenght > 1 || user?.user_role[0]?.role_id !== 1) {
       this.auditLogService.create(
         AuditLogConstants.createEnvironmentVerifyRolesFailedByRole({
-          userId: createEnvironmentDto.createdBy,
+          userId: createEnvironmentDto.requestUserId,
           error: 'Usuário não é um admin',
           statusCode: 403
         })
@@ -115,7 +112,7 @@ export class EnvironmentService {
         data: {
           name: createEnvironmentDto.name,
           description: createEnvironmentDto.description,
-          created_by: createEnvironmentDto.createdBy,
+          created_by: createEnvironmentDto.requestUserId,
           user_name: user.name,
           latitude: createEnvironmentDto.latitude,
           longitude: createEnvironmentDto.longitude,
@@ -125,7 +122,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentCreated(
         environment.name,
         environment.id,
-        createEnvironmentDto.createdBy,
+        createEnvironmentDto.requestUserId,
         createEnvironmentDto
       );
 
@@ -134,7 +131,7 @@ export class EnvironmentService {
       if (error.code === 'P2002') {
         this.auditLogService.create(
           AuditLogConstants.verifyRolesFailedByEnvironment({
-            createdBy: createEnvironmentDto.createdBy,
+            createdBy: createEnvironmentDto.requestUserId,
             target: error.meta.target,
             statusCode: 409
           })
@@ -152,7 +149,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao criar ambiente, usuário não encontrado',
             meta: {
-              createdBy: createEnvironmentDto.createdBy,
+              createdBy: createEnvironmentDto.requestUserId,
               target: error.meta.target,
               statusCode: 404
             }
@@ -174,7 +171,7 @@ export class EnvironmentService {
             type: "Error",
             message: 'Falha ao criar ambiente, erro interno verificar logs de erro do serviço',
             meta: {
-              createdBy: createEnvironmentDto.createdBy,
+              createdBy: createEnvironmentDto.requestUserId,
               context: error,
               statusCode: 403
             }
@@ -212,10 +209,6 @@ export class EnvironmentService {
   }
 
   async createTemporaryAccess(createTemporaryAccessDto: CreateTemporaryAccessDto) {
-    if (!createTemporaryAccessDto.createdBy) {
-      createTemporaryAccessDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const isAdmin = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -322,7 +315,7 @@ export class EnvironmentService {
           start_period: startPeriod,
           end_period: endPeriod,
           description: createTemporaryAccessDto.description,
-          created_by: createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '0f3c5449-9192-452e-aeb9-503778709f3e',
+          created_by: createTemporaryAccessDto.requestUserId,
           user_name: createTemporaryAccessDto.userName,
           environment_id: createTemporaryAccessDto.environmentId,
           user_id: createTemporaryAccessDto.userId,
@@ -336,7 +329,7 @@ export class EnvironmentService {
             type: "Error",
             message: "Falha ao criar acesso temporário, conflito com registro existente",
             meta: {
-              createdBy: createTemporaryAccessDto.createdBy,
+              createdBy: createTemporaryAccessDto.requestUserId,
               target: error.meta.target,
               statusCode: 409
             }
@@ -426,7 +419,7 @@ export class EnvironmentService {
               type: "Error",
               message: 'Falha ao criar acesso temporário, conflito com registro existente',
               meta: {
-                createdBy: createTemporaryAccessDto.createdBy,
+                createdBy: createTemporaryAccessDto.requestUserId,
                 target: error.meta.target,
                 statusCode: 409
               }
@@ -447,7 +440,7 @@ export class EnvironmentService {
               type: "Error",
               message: 'Falha ao criar acesso temporário, erro interno verificar logs de erro do serviço',
               meta: {
-                createdBy: createTemporaryAccessDto.createdBy,
+                createdBy: createTemporaryAccessDto.requestUserId,
                 context: error,
                 statusCode: 403
               }
@@ -486,9 +479,7 @@ export class EnvironmentService {
     userId: string,
     createTemporaryAccessDto: CreateTemporaryAccessDto
   ) {
-    const createdByUser: any = await this.findUserForLog(
-      createTemporaryAccessDto.createdBy ? createTemporaryAccessDto.createdBy : '0f3c5449-9192-452e-aeb9-503778709f3e'
-    );
+    const createdByUser: any = await this.findUserForLog(createTemporaryAccessDto.requestUserId);
     const environment = await this.prisma.environment.findFirst({
       where: { id: environmentId }
     })
@@ -555,6 +546,9 @@ export class EnvironmentService {
       throw new HttpException('Environment not found', HttpStatus.NOT_FOUND);
     }
 
+    console.log('environment', environment);
+    
+
     const esp8266 = await lastValueFrom(
       this.httpService.get(`${this.getEsp8266Endpoint}/microcontrollers/one/${esp8266Id}`).pipe(
         catchError((error) => {
@@ -616,7 +610,7 @@ export class EnvironmentService {
 
     const key = esp8266.id.toString();
     const cache = { value: true, remoteAccessType, userName: user.name, userId: user.id, environmentName: environment.name, environmentId: environment.id };
-    await this.cacheService.set(key, cache); // TODO: alterar o cache para salvar em arquivo em vez de memória
+    await this.cacheService.set(key, cache);
 
     if (remoteAccessType === 'web') {
       await this.sendAccessLogWhenWebRemoteAccessSuccess(
@@ -627,6 +621,7 @@ export class EnvironmentService {
         user.id
       );
     } else {
+      
       await this.sendAccessLogWhenMobileRemoteAccessSuccess(
         environment.name,
         environment.id,
@@ -644,7 +639,7 @@ export class EnvironmentService {
     const value = await this.cacheService.get(key);
     await this.cacheService.set(key, { value: false });
 
-    return value;
+    return value === undefined ? { value: false } : value;
   }
 
   async sendAccessLogWhenWebRemoteAccessSuccess(
@@ -654,8 +649,6 @@ export class EnvironmentService {
     userName: string,
     userId: string
   ) {
-
-
     await this.accessLogService.create(AccessConstants.webRemoteAccessSuccess(
       environmentName,
       userName,
@@ -706,31 +699,54 @@ export class EnvironmentService {
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;
-    const order = findAllDto.orderBy ? findAllDto.orderBy : {};
-    const filter = findAllDto.where ? findAllDto.where : {};
-    const select = findAllDto.select ? findAllDto.select : {};
+    const environmentFieldsToSelect = {
+      id: true,
+      name: true,
+      description: true,
+      created_at: true,
+      user_name: true,
+      latitude: true,
+      longitude: true,
+      environment_user: {
+        select: {
+          user_name: true
+        },
 
-    const [environments, total] = await this.prisma.$transaction([
-      this.prisma.environment.findMany({
-        skip: previousLenght,
-        take: nextLenght,
-        orderBy: order,
-        where: filter,
-        select: select
-      }),
+      },
+      environment_manager: {
+        select: {
+          user_name: true
+        }
+      },
+      environment_restriction_access: true
+    }
 
-      this.prisma.environment.count({
-        where: filter
-      })
-    ]);
+    try {
+      const [environments, total] = await this.prisma.$transaction([
+        this.prisma.environment.findMany({
+          skip: previousLenght,
+          take: nextLenght,
+          orderBy: findAllDto.orderBy ? findAllDto.orderBy : { created_at: 'desc' },
+          where: findAllDto.where,
+          select: findAllDto.select || environmentFieldsToSelect
+        }),
 
-    return {
-      pageSize: findAllDto.pageSize,
-      previous: findAllDto.previous,
-      next: findAllDto.next,
-      total,
-      data: environments
-    };
+        this.prisma.environment.count({
+          where: findAllDto.where,
+        })
+      ]);
+
+      return {
+        pageSize: findAllDto.pageSize,
+        previous: findAllDto.previous,
+        next: findAllDto.next,
+        total,
+        data: environments
+      };
+    } catch (error) {
+      this.auditLogService.create(AuditConstants.findAllError({ target: 'users', statusCode: 500 }))
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async getEnvironmentForMobile(body: MobileGetEnvironmentsDto) {
@@ -1035,7 +1051,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentUpdated(
         environment.name,
         environment.id,
-        updateEnvironmentDto.requestUserId ? updateEnvironmentDto.requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
+        updateEnvironmentDto.requestUserId,
         updateEnvironmentDto
       );
 
@@ -1162,7 +1178,7 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentStatusChanged(
         environment.name,
         environment.id,
-        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e',
+        requestUserId,
         status
       );
 
@@ -1262,12 +1278,15 @@ export class EnvironmentService {
       this.sendLogWhenEnvironmentRemoved(
         environment.name,
         environment.id,
-        requestUserId ? requestUserId : '0f3c5449-9192-452e-aeb9-503778709f3e'
+        requestUserId
       );
 
       return environment
     } catch (error) {
-      if (error.code === 'P2025') {
+      if (error.response.status === 'ECONNREFUSED') {
+        this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+        throw new HttpException('Serviço fora do ar', HttpStatus.INTERNAL_SERVER_ERROR);
+      } else if (error.code === 'P2025') {
         await lastValueFrom(
           this.httpService.post(this.createAuditLogUrl, {
             topic: "Ambiente",

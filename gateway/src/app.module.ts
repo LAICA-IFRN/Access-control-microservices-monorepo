@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { AccessModule } from './access/access.module';
 import { LogsModule } from './logs/logs.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { LogsModule } from './logs/logs.module';
     AuthModule,
     AccessModule,
     LogsModule
-  ]
+  ],
+  controllers: [AppController],
 })
 export class AppModule {}

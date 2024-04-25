@@ -20,10 +20,6 @@ export class EnvManagerService {
   ) {}
 
   async create(createEnvManagerDto: CreateEnvManagerDto) {
-    if (!createEnvManagerDto.createdBy) {
-      createEnvManagerDto.createdBy = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     const isEnvManager = await lastValueFrom(
       this.httpService.get(this.verifyRoleEndpoint, {
         data: {
@@ -111,7 +107,7 @@ export class EnvManagerService {
       throw new HttpException('User is not a enviroment manager', HttpStatus.FORBIDDEN);
     }
 
-    const { userId, environmentId, createdBy } = createEnvManagerDto;
+    const { userId, environmentId, requestUserId: createdBy } = createEnvManagerDto;
     const hasEnvAccess = await this.hasEnvAccessOnEnv(userId, environmentId)
       .then((response) => response)
       .catch((error) => {
@@ -458,38 +454,12 @@ export class EnvManagerService {
         }
       }
     });
+
+    if (!envManager) {
+      return null;
+    }
     
-    const response = { access: false, environmentName: envManager.environment.name };
-
-    if (envManager) {
-      response.access = true;
-    }
-
-    return response;
-  }
-
-  async findAccessForMobileAccess(environmentManagerId: string) {
-    const envManager = await this.prisma.environment_manager.findFirst({ // findUnique
-      where: {
-        user_id: environmentManagerId,//id: environmentManagerId,
-      },
-      include: {
-        environment: {
-          select: {
-            name: true,
-            id: true,
-          }
-        }
-      }
-    });
-
-    const response: any = { access: false, environmentName: envManager.environment.name, environmentId: envManager.environment.id };
-
-    if (envManager.active) {
-      response.access = true;
-    }
-
-    return response;
+    return { access: true, environmentName: envManager.environment.name };
   }
 
   async findOne(id: string) {
@@ -637,10 +607,6 @@ export class EnvManagerService {
   }
 
   async updateStatus(id: string, envManagerStatusDto: EnvManagerStatusDto) {
-    if (!envManagerStatusDto.requestUserId) {
-      envManagerStatusDto.requestUserId = '0f3c5449-9192-452e-aeb9-503778709f3e'
-    }
-
     if (!isUUID(id)) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {

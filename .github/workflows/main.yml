@@ -55,4 +55,4 @@ jobs:
           ssh-host: laica.ifrn.edu.br
 
       - name: Deploy
-        run: make deploy
+        run: make cd

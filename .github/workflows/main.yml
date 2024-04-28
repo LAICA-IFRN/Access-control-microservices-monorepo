@@ -22,25 +22,25 @@ jobs:
           node-version: 18.x
 
       - name: Install dependencies, run tests and build Access service
-        run: cd access && npm install && npm run build:ci && cd ..
+        run: cd access && npm install && npm run build
 
       - name: Install dependencies, run tests and build Audit service
-        run: cd audit && npm install && npm run build:ci && cd ..
+        run: cd audit && npm install && npm run build
 
       - name: Install dependencies, run tests and build Devices service
-        run: cd devices && npm install && npm run build:ci && cd ..
+        run: cd devices && npm install && npm run build
 
       - name: Install dependencies, run tests and build Environments service
-        run: cd environments && npm install && npm run build:ci && cd ..
+        run: cd environments && npm install && npm run build
       
       - name: Install dependencies, run tests and build Gateway service
-        run: cd gateway && npm install && npm run build:ci && cd ..
+        run: cd gateway && npm install && npm run build
 
       - name: Install dependencies, run tests and build Tokenization service
-        run: cd tokenization && npm install && npm run build:ci && cd ..
+        run: cd tokenization && npm install && npm run build
       
       - name: Install dependencies, run tests and build Users service
-        run: cd users && npm install && npm run build:ci && cd ..
+        run: cd users && npm install && npm run build
         
   CD:
     runs-on: ubuntu-latest

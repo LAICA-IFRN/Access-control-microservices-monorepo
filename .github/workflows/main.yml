@@ -51,7 +51,7 @@ jobs:
       - name: Set up keys
         uses: kielabokkie/ssh-key-and-known-hosts-action@v1
         with:
-          ssh_private_key: [${{ secrets.LAICA_CD_KEY }}]
+          ssh-private-key: ${{ secrets.LAICA_CD_KEY }}
           ssh-host: laica.ifrn.edu.br
 
       - name: Deploy

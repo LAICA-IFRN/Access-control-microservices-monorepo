@@ -27,4 +27,4 @@ deploy:
 	start-all-processes
 
 cd:
-	ssh hilquias@laica.ifrn.edu.br:~ "cd /home/hilquias/deploy/Access-control-microservices-monorepo && make deploy"
+	ssh hilquias@laica.ifrn.edu.br 'cd /home/hilquias/deploy/Access-control-microservices-monorepo && make deploy'

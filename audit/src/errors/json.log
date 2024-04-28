@@ -368,3 +368,5 @@
 {"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2024-04-15T23:36:39.095Z"}
 {"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2024-04-15T23:36:43.129Z"}
 {"level":"error","message":"Falha ao criar log","stack":[{"table":"main.access"}],"timestamp":"2024-04-15T23:36:44.111Z"}
+{"level":"error","message":"Falha ao criar log","stack":[null],"timestamp":"2024-04-22T11:08:23.209Z"}
+{"level":"error","message":"Falha ao criar log","stack":[null],"timestamp":"2024-04-22T16:29:41.441Z"}

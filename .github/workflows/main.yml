@@ -1,0 +1,42 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Using Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18.x
+
+      - name: Install dependencies, run tests and build Access service
+        run: cd access && npm install && npm run build && cd ..
+
+      - name: Install dependencies, run tests and build Audit service
+        run: cd audit && npm install && npm run build && cd ..
+
+      - name: Install dependencies, run tests and build Devices service
+        run: cd devices && npm install && npm run build && cd ..
+
+      - name: Install dependencies, run tests and build Environments service
+        run: cd environments && npm install && npm run build && cd ..
+      
+      - name: Install dependencies, run tests and build Gateway service
+        run: cd gateway && npm install && npm run build && cd ..
+
+      - name: Install dependencies, run tests and build Tokenization service
+        run: cd tokenization && npm install && npm run build && cd ..
+      
+      - name: Install dependencies, run tests and build Users service
+        run: cd users && npm install && npm run build && cd ..

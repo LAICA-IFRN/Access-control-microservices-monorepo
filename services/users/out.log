@@ -1,0 +1,95 @@
+25-04-24 20:58:19: Starting Nest application... NestFactory
+25-04-24 20:58:19: AppModule dependencies initialized InstanceLoader
+25-04-24 20:58:19: AppController {/}: RoutesResolver
+25-04-24 20:58:19: Mapped {/, GET} route RouterExplorer
+25-04-24 20:58:19: Mapped {/health, GET} route RouterExplorer
+25-04-24 20:58:19: Mapped {/error, GET} route RouterExplorer
+25-04-24 20:58:19: Nest application successfully started NestApplication
+25-04-24 20:58:19: Starting Nest application... NestFactory
+25-04-24 20:58:19: AppModule dependencies initialized InstanceLoader
+25-04-24 20:58:19: AppController {/}: RoutesResolver
+25-04-24 20:58:19: Mapped {/, GET} route RouterExplorer
+25-04-24 20:58:19: Mapped {/health, GET} route RouterExplorer
+25-04-24 20:58:19: Mapped {/error, GET} route RouterExplorer
+25-04-24 20:58:19: Nest application successfully started NestApplication
+25-04-24 21:00:54: Health check
+25-04-24 21:01:00: Health check
+25-04-24 21:01:00: Health check
+25-04-24 21:01:01: Health check
+25-04-24 21:01:01: Health check
+25-04-24 21:01:01: Health check
+25-04-24 21:01:02: Health check
+25-04-24 21:01:02: Health check
+25-04-24 21:01:02: Health check
+25-04-24 21:01:02: Health check
+25-04-24 21:01:02: Health check
+25-04-24 21:01:03: Health check
+25-04-24 21:01:03: Health check
+25-04-24 21:01:03: Health check
+25-04-24 21:01:03: Health check
+25-04-24 21:01:03: Health check
+25-04-24 21:01:04: Health check
+25-04-24 21:01:04: Health check
+25-04-24 21:01:04: Health check
+25-04-24 21:01:04: Health check
+25-04-24 21:01:05: Health check
+25-04-24 21:01:05: Health check
+25-04-24 21:01:05: Health check
+25-04-24 21:01:05: Health check
+25-04-24 21:01:06: Health check
+25-04-24 21:01:06: Health check
+25-04-24 21:01:06: Health check
+25-04-24 21:01:06: Health check
+25-04-24 21:01:06: Health check
+25-04-24 21:01:07: Health check
+25-04-24 21:01:07: Health check
+25-04-24 21:01:07: Health check
+25-04-24 21:01:07: Health check
+25-04-24 21:01:07: Health check
+25-04-24 21:01:08: Health check
+25-04-24 21:01:08: Health check
+25-04-24 21:01:08: Health check
+25-04-24 21:01:08: Health check
+25-04-24 21:01:09: Health check
+25-04-24 21:01:09: Health check
+25-04-24 21:01:09: Health check
+25-04-24 21:01:09: Health check
+25-04-24 21:01:09: Health check
+25-04-24 21:01:10: Health check
+25-04-24 21:01:10: Health check
+25-04-24 21:01:10: Health check
+25-04-24 21:01:10: Health check
+25-04-24 21:01:11: Health check
+25-04-24 21:01:11: Health check
+25-04-24 21:01:11: Health check
+25-04-24 21:01:11: Health check
+25-04-24 21:01:11: Health check
+25-04-24 21:01:12: Health check
+25-04-24 21:01:12: Health check
+25-04-24 21:01:12: Health check
+25-04-24 21:01:12: Health check
+25-04-24 21:01:12: Health check
+25-04-24 21:01:13: Health check
+25-04-24 21:01:13: Health check
+25-04-24 21:01:13: Health check
+25-04-24 21:01:13: Health check
+25-04-24 21:01:14: Health check
+25-04-24 21:01:14: Health check
+25-04-24 21:01:14: Health check
+25-04-24 21:01:14: Health check
+25-04-24 21:01:15: Health check
+25-04-24 21:01:15: Health check
+25-04-24 21:01:15: Health check
+25-04-24 21:01:15: Health check
+25-04-24 21:01:15: Health check
+25-04-24 21:01:16: Health check
+25-04-24 21:01:16: Health check
+25-04-24 21:01:16: Health check
+25-04-24 21:01:16: Health check
+25-04-24 21:01:17: Health check
+25-04-24 21:01:17: Health check
+25-04-24 21:01:17: Health check
+25-04-24 21:01:17: Health check
+25-04-24 21:01:17: Health check
+25-04-24 21:01:18: Health check
+25-04-24 21:01:18: Health check

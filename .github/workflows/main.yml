@@ -9,7 +9,7 @@ on:
       - main
 
 jobs:
-  CI-CD:
+  CI:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,7 +19,7 @@ jobs:
       - name: Using Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 18.x
+          node-version: 18
 
       - name: Install dependencies, run tests and build Access service
         run: cd access && npm install && npm run build
@@ -41,7 +41,19 @@ jobs:
       
       - name: Install dependencies, run tests and build Users service
         run: cd users && npm install && npm run build
-        
+       
+  CD:
+    runs-on: ubuntu-latest
+    needs: CI
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+
+      - name: Using Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: 18
+
       - name: Set up keys
         uses: kielabokkie/ssh-key-and-known-hosts-action@v1
         with:

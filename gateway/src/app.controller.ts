@@ -2,13 +2,8 @@ import { Controller, Get, Query } from '@nestjs/common';
 
 @Controller()
 export class AppController {
-  @Get('test')
-  getTest(): string {
-    return 'Hello World!';
-  }
-
   @Get('redirect-register')
-  getHello(@Query('id') id: string): string {
+  redirectRegister(@Query('id') id: string): string {
     return `
         <!DOCTYPE html>
         <html lang="en">

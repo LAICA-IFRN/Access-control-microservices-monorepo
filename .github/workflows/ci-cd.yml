@@ -19,7 +19,7 @@ jobs:
       - name: Using Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 18
+          node-version: 20.x
 
       - name: Install dependencies, run tests and build Access service
         run: cd access && npm install && npm run build
@@ -52,7 +52,7 @@ jobs:
       - name: Using Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: 18
+          node-version: 20.x
 
       - name: Set up keys
         uses: kielabokkie/ssh-key-and-known-hosts-action@v1

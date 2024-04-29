@@ -10,7 +10,13 @@ backup-db:
 git-pull: 
 	git stash && git pull
 
-build:
+restore-db:
+	cp ../backup/test/audit/dev.db audit/prisma && cd audit/prisma && npx prisma generate
+	cp ../backup/test/devices/dev.db devices/prisma && cd devices/prisma && npx prisma generate
+	cp ../backup/test/environments/dev.db environments/prisma && cd environments/prisma && npx prisma generate
+	cp ../backup/test/users/dev.db users/prisma && cd users/prisma && npx prisma generate
+
+build-all-services:
 	cd audit && npm install && npm run build 
 	cd devices && npm install && npm run build
 	cd environments && npm install && npm run build
@@ -19,17 +25,10 @@ build:
 	cd access && npm install && npm run build
 	cd gateway && npm install && npm run build
 
-
-restore-db:
-	cp ../backup/test/audit/dev.db audit/prisma
-	cp ../backup/test/devices/dev.db devices/prisma
-	cp ../backup/test/environments/dev.db environments/prisma
-	cp ../backup/test/users/dev.db users/prisma
-
 start-all-processes:
 	pm2 start all
 
-deploy: stop-all-processes backup-db git-pull build restore-db start-all-processes
+deploy: stop-all-processes backup-db git-pull restore-db build-all-services start-all-processes
 
 cd:
 	ssh hilquias@laica.ifrn.edu.br 'cd /home/hilquias/deploy/Access-control-microservices-monorepo && make deploy'

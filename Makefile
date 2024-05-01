@@ -21,7 +21,7 @@ restore-db:
 	cp ../backup/environments/dev.db environments/prisma && cd environments/prisma && npx prisma generate
 	cp ../backup/users/dev.db users/prisma && cd users/prisma && npx prisma generate
 
-start-all-services:
+start-all-processes:
 	echo "Building all services"
 	cd audit && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js && pm2 save 
 	cd devices && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js && pm2 save

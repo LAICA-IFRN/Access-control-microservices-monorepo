@@ -22,10 +22,10 @@ restore-db:
 
 start-all-services:
 	echo "Building all services"
-	cd audit && npm install && npm run build && pm2 start ecosystem.config.js 
-	cd devices && npm install && npm run build && pm2 start ecosystem.config.js
-	cd environments && npm install && npm run build && pm2 start ecosystem.config.js
-	cd users && npm install && npm run build && pm2 start ecosystem.config.js
+	cd audit && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js 
+	cd devices && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js
+	cd environments && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js
+	cd users && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js
 	cd tokenization && npm install && npm run build && pm2 start ecosystem.config.js
 	cd access && npm install && npm run build && pm2 start ecosystem.config.js
 	cd gateway && npm install && npm run build && pm2 start ecosystem.config.js

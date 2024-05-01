@@ -1,6 +1,7 @@
 delete-all-processes:
 	echo "Deleting all processes"
 	pm2 del all
+	pm2 save
 
 backup-db:
 	echo "Backing up databases"
@@ -22,13 +23,13 @@ restore-db:
 
 start-all-services:
 	echo "Building all services"
-	cd audit && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js 
-	cd devices && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js
-	cd environments && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js
-	cd users && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js
-	cd tokenization && npm install && npm run build && pm2 start ecosystem.config.js
-	cd access && npm install && npm run build && pm2 start ecosystem.config.js
-	cd gateway && npm install && npm run build && pm2 start ecosystem.config.js
+	cd audit && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js && pm2 save 
+	cd devices && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js && pm2 save
+	cd environments && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js && pm2 save
+	cd users && npm install && npx prisma generate && npm run build && pm2 start ecosystem.config.js && pm2 save
+	cd tokenization && npm install && npm run build && pm2 start ecosystem.config.js && pm2 save
+	cd access && npm install && npm run build && pm2 start ecosystem.config.js && pm2 save
+	cd gateway && npm install && npm run build && pm2 start ecosystem.config.js && pm2 save
 
 deploy: delete-all-processes backup-db git-pull restore-db start-all-processes
 

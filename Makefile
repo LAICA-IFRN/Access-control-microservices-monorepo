@@ -4,10 +4,10 @@ stop-all-processes:
 
 backup-db:
 	echo "Backing up databases"
-	cp audit/prisma/dev.db ../backup/audit/dev.db
-	cp devices/prisma/dev.db ../backup/devices/dev.db
-	cp environments/prisma/dev.db ../backup/environments/dev.db
-	cp users/prisma/dev.db ../backup/users/dev.db
+	cp audit/prisma/dev.db ../backup/audit/
+	cp devices/prisma/dev.db ../backup/devices/
+	cp environments/prisma/dev.db ../backup/environments/
+	cp users/prisma/dev.db ../backup/users/
 
 git-pull: 
 	echo "Pulling from git"

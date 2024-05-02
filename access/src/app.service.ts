@@ -154,13 +154,13 @@ export class AppService {
     let userAccessData: any;
 
     if (userRoles.includes(Roles.FREQUENTER)) {
-      userAccessData = await this.searchFrequenterAccess(userData, environmentId);
+      userAccessData = await this.searchFrequenterAccess(userData.userId, environmentId);
       this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
       return { access: true };
     }
 
     if (userRoles.includes(Roles.ENVIRONMENT_MANAGER)) {
-      userAccessData = await this.searchEnvironmentManagerAccess(userData, environmentId);
+      userAccessData = await this.searchEnvironmentManagerAccess(userData.userId, environmentId);
       this.sendLogWhenFacialRecognitionSucceeds(userData, userAccessData, accessDto);
       return { access: true };
     }
@@ -169,8 +169,6 @@ export class AppService {
   }
 
   async accessByMobileDeviceTEMP(accessDto: AccessByMobileDeviceDto) {
-    console.log('accessDto', accessDto);
-    
     const esp = await lastValueFrom(
       this.httpService.get(`${this.tempGetEsp}/${accessDto.environmentId}`)
     )
@@ -179,9 +177,6 @@ export class AppService {
       this.errorLogger.error('Falha ao buscar esp', error);
       throw new HttpException(error.response.data.message, error.response.data.statusCode);
     })
-
-    console.log('esp', esp);
-    
 
     const mobile = await this.getMobileData(accessDto.mobileId);
 
@@ -217,11 +212,7 @@ export class AppService {
     }
 
     if (roles.includes('FREQUENTER')) {
-      console.log('FREQUENTER');
-      
       const data = await this.searchFrequenterAccess(accessDto.userId, accessDto.environmentId);
-      console.log('data', data);
-
       if (data) {
         userData = data;
       }
@@ -233,9 +224,7 @@ export class AppService {
     }
     
     if (roles.includes('ENVIRONMENT_MANAGER')) {
-      console.log('ENVIRONMENT_MANAGER');
       const data = await this.searchEnvironmentManagerAccess(accessDto.userId, accessDto.environmentId);
-      console.log('data', data);
 
       if (data) {
         userData = data;
@@ -489,11 +478,11 @@ export class AppService {
     return data;
   }
 
-  async searchFrequenterAccess(userData: string, environmentId: string) {
+  async searchFrequenterAccess(userId: string, environmentId: string) {
     const data: any = await lastValueFrom(
       this.httpService.get(this.searchFrequenterAccessUrl, {
         data: {
-          userId: userData,
+          userId: userId,
           environmentId
         }
       })

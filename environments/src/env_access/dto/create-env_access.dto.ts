@@ -1,4 +1,4 @@
-import { ArrayNotEmpty, IsArray, IsIn, IsOptional, IsString, IsUUID } from "class-validator";
+import { ArrayNotEmpty, IsArray, IsBoolean, IsIn, IsOptional, IsString, IsUUID } from "class-validator";
 import { IsDateFormat } from "../decorators/is-date-format.decorator";
 import { ApiProperty } from "@nestjs/swagger";
 import { AccessDto } from "./access.dto";
@@ -6,11 +6,13 @@ import { AccessDto } from "./access.dto";
 export class CreateEnvAccessDto {
   @ApiProperty()
   @IsDateFormat()
-  startPeriod: string;
+  @IsOptional()
+  startPeriod?: string;
 
   @ApiProperty()
   @IsDateFormat()
-  endPeriod: string;
+  @IsOptional()
+  endPeriod?: string;
 
   @ApiProperty()
   @IsUUID()
@@ -26,12 +28,16 @@ export class CreateEnvAccessDto {
 
   @ApiProperty()
   @IsUUID()
-  @IsOptional()
   requestUserId: string;
 
   @ApiProperty()
+  @IsBoolean()
+  @IsOptional()
+  permanent?: boolean;
+
+  @ApiProperty()
   @IsArray()
-  @ArrayNotEmpty()
-  access: AccessDto[];
+  @IsOptional()
+  access?: AccessDto[];
 }
 

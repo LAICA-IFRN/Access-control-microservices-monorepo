@@ -8,6 +8,9 @@ export class EnvAccessEntity implements environment_user {
   id: string;
 
   @ApiProperty()
+  permanent_access: boolean;
+
+  @ApiProperty()
   start_period: Date;
 
   @ApiProperty()

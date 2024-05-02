@@ -17,7 +17,7 @@ async function bootstrap() {
     .setVersion('1.3')
     .build();
 
-  //app.setGlobalPrefix('access-control/gateway');
+  app.setGlobalPrefix('access-control/gateway');
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
   app.setGlobalPrefix('');

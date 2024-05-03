@@ -411,8 +411,11 @@ export class UserService {
       }
     });
 
+    console.log(user);
+
+
     if (!user) {
-      this.auditLogService.create(AuditConstants.validateToTokenNotFound({ document: user.document, statusCode: 404 }))
+      this.auditLogService.create(AuditConstants.validateToTokenNotFound({ document: validateToToken.document, statusCode: 404 }))
       throw new HttpException('User not found', HttpStatus.NOT_FOUND);
     }
 

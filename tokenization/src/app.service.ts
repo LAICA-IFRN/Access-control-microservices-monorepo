@@ -234,8 +234,76 @@ export class AppService {
     )
       .then((response) => response.data)
       .catch((error) => {
-        this.errorLogger.error('Falha ao validar usuário', error)
-        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+        console.log(error);
+
+        if (error.status === 503) {
+          lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Autenticação',
+              type: 'Error',
+              message: 'Falha ao validar usuário, serviço de usuários indisponível',
+              meta: {
+                document: tokenizeMobileDto.document,
+              }
+            })
+          )
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error)
+            })
+
+          throw new HttpException('Users service unavailable', HttpStatus.SERVICE_UNAVAILABLE)
+        } else if (error.status === 404) {
+          lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Autenticação',
+              type: 'Error',
+              message: 'Falha ao validar usuário, usuário não encontrado',
+              meta: {
+                document: tokenizeMobileDto.document,
+              }
+            })
+          )
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error)
+            })
+
+          throw new HttpException('User not found', HttpStatus.NOT_FOUND)
+        } else if (error.status === 401) {
+          lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Autenticação',
+              type: 'Error',
+              message: 'Falha ao validar usuário, senha incorreta',
+              meta: {
+                document: tokenizeMobileDto.document,
+              }
+            })
+          )
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error)
+            })
+
+          throw new HttpException('Invalid password', HttpStatus.UNAUTHORIZED)
+        } else {
+          lastValueFrom(
+            this.httpService.post(this.createAuditLogUrl, {
+              topic: 'Autenticação',
+              type: 'Error',
+              message: 'Falha ao validar usuário, erro inesperado verifique os logs de erro no serviço',
+              meta: {
+                document: tokenizeMobileDto.document,
+              }
+            })
+          )
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error)
+            })
+
+          throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+        }
       })
 
     const token = jwt.sign(

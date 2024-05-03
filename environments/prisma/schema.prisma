@@ -52,8 +52,9 @@ model environment_manager {
 
 model environment_user {
   id                              String                            @id @default(uuid())
-  start_period                    DateTime                          @default(now())
-  end_period                      DateTime
+  permanent_access                Boolean                           @default(false)
+  start_period                    DateTime?
+  end_period                      DateTime?
   active                          Boolean                           @default(true)
   user_id                         String
   user_name                       String?

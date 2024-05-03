@@ -8,6 +8,7 @@ import { isUUID } from 'class-validator';
 import { EnvAccessStatusDto } from './dto/status-env_access.dto';
 import { environment_user_access_control, environment_user } from '@prisma/client';
 import { AuditLogService } from 'src/logs/audit-log.service';
+import { AccessDto } from './dto/access.dto';
 
 @Injectable()
 export class EnvAccessService {
@@ -134,6 +135,10 @@ export class EnvAccessService {
         'User is an active manager in this environment', 
         HttpStatus.FORBIDDEN
       );
+    }
+
+    if (createEnvAccessDto.permanent) {
+      return await this.createPermanentAccess(createEnvAccessDto);
     }
 
     const startPeriod = new Date(createEnvAccessDto.startPeriod);
@@ -465,6 +470,110 @@ export class EnvAccessService {
     });
   }
 
+  async createPermanentAccess(createEnvAccessDto: CreateEnvAccessDto) {
+    let envAccess: environment_user;
+    try {
+      envAccess = await this.prisma.environment_user.create({
+        data: {
+          permanent_access: true,
+          user_name: createEnvAccessDto.userName,
+          user_id: createEnvAccessDto.userId,
+          environment_id: createEnvAccessDto.environmentId,
+          created_by: createEnvAccessDto.requestUserId,
+        },
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente, conflito com registro existente',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 400,
+            },
+          })
+        )
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+        throw new HttpException(
+          'Environment access already exists',
+          HttpStatus.BAD_REQUEST
+        );
+      } else if (error.code === 'P2025') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente, registro não encontrado',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 404,
+            },
+          })
+        )
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+        throw new HttpException(
+          'Environment not found',
+          HttpStatus.NOT_FOUND
+        );
+      } else if (error.code === 'P2003') {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente, chave duplicada',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 400,
+            },
+          })
+        )
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+        throw new HttpException(
+          'Environment access already exists',
+          HttpStatus.CONFLICT
+        );
+      } else {
+        await lastValueFrom(
+          this.httpService.post(this.createAuditLogUrl, {
+            topic: 'Acesso de ambiente',
+            type: 'Error',
+            message: 'Falha ao criar acesso à ambiente, erro interno verificar logs de erro do serviço',
+            meta: {
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId],
+              statusCode: 500,
+            },
+          })
+        )
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
+        this.errorLogger.error('Falha do sistema (500)', error);
+
+        throw new HttpException(
+          "Can't create environment access",
+          HttpStatus.FORBIDDEN
+        );
+      }
+    }
+    return envAccess;
+  }
+
   async findParity(createEnvAccessDto: CreateEnvAccessDto) {
     const startPeriod = new Date(createEnvAccessDto.startPeriod);
     const endPeriod = new Date(createEnvAccessDto.endPeriod);
@@ -791,8 +900,13 @@ export class EnvAccessService {
     }
 
     const response = { access: false, environmentName: environmentUser.environment.name, environmentId: environmentUser.environment_id }
-    const currentDate = new Date();
 
+    if (environmentUser.permanent_access) {
+      response.access = true;
+      return response;
+    }
+
+    const currentDate = new Date();
     const startPeriod = new Date(environmentUser.start_period);
     startPeriod.setHours(startPeriod.getHours() - 3);
     const endPeriod = new Date(environmentUser.end_period);
@@ -816,8 +930,6 @@ export class EnvAccessService {
         
         if (startTime <= currentTime && endTime >= currentTime) {
           response.access = true;
-          console.log('Acesso permitido');
-          
           break;
         }
       }

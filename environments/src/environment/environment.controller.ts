@@ -46,6 +46,11 @@ export class EnvironmentController {
   //   return this.environmentService.getQRCode(id);
   // }
 
+  @Get('phrases')
+  getEnvironmentPhrase(@Param('environmentId') environmentId: string) {
+    return this.environmentService.getEnvironmentPhrase(environmentId);
+  }
+
   @Get('remote-access')
   findRemoteAccess(@Query('esp8266Id') esp8266Id: number) {
     return this.environmentService.findRemoteAccess(esp8266Id);

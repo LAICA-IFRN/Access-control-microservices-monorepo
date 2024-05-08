@@ -9,8 +9,8 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
-// import { Cron, CronExpression } from '@nestjs/schedule';
-//import { randomUUID } from 'crypto';
+import { Cron, CronExpression } from '@nestjs/schedule';
+import { randomUUID } from 'crypto';
 import { FindAllDto } from './dto/find-all.dto';
 import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
 import { environment_temporary_access, environment_user_access_control } from '@prisma/client';
@@ -18,6 +18,7 @@ import { AuditLogService } from 'src/logs/audit-log.service';
 import { AuditLogConstants } from 'src/providers/audit-log/audit-log.constants';
 import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
 import { AuditConstants } from 'src/logs/audit-contants';
+import { EnvironmentPhrase } from 'src/interfaces/environment-phrase';
 
 @Injectable()
 export class EnvironmentService {
@@ -59,6 +60,29 @@ export class EnvironmentService {
   //   const value = await this.cacheService.get(key);
   //   return value;
   // } 
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async generateEnvironmentsPhrases() {
+    const environmentsPhraseConfig = await this.prisma.environment_microcontroller_config.findMany({
+      select: {
+        phrase: true,
+        backup_phrase: true,
+        environment_id: true
+      }
+    });
+
+    environmentsPhraseConfig.forEach(environment => {
+      const key = environment.environment_id;
+      this.cacheService.set(key, { phrase: randomUUID(), backup: environment.phrase });
+    });
+  }
+
+  async getEnvironmentPhrase(environmentId: string) {
+    const key = environmentId;
+    const value: EnvironmentPhrase = await this.cacheService.get(key);
+    await this.cacheService.set(key, { phrase: randomUUID(), backup: value.phrase });
+    return value;
+  }
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
     const user: any = await lastValueFrom(

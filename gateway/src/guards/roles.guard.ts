@@ -19,7 +19,7 @@ export class RolesGuard implements CanActivate {
     const roles = this.reflector.get<string[]>('roles', context.getHandler());
     const authorizationType = this.reflector.get<string>('authorization-type', context.getHandler());
 
-    if (!roles) {
+    if (!roles && authorizationType === AuthorizationTypeConstants.MICROCONTROLLER) {
       return true;
     }
 
@@ -87,7 +87,18 @@ export class RolesGuard implements CanActivate {
         );
       });
     }
-    request['userId'] = response.userId
+
+    if (authorizationType === AuthorizationTypeConstants.MICROCONTROLLER) {
+      // TODO: Implementar verificação de autorização para microcontroladores
+    }
+
+    if (response.userId) {
+      request['userId'] = response.userId
+    }
+
+    if (response.mac) {
+      request['mac'] = response.mac;
+    }
 
     return response.isAuthorized;
   }

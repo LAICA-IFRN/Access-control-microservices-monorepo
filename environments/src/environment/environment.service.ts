@@ -80,7 +80,7 @@ export class EnvironmentService {
   async getEnvironmentPhrase(environmentId: string) {
     const key = environmentId;
     const value: EnvironmentPhrase = await this.cacheService.get(key);
-    await this.cacheService.set(key, { phrase: randomUUID(), backup: value.phrase });
+    // await this.cacheService.set(key, { phrase: randomUUID(), backup: value.phrase });
     return value;
   }
 

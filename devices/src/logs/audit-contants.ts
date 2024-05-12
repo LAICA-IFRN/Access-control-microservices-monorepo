@@ -2,12 +2,12 @@ import { AuditLog } from "./audit-log.service";
 
 export class AuditConstants {
   public static coldStartMicrocontrollerSuccess(metaData: any): AuditLog {
-    const date = metaData.date;
-    const dateFormatted = `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()} ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
+    const coldStart = metaData.coldStart;
+    const dateFormatted = coldStart.created_at.toLocaleDateString() + ' ' + coldStart.created_at.toLocaleTimeString();
     return {
       topic: "Dispositivos",
       type: "Info",
-      message: `Microcontrolador ${metaData.mac} reiniciado em ${dateFormatted}.`,
+      message: `Microcontrolador de mac ${metaData.mac} iniciou em ${dateFormatted}`,
       meta: metaData
     };
   }

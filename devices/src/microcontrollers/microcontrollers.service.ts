@@ -106,13 +106,19 @@ export class MicrocontrollersService {;
       throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)
     }
 
-    const key = `cold-start-${id.toString()}`;
-    const date = new Date();
-    await this.cacheService.set(key, date);
+    try {
+      const coldStart = await this.prismaService.microcontroller_cold_start.create({
+        data: {
+          microcontroller_id: id
+        }
+      });
 
-    this.auditLogService.create(AuditConstants.coldStartMicrocontrollerSuccess({ id, date, mac: microcontroller.mac }));
-
-    return date;
+      this.auditLogService.create(AuditConstants.coldStartMicrocontrollerSuccess({ id, coldStart, mac: microcontroller.mac }));
+      return coldStart;
+    } catch (error) {
+      this.errorLogger.error('Erro inesperado ao criar cold start', error);
+      throw new HttpException('Erro inesperado ao criar cold start', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
   }
 
   async getColdStartMicrocontroller (id: number) {

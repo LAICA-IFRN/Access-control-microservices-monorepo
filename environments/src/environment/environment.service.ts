@@ -19,6 +19,7 @@ import { AuditLogConstants } from 'src/providers/audit-log/audit-log.constants';
 import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
 import { AuditConstants } from 'src/logs/audit-contants';
 import { EnvironmentPhrase } from 'src/interfaces/environment-phrase';
+import { EnvironmentMicrocontrollerConfigDto } from './dto/create-microcontroller-config.dto';
 
 @Injectable()
 export class EnvironmentService {
@@ -61,27 +62,80 @@ export class EnvironmentService {
   //   return value;
   // } 
 
-  @Cron(CronExpression.EVERY_HOUR)
-  async generateEnvironmentsPhrases() {
-    const environmentsPhraseConfig = await this.prisma.environment_microcontroller_config.findMany({
-      select: {
-        phrase: true,
-        backup_phrase: true,
-        environment_id: true
-      }
-    });
+  // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  // async generateEnvironmentsPhrases() {
+  //   const environmentsPhraseConfig = await this.prisma.environment_microcontroller_config.findMany({
+  //     select: {
+  //       phrase: true,
+  //       environment_id: true
+  //     }
+  //   });
 
-    environmentsPhraseConfig.forEach(environment => {
-      const key = environment.environment_id;
-      this.cacheService.set(key, { phrase: randomUUID(), backup: environment.phrase });
-    });
+  //   for (const environmentPhrase of environmentsPhraseConfig) {
+  //     await this.prisma.environment_microcontroller_config.update({
+  //       where: {
+  //         environment_id: environmentPhrase.environment_id
+  //       },
+  //       data: {
+  //         phrase: randomUUID()
+  //       }
+  //     });
+  //   }
+  // }
+
+  async createEnvironmentMicrocontrollerConfig(environmentMicrocontrollerConfigDto: EnvironmentMicrocontrollerConfigDto) {
+    try {
+      const environmentMicrocontrollerConfig = await this.prisma.environment_microcontroller_config.create({
+        data: {
+          environment_id: environmentMicrocontrollerConfigDto.environmentId,
+          phrase: randomUUID()
+        }
+      });
+      return environmentMicrocontrollerConfig;
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new HttpException(
+          `Already exists: ${error.meta.target}`,
+          HttpStatus.CONFLICT
+        );
+      } else if (error.code === 'P2025') {
+        throw new HttpException(
+          `Environment not found: ${error.meta.target}`,
+          HttpStatus.NOT_FOUND
+        );
+      } else {
+        this.errorLogger.error('Falha ao criar configuração de microcontrolador para ambiente', error);
+        throw new HttpException('Can not create environment microcontroller config', HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    }
   }
 
   async getEnvironmentPhrase(environmentId: string) {
-    const key = environmentId;
-    const value: EnvironmentPhrase = await this.cacheService.get(key);
-    // await this.cacheService.set(key, { phrase: randomUUID(), backup: value.phrase });
-    return value;
+    const environmentPhrase = await this.prisma.environment_microcontroller_config.findFirst({
+      where: {
+        environment_id: environmentId
+      }
+    });
+
+    if (!environmentPhrase) {
+      throw new HttpException('Environment not found', HttpStatus.NOT_FOUND);
+    }
+
+    return environmentPhrase;
+  }
+
+  async verifyEnvironmentPhrase(phrase: string) {
+    const environmentPhrase = await this.prisma.environment_microcontroller_config.findFirst({
+      where: {
+        phrase
+      }
+    });
+
+    if (!environmentPhrase) {
+      throw new HttpException('Invalid phrase', HttpStatus.UNAUTHORIZED);
+    }
+
+    return environmentPhrase; 
   }
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {

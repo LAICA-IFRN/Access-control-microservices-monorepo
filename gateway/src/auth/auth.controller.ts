@@ -23,6 +23,11 @@ export class AuthController {
     return this.authService.loginMobile(loginMobileDto);
   }
 
+  @Post('microcontroller')
+  loginMicrocontroller(@Body() body: any) {
+    return this.authService.loginMicrocontroller(body);
+  }
+
   @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER, RolesConstants.FREQUENTER)
   @AuthorizationType(AuthorizationTypeConstants.MOBILE)
   @UseGuards(RolesGuard)

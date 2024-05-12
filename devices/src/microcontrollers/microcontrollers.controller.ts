@@ -31,7 +31,7 @@ export class MicrocontrollersController {
     return this.microcontrollersService.setMicrocontrollerInfo(+id, +healthCode, doorStatus);
   }
 
-  @Get('consult')
+  //@Get('consult')
 
 
   @Post('cold-start')

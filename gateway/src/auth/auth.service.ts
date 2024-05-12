@@ -9,6 +9,7 @@ export class AuthService {
   private readonly tokenizeUserUrl = process.env.USER_TOKENIZE_URL;
   private readonly tokenizeMobileUrl = process.env.MOBILE_TOKENIZE_URL;
   private readonly tokenizeAccessUrl = process.env.ACCESS_TOKENIZE_URL;
+  private readonly tokenizeMicrocontrollerUrl = process.env.MICROCONTROLLER_TOKENIZE_URL;
   private readonly verifyUserUrl = process.env.VERIFY_USER_TOKEN_URL;
   private readonly verifyMobileUrl = process.env.VERIFY_MOBILE_TOKEN_URL;
   private readonly verifyAccessUrl = process.env.VERIFY_ACCESS_TOKEN_URL;
@@ -36,6 +37,22 @@ export class AuthService {
   async loginMobile(loginMobileDto: LoginMobileDto) {
     const response = await lastValueFrom(
       this.httpService.post(this.tokenizeMobileUrl, loginMobileDto).pipe(
+        catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
+          }
+
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    ).then((response) => response.data)
+
+    return response;
+  }
+
+  async loginMicrocontroller(body: any) {
+    const response = await lastValueFrom(
+      this.httpService.post(this.tokenizeMicrocontrollerUrl, body).pipe(
         catchError((error) => {
           if (error.code === 'ECONNREFUSED') {
             throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);

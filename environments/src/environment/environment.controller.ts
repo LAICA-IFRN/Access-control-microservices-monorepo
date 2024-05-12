@@ -9,6 +9,7 @@ import { ConflictResponseEntity, CreateBadRequestResponseEntity, CreateForbidden
 import { FindAllDto } from './dto/find-all.dto';
 import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
 import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
+import { EnvironmentMicrocontrollerConfigDto } from './dto/create-microcontroller-config.dto';
 
 @ApiTags('Env')
 @Controller('env')
@@ -49,6 +50,11 @@ export class EnvironmentController {
   @Get('phrases')
   getEnvironmentPhrase(@Param('environmentId') environmentId: string) {
     return this.environmentService.getEnvironmentPhrase(environmentId);
+  }
+
+  @Post('microcontroller-config')
+  createEnvironmentMicrocontrollerConfig(@Body() environmentMicrocontrollerConfig: EnvironmentMicrocontrollerConfigDto) {
+    return this.environmentService.createEnvironmentMicrocontrollerConfig(environmentMicrocontrollerConfig);
   }
 
   @Get('remote-access')

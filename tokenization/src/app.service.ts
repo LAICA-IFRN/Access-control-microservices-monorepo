@@ -7,13 +7,17 @@ import { TokenizeMobileDto } from './dto/tokenize-mobile.dto';
 import { AuthorizationUserDto } from './dto/authorization-user.dto';
 import { AuthorizationMobileDto } from './dto/authorization-mobile.dto';
 import { TokenizeAccessDto } from './dto/tokenize-access.dto';
+import { TokenizeMicrocontrollerDto } from './dto/tokenize-microcontroller.dto';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class AppService {
   private readonly jwtUserSecret = process.env.JWT_USER_SECRET
   private readonly jwtMobileSecret = process.env.JWT_MOBILE_SECRET
+  private readonly jwtMicrocontrollerSecret = process.env.JWT_MICROCONTROLLER_SECRET
   private readonly jwtUserExpirationTime = process.env.JWT_USER_EXPIRATION_TIME
   private readonly jwtMobileExpirationTime = process.env.JWT_MOBILE_EXPIRATION_TIME
+  private readonly jwtMicrocontrollerExpirationTime = process.env.JWT_MICROCONTROLLER_EXPIRATION_TIME
   private readonly jwtAccessSecret = process.env.JWT_ACCESS_SECRET
   private readonly createAuditLogUrl = process.env.CREATE_AUDIT_LOG_URL
   private readonly validateUserUrl = process.env.VALIDATE_USER_URL
@@ -26,6 +30,15 @@ export class AppService {
   constructor(
     private readonly httpService: HttpService,
   ) { }
+
+  async decryptSecretHash(secretHash: string) {
+    // decrypt secretHash  using crypto with algorithm aes-256-cbc
+    const algorithm = 'aes-256-cbc';
+    const key = process.env.SECRET_HASH_KEY;
+    const iv = process.env.SECRET_HASH_IV;
+    const decipher = crypto.createDecipheriv(algorithm, key, iv);
+    let decrypted = decipher.update(secretHash, 'hex', 'utf8');
+  }
 
   async tokenizeUser(tokenizeUserDto: TokenizeUserDto) {
     const data = await lastValueFrom(
@@ -526,6 +539,30 @@ export class AppService {
   //   return data.roles;
   // }
 
+  async tokenizeMicrocontroller(tokenizeMicrocontrollerDto: TokenizeMicrocontrollerDto) {
+
+    // this.createLogWhenMicrocontrollerAuthenticates(mac);
+
+    // return {
+    //   accessToken: token
+    // }
+  }
+
+  async createLogWhenMicrocontrollerAuthenticates(mac: string) {
+    await lastValueFrom(
+      this.httpService.post(this.createAuditLogUrl, {
+        topic: 'Autenticação',
+        type: 'Info',
+        message: `Microcontrolador de ${mac} autenticou-se`,
+        meta: {
+          mac: mac,
+        }
+      })
+    ).catch((error) => {
+      this.errorLogger.error('Falha ao enviar log', error)
+    })
+  }
+
   async getUserData(userId: string) {
     const getUserDataUrl = `${process.env.USERS_SERVICE_URL}/${userId}`;
     const data = await lastValueFrom(
@@ -537,6 +574,19 @@ export class AppService {
       )
     ).then((response) => response.data)
 
+    return data;
+  }
+
+  async getEnvironmentPhraseData(environmentId: string) {
+    const getEnvironmentPhraseDataUrl = `${this.environmentServiceUrl}/phrases/${environmentId}`;
+    const data = await lastValueFrom(
+      this.httpService.get(getEnvironmentPhraseDataUrl).pipe(
+        catchError((error) => {
+          this.errorLogger.error('Falha ao buscar frase do ambiente', error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
     return data;
   }
 
@@ -655,13 +705,7 @@ export class AppService {
     }
   }
 
-  // async verifyAccessToken(token: string) {
-  //   try {
-  //     jwt.verify(token, this.jwtAccessSecret);
-  //     return { isValid: true }
-  //   } catch (error) {
-  //     this.errorLogger.error('Falha ao validar token', error)
-  //     return { isValid: false }
-  //   }
-  // }
+  async verifyMicrocontrollerToken(token: string, environmentId: string) {
+    const environmentPhraseData = await this.getEnvironmentPhraseData(environmentId);
+  }
 }

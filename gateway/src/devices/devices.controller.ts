@@ -101,11 +101,11 @@ export class DevicesController {
     return this.devicesService.searchRemoteAccess(id);
   }
 
-  @Get('microcontrollers/consult')
-  consultMicrocontroller(@Req() request: Request) {
-    const mac = request['mac']
-    return this.devicesService.consultMicrocontroller(mac);
-  }
+  // @Get('microcontrollers/consult')
+  // consultMicrocontroller(@Req() request: Request) {
+  //   const mac = request['mac']
+  //   return this.devicesService.consultMicrocontroller(mac);
+  // }
 
   @Get('microcontrollers/keep-alive')
   getMicrocontrollerInfo(@Query('id') id: number) {

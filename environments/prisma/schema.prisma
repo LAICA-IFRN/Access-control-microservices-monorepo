@@ -28,7 +28,6 @@ model environment {
 model environment_microcontroller_config {
   id             Int         @id @default(autoincrement())
   phrase         String
-  backup_phrase  String?     @default("first")
   environment    environment @relation(fields: [environment_id], references: [id])
   environment_id String      @unique
 }

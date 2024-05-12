@@ -5,6 +5,7 @@ import { AuthorizationUserDto } from './dto/authorization-user.dto';
 import { AuthorizationMobileDto } from './dto/authorization-mobile.dto';
 import { TokenizeMobileDto } from './dto/tokenize-mobile.dto';
 import { TokenizeAccessDto } from './dto/tokenize-access.dto';
+import { TokenizeMicrocontrollerDto } from './dto/tokenize-microcontroller.dto';
 
 @Controller()
 export class AppController {
@@ -18,6 +19,11 @@ export class AppController {
   @Post('tokenize/mobile')
   tokenizeMobile(@Body() tokenizeMobileDto: TokenizeMobileDto) {
     return this.appService.tokenizeMobile(tokenizeMobileDto);
+  }
+
+  @Post('tokenize/microcontroller')
+  tokenizeMicrocontroller(@Body() tokenizeMicrocontrollerDto: TokenizeMicrocontrollerDto) {
+    return this.appService.tokenizeMicrocontroller(tokenizeMicrocontrollerDto);
   }
 
   // @Post('tokenize/access')

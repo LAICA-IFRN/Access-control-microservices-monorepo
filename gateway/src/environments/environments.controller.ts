@@ -79,6 +79,14 @@ export class EnvironmentsController {
   @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   @AuthorizationType(AuthorizationTypeConstants.WEB)
   @UseGuards(RolesGuard)
+  @Get('microcontroller-config')
+  environmentMicrocontrollerConfig(@Query('environmentId') environmentId: string) {
+    return this.environmentsService.environmentMicrocontrollerConfig(environmentId);
+  }
+
+  @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
+  @AuthorizationType(AuthorizationTypeConstants.WEB)
+  @UseGuards(RolesGuard)
   @Patch('environment/:id')
   update(@Param('id') id: string, @Body() updateEnvironmentDto: any, @Req() request: Request) {
     const userId = request['userId'];

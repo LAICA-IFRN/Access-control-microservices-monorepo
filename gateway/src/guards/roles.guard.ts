@@ -57,6 +57,8 @@ export class RolesGuard implements CanActivate {
           error.response.data.statusCode,
         );
       });
+      console.log('response', response);
+
     }
     
     if (

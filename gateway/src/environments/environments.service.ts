@@ -57,6 +57,18 @@ export class EnvironmentsService {
     return data;
   }
 
+  async environmentMicrocontrollerConfig(environmentId: string) {
+    const { data } = await lastValueFrom(
+      this.httpService.get(this.envRoutes.environmentMicrocontrollerConfig(environmentId)).pipe(
+        catchError((error) => {
+          throw new HttpException(error.response.data.message, error.response.data.statusCode);
+        })
+      )
+    );
+
+    return data;
+  }
+
   async findRemoteAccess(esp8266Id: number) {
     const { data } = await lastValueFrom(
       this.httpService.get(this.envRoutes.findRemoteAccess(esp8266Id)).pipe(

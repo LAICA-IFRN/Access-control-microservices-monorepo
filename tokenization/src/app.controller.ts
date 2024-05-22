@@ -46,6 +46,11 @@ export class AppController {
     return this.appService.authorizeMobile(authorizationMobileDto)
   }
 
+  @Get('authorize/microcontroller')
+  authorizeMicrocontroller(@Query('token') token: string) {
+    return this.appService.authorizeMicrocontroller(token)
+  }
+
   @Get('verify/web')
   verifyUserToken(@Query('token') token: string) {
     return this.appService.verifyUserToken(token)
@@ -54,6 +59,11 @@ export class AppController {
   @Get('verify/mobile')
   verifyMobileToken(@Query('token') token: string) {
     return this.appService.verifyMobileToken(token)
+  }
+
+  @Get('verify/microcontroller')
+  verifyMicrocontroller(@Query('secret') secret: string) {
+    return this.appService.verifyMicrocontroller(secret)
   }
 
   // @Get('verify/access')

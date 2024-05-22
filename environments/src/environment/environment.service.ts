@@ -9,8 +9,8 @@ import { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { AccessLogService } from 'src/logs/access-log.service';
 import { AccessConstants } from 'src/logs/access-constants';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { randomUUID } from 'crypto';
+// import { Cron, CronExpression } from '@nestjs/schedule';
+// import { randomUUID } from 'crypto';
 import { FindAllDto } from './dto/find-all.dto';
 import { CreateTemporaryAccessDto } from './dto/create-temporary-access.dto';
 import { environment_temporary_access, environment_user_access_control } from '@prisma/client';
@@ -18,8 +18,8 @@ import { AuditLogService } from 'src/logs/audit-log.service';
 import { AuditLogConstants } from 'src/providers/audit-log/audit-log.constants';
 import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
 import { AuditConstants } from 'src/logs/audit-contants';
-import { EnvironmentPhrase } from 'src/interfaces/environment-phrase';
-import { EnvironmentMicrocontrollerConfigDto } from './dto/create-microcontroller-config.dto';
+// import { EnvironmentPhrase } from 'src/interfaces/environment-phrase';
+// import { EnvironmentMicrocontrollerConfigDto } from './dto/create-microcontroller-config.dto';
 
 @Injectable()
 export class EnvironmentService {
@@ -60,7 +60,7 @@ export class EnvironmentService {
   //   const key = environmentId;
   //   const value = await this.cacheService.get(key);
   //   return value;
-  // } 
+  // }
 
   // @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   // async generateEnvironmentsPhrases() {
@@ -83,60 +83,60 @@ export class EnvironmentService {
   //   }
   // }
 
-  async createEnvironmentMicrocontrollerConfig(environmentMicrocontrollerConfigDto: EnvironmentMicrocontrollerConfigDto) {
-    try {
-      const environmentMicrocontrollerConfig = await this.prisma.environment_microcontroller_config.create({
-        data: {
-          environment_id: environmentMicrocontrollerConfigDto.environmentId,
-          phrase: randomUUID()
-        }
-      });
-      return environmentMicrocontrollerConfig;
-    } catch (error) {
-      if (error.code === 'P2002') {
-        throw new HttpException(
-          `Already exists: ${error.meta.target}`,
-          HttpStatus.CONFLICT
-        );
-      } else if (error.code === 'P2025') {
-        throw new HttpException(
-          `Environment not found: ${error.meta.target}`,
-          HttpStatus.NOT_FOUND
-        );
-      } else {
-        this.errorLogger.error('Falha ao criar configuração de microcontrolador para ambiente', error);
-        throw new HttpException('Can not create environment microcontroller config', HttpStatus.UNPROCESSABLE_ENTITY);
-      }
-    }
-  }
+  // async createEnvironmentMicrocontrollerConfig(environmentMicrocontrollerConfigDto: EnvironmentMicrocontrollerConfigDto) {
+  //   try {
+  //     const environmentMicrocontrollerConfig = await this.prisma.environment_microcontroller_config.create({
+  //       data: {
+  //         environment_id: environmentMicrocontrollerConfigDto.environmentId,
+  //         phrase: randomUUID()
+  //       }
+  //     });
+  //     return environmentMicrocontrollerConfig;
+  //   } catch (error) {
+  //     if (error.code === 'P2002') {
+  //       throw new HttpException(
+  //         `Already exists: ${error.meta.target}`,
+  //         HttpStatus.CONFLICT
+  //       );
+  //     } else if (error.code === 'P2025') {
+  //       throw new HttpException(
+  //         `Environment not found: ${error.meta.target}`,
+  //         HttpStatus.NOT_FOUND
+  //       );
+  //     } else {
+  //       this.errorLogger.error('Falha ao criar configuração de microcontrolador para ambiente', error);
+  //       throw new HttpException('Can not create environment microcontroller config', HttpStatus.UNPROCESSABLE_ENTITY);
+  //     }
+  //   }
+  // }
 
-  async getEnvironmentPhrase(environmentId: string) {
-    const environmentPhrase = await this.prisma.environment_microcontroller_config.findFirst({
-      where: {
-        environment_id: environmentId
-      }
-    });
+  // async getEnvironmentPhrase(environmentId: string) {
+  //   const environmentPhrase = await this.prisma.environment_microcontroller_config.findFirst({
+  //     where: {
+  //       environment_id: environmentId
+  //     }
+  //   });
 
-    if (!environmentPhrase) {
-      throw new HttpException('Environment not found', HttpStatus.NOT_FOUND);
-    }
+  //   if (!environmentPhrase) {
+  //     throw new HttpException('Environment not found', HttpStatus.NOT_FOUND);
+  //   }
 
-    return environmentPhrase;
-  }
+  //   return environmentPhrase;
+  // }
 
-  async verifyEnvironmentPhrase(phrase: string) {
-    const environmentPhrase = await this.prisma.environment_microcontroller_config.findFirst({
-      where: {
-        phrase
-      }
-    });
+  // async verifyEnvironmentPhrase(phrase: string) {
+  //   const environmentPhrase = await this.prisma.environment_microcontroller_config.findFirst({
+  //     where: {
+  //       phrase
+  //     }
+  //   });
 
-    if (!environmentPhrase) {
-      throw new HttpException('Invalid phrase', HttpStatus.UNAUTHORIZED);
-    }
+  //   if (!environmentPhrase) {
+  //     throw new HttpException('Invalid phrase', HttpStatus.UNAUTHORIZED);
+  //   }
 
-    return environmentPhrase; 
-  }
+  //   return environmentPhrase;
+  // }
 
   async create(createEnvironmentDto: CreateEnvironmentDto) {
     const user: any = await lastValueFrom(
@@ -549,6 +549,10 @@ export class EnvironmentService {
       ...tempAccess,
       accesses
     }
+  }
+
+  environmentMicrocontrollerConfig(environmentId: string) {
+    return environmentId + " " + process.env.SECRET_HASH_KEY + " " + process.env.SECRET_HASH_IV
   }
 
   async sendLogWhenTemporaryAccessCreated(

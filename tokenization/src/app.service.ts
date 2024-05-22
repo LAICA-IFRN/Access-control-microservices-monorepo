@@ -32,12 +32,11 @@ export class AppService {
   ) { }
 
   async decryptSecretHash(secretHash: string) {
-    // decrypt secretHash  using crypto with algorithm aes-256-cbc
-    const algorithm = 'aes-256-cbc';
-    const key = process.env.SECRET_HASH_KEY;
-    const iv = process.env.SECRET_HASH_IV;
+    const algorithm = 'aes-128-cbc';
+    const key = Buffer.from(process.env.SECRET_HASH_KEY.split('').map((char) => parseInt(char, 10)));
+    const iv = Buffer.from(process.env.SECRET_HASH_IV.split('').map((char) => parseInt(char, 10)));
     const decipher = crypto.createDecipheriv(algorithm, key, iv);
-    let decrypted = decipher.update(secretHash, 'hex', 'utf8');
+    return decipher.update(secretHash, 'base64', 'utf-8');
   }
 
   async tokenizeUser(tokenizeUserDto: TokenizeUserDto) {
@@ -540,12 +539,28 @@ export class AppService {
   // }
 
   async tokenizeMicrocontroller(tokenizeMicrocontrollerDto: TokenizeMicrocontrollerDto) {
+    let microcontrollerCredentials: string[];
+    try {
+      microcontrollerCredentials = (await this.decryptSecretHash(tokenizeMicrocontrollerDto.secretHash)).split(' ');
+    } catch (error) {
+      throw new HttpException('Invalid secret hash', HttpStatus.BAD_REQUEST)
+    }
 
-    // this.createLogWhenMicrocontrollerAuthenticates(mac);
+    const microcontrollerData = await this.getMicrocontrollerData(microcontrollerCredentials[0]);
 
-    // return {
-    //   accessToken: token
-    // }
+    if (!microcontrollerData) {
+      throw new HttpException('Microcontroller not found', HttpStatus.NOT_FOUND)
+    }
+
+    const token = jwt.sign(
+      { sub: microcontrollerData.id },
+      this.jwtMicrocontrollerSecret,
+      { expiresIn: this.jwtMicrocontrollerExpirationTime }
+    )
+
+    this.createLogWhenMicrocontrollerAuthenticates(microcontrollerCredentials[0]);
+
+    return token;
   }
 
   async createLogWhenMicrocontrollerAuthenticates(mac: string) {
@@ -569,6 +584,24 @@ export class AppService {
       this.httpService.get(getUserDataUrl).pipe(
         catchError((error) => {
           this.errorLogger.error('Falha ao buscar dados do usuário', error);
+          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+        })
+      )
+    ).then((response) => response.data)
+
+    return data;
+  }
+
+  async getMicrocontrollerData(microcontrollerMac: string) {
+    const getMicrocontrollerDataUrl = `${this.getMicrocontrollerUrl}/mac`;
+    const data = await lastValueFrom(
+      this.httpService.get(getMicrocontrollerDataUrl, {
+        data: {
+          mac: microcontrollerMac,
+        },
+      }).pipe(
+        catchError((error) => {
+          this.errorLogger.error('Falha ao buscar dados do microcontrolador', error);
           throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
         })
       )
@@ -685,6 +718,15 @@ export class AppService {
     }
   }
 
+  async authorizeMicrocontroller(token: string) {
+    try {
+      const decodeToken = jwt.verify(token, this.jwtMicrocontrollerSecret);
+      return { isAuthorized: true, microcontrollerId: decodeToken.sub }
+    } catch (error) {
+      throw new HttpException('Expired or invalid token', HttpStatus.UNAUTHORIZED)
+    }
+  }
+
   async verifyMobileToken(token: string) {
     try {
       jwt.verify(token, this.jwtMobileSecret);
@@ -705,7 +747,24 @@ export class AppService {
     }
   }
 
-  async verifyMicrocontrollerToken(token: string, environmentId: string) {
-    const environmentPhraseData = await this.getEnvironmentPhraseData(environmentId);
+  async verifyMicrocontroller(secret: string) {
+    let microcontrollerCredentials: string[];
+    try {
+      microcontrollerCredentials = (await this.decryptSecretHash(secret)).split(' ');
+    } catch (error) {
+      throw new HttpException('Invalid secret hash', HttpStatus.BAD_REQUEST)
+    }
+
+    const microcontrollerData = await this.getMicrocontrollerData(microcontrollerCredentials[0]);
+
+    if (!microcontrollerData) {
+      throw new HttpException('Microcontroller not found', HttpStatus.NOT_FOUND)
+    }
+
+    return { microcontrollerId: microcontrollerData.id }
   }
+
+  // async verifyMicrocontrollerToken(token: string, environmentId: string) {
+  //   const environmentPhraseData = await this.getEnvironmentPhraseData(environmentId);
+  // }
 }

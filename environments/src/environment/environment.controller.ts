@@ -47,14 +47,19 @@ export class EnvironmentController {
   //   return this.environmentService.getQRCode(id);
   // }
 
-  @Get('phrases')
-  getEnvironmentPhrase(@Param('environmentId') environmentId: string) {
-    return this.environmentService.getEnvironmentPhrase(environmentId);
-  }
+  // @Get('phrases')
+  // getEnvironmentPhrase(@Param('environmentId') environmentId: string) {
+  //   return this.environmentService.getEnvironmentPhrase(environmentId);
+  // }
 
-  @Post('microcontroller-config')
-  createEnvironmentMicrocontrollerConfig(@Body() environmentMicrocontrollerConfig: EnvironmentMicrocontrollerConfigDto) {
-    return this.environmentService.createEnvironmentMicrocontrollerConfig(environmentMicrocontrollerConfig);
+  // @Post('microcontroller-config')
+  // createEnvironmentMicrocontrollerConfig(@Body() environmentMicrocontrollerConfig: EnvironmentMicrocontrollerConfigDto) {
+  //   return this.environmentService.createEnvironmentMicrocontrollerConfig(environmentMicrocontrollerConfig);
+  // }
+
+  @Get('microcontroller-config/:environmentId')
+  environmentMicrocontrollerConfig(@Param('environmentId') environmentId: string) {
+    return this.environmentService.environmentMicrocontrollerConfig(environmentId);
   }
 
   @Get('remote-access')

@@ -187,6 +187,8 @@ export class MicrocontrollersService {;
     return remoteAccess.value;
   }
 
+  async getMicrocontrollerIdOrRegister() { }
+
   async sendAccessLogWhenFindOne (
     remoteAccess: any,
     microcontrollerMac: string,

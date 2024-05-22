@@ -8,29 +8,29 @@ datasource db {
 }
 
 model environment {
-  id                                 String                              @id @default(uuid())
-  name                               String                              @unique
-  description                        String?
-  active                             Boolean                             @default(true)
-  created_by                         String
-  user_name                          String?
-  latitude                           Float
-  longitude                          Float
-  created_at                         DateTime                            @default(now())
-  updated_at                         DateTime                            @updatedAt
-  environment_user                   environment_user[]
-  environment_manager                environment_manager[]
-  environment_restriction_access     environment_restriction_access[]
-  environment_temporary_access       environment_temporary_access[]
-  environment_microcontroller_config environment_microcontroller_config?
+  id                             String                           @id @default(uuid())
+  name                           String                           @unique
+  description                    String?
+  active                         Boolean                          @default(true)
+  created_by                     String
+  user_name                      String?
+  latitude                       Float
+  longitude                      Float
+  created_at                     DateTime                         @default(now())
+  updated_at                     DateTime                         @updatedAt
+  environment_user               environment_user[]
+  environment_manager            environment_manager[]
+  environment_restriction_access environment_restriction_access[]
+  environment_temporary_access   environment_temporary_access[]
+  // environment_microcontroller_config environment_microcontroller_config?
 }
 
-model environment_microcontroller_config {
-  id             Int         @id @default(autoincrement())
-  phrase         String
-  environment    environment @relation(fields: [environment_id], references: [id])
-  environment_id String      @unique
-}
+// model environment_microcontroller_config {
+//   id             Int         @id @default(autoincrement())
+//   phrase         String
+//   environment    environment @relation(fields: [environment_id], references: [id])
+//   environment_id String      @unique
+// }
 
 model environment_restriction_access {
   id             String      @id @default(uuid())

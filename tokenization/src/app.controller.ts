@@ -70,4 +70,14 @@ export class AppController {
   // verifyAccessToken(@Query('token') token: string) {
   //   return this.appService.verifyAccessToken(token)
   // }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() body: any) {
+    return this.appService.forgotPassword(body);
+  }
+
+  @Post('verify/forgot-password')
+  verifyForgotPasswordToken(@Body() body: any) {
+    return this.appService.verifyForgotPasswordToken(body.token);
+  }
 }

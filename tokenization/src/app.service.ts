@@ -767,4 +767,28 @@ export class AppService {
   // async verifyMicrocontrollerToken(token: string, environmentId: string) {
   //   const environmentPhraseData = await this.getEnvironmentPhraseData(environmentId);
   // }
+
+  async forgotPassword(body: any) {
+    console.log('forgot-password service');
+
+    const userId = body.userId;
+    const token = jwt.sign(
+      { sub: userId },
+      process.env.JWT_FORGOT_PASSWORD_SECRET,
+      { expiresIn: process.env.JWT_FORGOT_PASSWORD_EXPIRATION_TIME }
+    )
+    return token;
+  }
+
+  async verifyForgotPasswordToken(token: string) {
+    console.log('verifyForgotPasswordToken service');
+
+    try {
+      jwt.verify(token, process.env.JWT_FORGOT_PASSWORD_SECRET);
+      return { isValid: true, userId: jwt.decode(token).sub }
+    } catch (error) {
+      this.errorLogger.error('Falha ao validar token', error)
+      return { isValid: false }
+    }
+  }
 }

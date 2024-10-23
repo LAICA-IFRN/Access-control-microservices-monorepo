@@ -26,6 +26,14 @@ export class UserRoutes {
     return `${this.baseUrl}/paginate`;
   }
 
+  forgotPassword(): string {
+    return `${this.baseUrl}/forgot-password`;
+  }
+
+  verifyForgotPassword(): string {
+    return `${this.baseUrl}/verify/forgot-password`;
+  }
+
   findDocumentTypes(): string {
     return `${this.baseUrl}/document-types`;
   }

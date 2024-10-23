@@ -67,7 +67,17 @@ export class UserController {
 
   @Post('paginate')
   findAll(@Body() body: FindAllDto) {
-   return this.userService.findAll(body);
+    return this.userService.findAll(body);
+  }
+
+  @Post('forgot-password')
+  forgotPassword(@Body() body: { email: string }) {
+    return this.userService.forgotPasswordService(body.email);
+  }
+
+  @Post('verify/forgot-password')
+  verifyForgotPassword(@Body() body: any) {
+    return this.userService.verifyForgotPasswordService(body);
   }
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário para o serviço de acesso' })

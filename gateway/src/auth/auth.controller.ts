@@ -39,7 +39,6 @@ export class AuthController {
     }
     const userId = request['userId'];
     return this.authService.loginEnvironmentUser(castBody, userId);
-
   }
 
   @Get('verify/user')

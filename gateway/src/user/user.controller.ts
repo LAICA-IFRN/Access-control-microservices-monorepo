@@ -53,6 +53,16 @@ export class UserController {
     return this.userService.findAll(body);
   }
 
+  @Post('forgot-password')
+  forgotPassword(@Body() body: any) {
+    return this.userService.forgotPassword(body);
+  }
+
+  @Post('verify/forgot-password')
+  verifyForgotPassword(@Body() body: any) {
+    return this.userService.verifyForgotPassword(body);
+  }
+
   @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
   @AuthorizationType(AuthorizationTypeConstants.WEB)
   @UseGuards(RolesGuard)

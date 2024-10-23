@@ -1,6 +1,36 @@
 import { AuditLog } from "./audit-log.service";
 
 export class AuditConstants {
+  public static forgotPasswordNotFound(metaData: object): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: 'Falha ao enviar email de recuperação de senha, usuário não encontrado',
+      meta: metaData
+    };
+  }
+
+  public static forgotPasswordOk(
+    email: string,
+    metaData: any
+  ): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: `Email de recuperação de senha enviado para ${email}`,
+      meta: metaData
+    };
+  }
+
+  public static forgotPasswordError(metaData: object): AuditLog {
+    return {
+      topic: "Usuários",
+      type: "Info",
+      message: 'Falha ao enviar email de recuperação de senha, erro interno verificar logs de erro do serviço',
+      meta: metaData
+    };
+  }
+
   public static sendInviteEmailOk(
     invitedBy: string,
     metaData: any

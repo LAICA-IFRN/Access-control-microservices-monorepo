@@ -21,6 +21,8 @@ import { UserStatusDto } from './dto/status-user.dto';
 
 @Injectable()
 export class UserService {
+  private readonly createTokenForForgotPasswordUrl = process.env.CREATE_TOKEN_FOR_FORGOT_PASSWORD_URL
+  private readonly verifyForgotPasswordUrl = process.env.VERIFY_FORGOT_PASSWORD_URL
   private readonly createRFIDDeviceUrl = `${process.env.DEVICES_SERVICE_URL}/rfid`
   private readonly generateSuapTokenUrl = process.env.GENERATE_SUAP_TOKEN_URL
   private readonly getSuapUserDataUrl = process.env.GET_SUAP_USER_DATA_URL
@@ -189,6 +191,83 @@ export class UserService {
     });
 
     this.auditLogService.create(AuditConstants.sendInviteEmailError(user.name, inviteEmail, meta));
+  }
+
+  async forgotPasswordService(email: string) {
+    const user = await this.prismaService.user.findFirst({
+      where: { email }
+    });
+
+    if (!user) {
+      this.auditLogService.create(AuditConstants.forgotPasswordNotFound({ email, statusCode: 404 }))
+      throw new HttpException('User not found', HttpStatus.NOT_FOUND);
+    }
+
+    const token = await this.createTokenForForgotPassword(user.id);
+    if (!token) {
+      this.auditLogService.create(AuditConstants.forgotPasswordError({ email, statusCode: 500 }))
+      throw new HttpException('Failed to send email', HttpStatus.UNPROCESSABLE_ENTITY);
+    }
+
+    try {
+      await this.emailService.sendForgotPasswordMail(email, process.env.FORGOT_PASSWORD_URI_REDIRECT, token);
+    } catch (error) {
+      this.errorLogger.error('Falha ao enviar e-mail', error);
+      throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+
+    return { message: 'E-mail sent successfully' };
+  }
+
+  async verifyForgotPasswordService(body: any) {
+    const token = await this.getUserIdVerifyForgotPassword(body.token);
+
+    if (token.isValid) {
+      try {
+        await this.prismaService.user.update({
+          where: { id: token.userId },
+          data: {
+            password: await bcrypt.hash(body.password, this.roundsOfHashing)
+          }
+        })
+
+        return { message: 'Password updated successfully' };
+      } catch (error) {
+        this.auditLogService.create(AuditConstants.forgotPasswordError({ context: error, statusCode: 422 }))
+        throw new HttpException("Can't update user password", HttpStatus.UNPROCESSABLE_ENTITY);
+      }
+    }
+
+    this.auditLogService.create(AuditConstants.forgotPasswordError({ token, statusCode: 422 }))
+    throw new HttpException('Invalid token', HttpStatus.UNAUTHORIZED);
+  }
+
+  async createTokenForForgotPassword(userId: string) {
+    try {
+      const token = await lastValueFrom(
+        this.httpService.post(this.createTokenForForgotPasswordUrl, {
+          userId
+        })
+      ).then((response) => response.data);
+      return token;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
+  }
+
+  async getUserIdVerifyForgotPassword(token: string) {
+    try {
+      const data = await lastValueFrom(
+        this.httpService.post(this.verifyForgotPasswordUrl, {
+          token: token
+        })
+      ).then((response) => response.data);
+      return data;
+    } catch (error) {
+      console.log(error);
+      return null;
+    }
   }
 
   async createUserByInvitation(createUserByInvitationDto: CreateUserByInvitationDto) {

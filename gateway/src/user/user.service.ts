@@ -82,6 +82,38 @@ export class UserService {
     return data;
   }
 
+  async forgotPassword(body: any) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.userRoutes.forgotPassword(), body).pipe(
+        catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Unable to send email, users service unavailable', HttpStatus.SERVICE_UNAVAILABLE);
+          } else {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          }
+        })
+      )
+    );
+
+    return data;
+  }
+
+  async verifyForgotPassword(body: any) {
+    const { data } = await lastValueFrom(
+      this.httpService.post(this.userRoutes.verifyForgotPassword(), body).pipe(
+        catchError((error) => {
+          if (error.code === 'ECONNREFUSED') {
+            throw new HttpException('Unable to verify token, users service unavailable', HttpStatus.SERVICE_UNAVAILABLE);
+          } else {
+            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
+          }
+        })
+      )
+    );
+
+    return data;
+  }
+
   async findDocumentTypes() {
     const { data } = await lastValueFrom(
       this.httpService.get(this.userRoutes.findDocumentTypes()).pipe(

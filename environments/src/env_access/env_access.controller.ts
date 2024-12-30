@@ -21,6 +21,8 @@ export class EnvAccessController {
   @ApiForbiddenResponse({ type: swagger.CreateForbiddenResponseEntity })
   @Post()
   create(@Body() createEnvAccessDto: CreateEnvAccessDto) {
+    console.log(createEnvAccessDto);
+
     return this.envAccessService.create(createEnvAccessDto);
   }
 

@@ -124,8 +124,7 @@ export class AppService {
       .then((response) => response.data)
       .catch((error) => {
         this.errorLogger.error('Falha ao validar usuário', error)
-
-        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+        throw new HttpException(error.response, error.status);
       })
 
     const token = jwt.sign(

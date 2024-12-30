@@ -29,4 +29,9 @@ export class AppController {
         </html>
     `;
   }
+
+  @Get('')
+  getHello(): string {
+    return 'Hello World!';
+  }
 }

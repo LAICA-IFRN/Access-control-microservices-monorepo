@@ -4,10 +4,10 @@ import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { WinstonModule } from 'nest-winston';
 import { format, transports } from 'winston';
-import * as bodyParser from 'body-parser';
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
     logger: WinstonModule.createLogger({
       transports: [
         new transports.File({
@@ -26,20 +26,17 @@ async function bootstrap() {
               return `${info.timestamp} ${info.level}: ${info.message}`;
             }),
           ),
-        })
-      ]
-    })
+        }),
+      ],
+    }),
   });
 
-  app.use(bodyParser.json({ limit: '50mb' }));
-  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
+  // app.setGlobalPrefix('service/users')
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
-    forbidNonWhitelisted: true
+    forbidNonWhitelisted: true,
   }));
-
-  app.setGlobalPrefix('service/users')
 
   const config = new DocumentBuilder()
     .setTitle('Serviço de Usuários')
@@ -55,7 +52,7 @@ async function bootstrap() {
       process.env.ALLOWED_GATEWAY_ORIGIN,
       process.env.ALLOWED_ENVIRONMENTS_ORIGIN,
       process.env.ALLOWED_ACCESS_ORIGIN,
-      process.env.ALLOWED_DEVICES_ORIGIN
+      process.env.ALLOWED_DEVICES_ORIGIN,
     ],
     methods: process.env.ALLOWED_METHODS,
     credentials: true,

@@ -16,6 +16,8 @@ model log {
   meta       String?
 }
 
+// TODO: remover modelo access e todas as referências
+
 model access {
   id         Int      @id @default(autoincrement())
   created_at DateTime @default(now())

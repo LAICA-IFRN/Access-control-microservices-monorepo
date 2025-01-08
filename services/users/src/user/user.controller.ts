@@ -1,22 +1,24 @@
 import { Controller, Get, Post, Body, Patch, Param, Req, Query } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { ApiBadRequestResponse, 
-  ApiConflictResponse, 
-  ApiCreatedResponse, 
-  ApiNotFoundResponse, 
-  ApiOkResponse, 
-  ApiOperation, 
-  ApiTags, 
+import {
+  ApiBadRequestResponse,
+  ApiConflictResponse,
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
   ApiUnauthorizedResponse
 } from '@nestjs/swagger';
 import { UserStatusDto } from './dto/status-user.dto';
 import { UpdateUserDataDto } from './dto/update-user-data.dto';
 import { UserEntity } from './entities/user.entity';
-import { BadRequestResponseEntity, 
-  ConflictResponseEntity, 
-  IdParamInvalidResponseEntity, 
-  NotFoundResponseEntity, 
+import {
+  BadRequestResponseEntity,
+  ConflictResponseEntity,
+  IdParamInvalidResponseEntity,
+  NotFoundResponseEntity,
   NotFoundToAccess,
   NotFoundToToken,
   OkToAccess,
@@ -33,11 +35,11 @@ import { InviteEmail } from './dto/invite-email.dto';
 @Controller()
 @ApiTags('Users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userService: UserService) { }
 
   @ApiOperation({ description: 'Endpoint para cadastro de usuários' })
   @ApiCreatedResponse({ type: UserEntity })
-  @ApiConflictResponse({type: ConflictResponseEntity })
+  @ApiConflictResponse({ type: ConflictResponseEntity })
   @ApiBadRequestResponse({ type: BadRequestResponseEntity })
   @Post()
   create(@Body() body: CreateUserDto) {
@@ -94,25 +96,25 @@ export class UserController {
   @ApiOkResponse({ type: OkToToken })
   @ApiUnauthorizedResponse({ type: UnauthorizedToToken })
   @ApiNotFoundResponse({ type: NotFoundToToken })
-  @Get('validate')
+  @Post('validate')
   validateToToken(@Body() validateToToken: ValidateToToken) {
     return this.userService.validateToToken(validateToToken);
   }
-  
+
   @ApiOperation({ description: 'Endpoint para buscar os usuários administradores' })
   @ApiOkResponse({ type: UserEntity, isArray: true })
   @Get('admin')
   findAllAdmins() {
     return this.userService.findAllAdmins();
   }
-  
+
   @ApiOperation({ description: 'Endpoint para buscar os usuários frequentadores' })
   @ApiOkResponse({ type: UserEntity, isArray: true })
   @Get('frequenter')
   findAllFrequenters() {
     return this.userService.findAllFrequenters();
   }
-  
+
   @ApiOperation({ description: 'Endpoint para buscar os usuários gestores de ambiente' })
   @ApiOkResponse({ type: UserEntity, isArray: true })
   @Get('environment-manager')
@@ -126,7 +128,7 @@ export class UserController {
   findAllInactive() {
     return this.userService.findAllInactive();
   }
-  
+
   @Get(':id/image')
   findUserImage(@Param('id') id: string) {
     return this.userService.findUserImage(id);
@@ -134,17 +136,17 @@ export class UserController {
 
   @ApiOperation({ description: 'Endpoint para buscar um usuário' })
   @ApiOkResponse({ type: UserEntity })
-  @ApiNotFoundResponse({type: NotFoundResponseEntity })
+  @ApiNotFoundResponse({ type: NotFoundResponseEntity })
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.userService.findOne(id);
   }
-  
+
 
   @ApiOperation({ description: 'Endpoint para atualizar o status de um usuário' })
   @ApiOkResponse({ type: UserEntity })
-  @ApiNotFoundResponse({type: NotFoundResponseEntity })
+  @ApiNotFoundResponse({ type: NotFoundResponseEntity })
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Patch(':id/status')
   updateStatus(@Param('id') id: string, @Body() body: UserStatusDto) {
@@ -153,7 +155,7 @@ export class UserController {
 
   @ApiOperation({ description: 'Endpoint para atualizar os dados de um usuário' })
   @ApiOkResponse({ type: UserEntity })
-  @ApiNotFoundResponse({type: NotFoundResponseEntity })
+  @ApiNotFoundResponse({ type: NotFoundResponseEntity })
   @ApiBadRequestResponse({ type: IdParamInvalidResponseEntity })
   @Patch(':id')
   update(@Param('id') id: string, @Body() body: UpdateUserDataDto) {

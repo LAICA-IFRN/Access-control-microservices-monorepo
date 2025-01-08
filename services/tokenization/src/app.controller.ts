@@ -38,6 +38,8 @@ export class AppController {
 
   @Get('authorize/web')
   authorizeUser(@Body() authorizationUserDto: AuthorizationUserDto) {
+    console.log('authorizationUserDto', authorizationUserDto);
+
     return this.appService.authorizeUser(authorizationUserDto)
   }
 

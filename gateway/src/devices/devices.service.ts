@@ -9,7 +9,7 @@ export class DevicesService {
   constructor(
     private readonly httpService: HttpService,
     private readonly deviceRoutes: DeviceRoutes,
-  ) {}
+  ) { }
 
   async dashboardConsultData() {
     const { data } = await lastValueFrom(
@@ -31,7 +31,7 @@ export class DevicesService {
         })
       )
     );
-    
+
     return response.data;
   }
 
@@ -199,7 +199,7 @@ export class DevicesService {
         })
       )
     );
-    
+
     return data;
   }
 
@@ -252,6 +252,10 @@ export class DevicesService {
   }
 
   async findAllMobile(body: any) {
+    console.log(body);
+    console.log(this.deviceRoutes.findAllMobile());
+
+
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.findAllMobile(), body).pipe(
         catchError((error) => {

@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite" // "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model environment {
+  id                             String                           @id @default(uuid())
+  name                           String                           @unique
+  description                    String?
+  active                         Boolean                          @default(true)
+  created_by                     String
+  user_name                      String?
+  latitude                       Float
+  longitude                      Float
+  created_at                     DateTime                         @default(now())
+  updated_at                     DateTime                         @updatedAt
+  environment_user               environment_user[]
+  environment_manager            environment_manager[]
+  environment_restriction_access environment_restriction_access[]
+  environment_temporary_access   environment_temporary_access[]
+  microcontroller                microcontroller[]
+}
+
+model environment_restriction_access {
+  id             String      @id @default(uuid())
+  description    String
+  day            Int
+  start_time     DateTime
+  end_time       DateTime
+  environment_id String
+  environment    environment @relation(fields: [environment_id], references: [id])
+
+  @@unique([day, start_time, end_time, environment_id])
+}
+
+model environment_manager {
+  id             String      @id @default(uuid())
+  active         Boolean     @default(true)
+  user_id        String
+  user_name      String?
+  created_by     String
+  created_at     DateTime    @default(now())
+  updated_at     DateTime    @updatedAt
+  environment_id String
+  environment    environment @relation(fields: [environment_id], references: [id])
+
+  @@unique([user_id, environment_id])
+}
+
+model environment_user {
+  id                              String                            @id @default(uuid())
+  permanent_access                Boolean                           @default(false)
+  start_period                    DateTime?
+  end_period                      DateTime?
+  active                          Boolean                           @default(true)
+  user_id                         String
+  user_name                       String?
+  created_by                      String
+  created_at                      DateTime                          @default(now())
+  updated_at                      DateTime                          @updatedAt
+  environment_id                  String
+  environment                     environment                       @relation(fields: [environment_id], references: [id])
+  environment_user_access_control environment_user_access_control[]
+
+  @@unique([user_id, environment_id])
+}
+
+model environment_user_access_control {
+  id                              String                        @id @default(uuid())
+  day                             Int
+  start_time                      DateTime
+  end_time                        DateTime
+  active                          Boolean                       @default(true)
+  no_access_restrict              Boolean                       @default(false)
+  created_at                      DateTime                      @default(now())
+  updated_at                      DateTime                      @updatedAt
+  environment_user_id             String?
+  environment_user                environment_user?             @relation(fields: [environment_user_id], references: [id])
+  environment_temporary_access_id String?
+  environment_temporary_access    environment_temporary_access? @relation(fields: [environment_temporary_access_id], references: [id])
+
+  @@unique([day, start_time, end_time, environment_user_id])
+}
+
+model environment_temporary_access {
+  id                              String                            @id @default(uuid())
+  description                     String?
+  active                          Boolean                           @default(true)
+  created_by                      String
+  created_at                      DateTime                          @default(now())
+  updated_at                      DateTime                          @updatedAt
+  start_period                    DateTime                          @default(now())
+  end_period                      DateTime
+  user_id                         String
+  user_name                       String
+  environment_id                  String
+  environment                     environment                       @relation(fields: [environment_id], references: [id])
+  environment_user_access_control environment_user_access_control[]
+
+  @@unique([user_id, environment_id])
+}
+
+model microcontroller_type {
+  id              Int               @id @default(autoincrement())
+  name            String            @unique
+  microcontroller microcontroller[]
+}
+
+model microcontroller {
+  id                         Int                          @id @default(autoincrement())
+  mac                        String                       @unique
+  ip                         String                       @unique
+  environment_id             String?
+  environment                environment?                 @relation(fields: [environment_id], references: [id])
+  pending                    Boolean                      @default(true)
+  active                     Boolean                      @default(false)
+  microcontroller_type       microcontroller_type         @relation(fields: [microcontroller_type_id], references: [id])
+  microcontroller_type_id    Int
+  created_at                 DateTime                     @default(now())
+  updated_at                 DateTime                     @updatedAt
+  microcontroller_cold_start microcontroller_cold_start[]
+
+  @@unique([mac, ip])
+}
+
+model microcontroller_cold_start {
+  id                 Int             @id @default(autoincrement())
+  microcontroller_id Int
+  created_at         DateTime        @default(now())
+  microcontroller    microcontroller @relation(fields: [microcontroller_id], references: [id])
+}
+
+model tag_rfid {
+  id         Int      @id @default(autoincrement())
+  tag        String   @unique
+  user_id    String   @unique
+  created_by String
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@unique([tag, user_id])
+}
+
+model mobile {
+  id         String   @id @default(uuid())
+  user_id    String
+  user_name  String
+  active     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}

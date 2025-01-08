@@ -6,10 +6,10 @@ export class DeviceRoutes {
   private readonly deviceMicrocontrollerUrl = process.env.DEVICES_SERVICE_URL + '/microcontrollers'
   private readonly deviceMobileUrl = process.env.DEVICES_SERVICE_URL + '/mobile'
 
-  constructor () {}
+  constructor() { }
 
   dashboardConsultData(): string {
-    return `${process.env.DEVICES_SERVICE_URL}/dashboard`;
+    return `${process.env.DEVICES_SERVICE_URL}/dashboard/devices`;
   }
 
   coldStartMicrocontroller(id: number): string {

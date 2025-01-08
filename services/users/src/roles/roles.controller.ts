@@ -11,11 +11,11 @@ import { VerifyRoleDto } from './dto/verify-role.dto';
 @Controller()
 @ApiTags('Roles')
 export class RolesController {
-  constructor(private readonly rolesService: RolesService) {}
+  constructor(private readonly rolesService: RolesService) { }
 
   @ApiOperation({ description: 'Endpoint para cadastro de papéis de usuário' })
   @ApiCreatedResponse({ type: RoleEntity })
-  @ApiConflictResponse({type: swagger.ConflictResponseEntity })
+  @ApiConflictResponse({ type: swagger.ConflictResponseEntity })
   @ApiBadRequestResponse({ type: swagger.BadRequestResponseEntity })
   @Post(':id/roles')
   create(
@@ -28,8 +28,10 @@ export class RolesController {
   @ApiOperation({ description: 'Endpoint para verificar se um usuário possui um papel' })
   @ApiOkResponse({ type: swagger.VerifyRoleResponseEntity })
   @ApiBadRequestResponse({ type: swagger.BadRequestVerifyResponseEntity })
-  @Get('roles/verify')
+  @Post('roles/verify')
   checkRole(@Body() verifyRoleDto: VerifyRoleDto) {
+    console.log('verifyRoleDto', verifyRoleDto);
+
     const { userId, roles } = verifyRoleDto;
     return this.rolesService.checkRole(userId, roles);
   }
@@ -52,7 +54,7 @@ export class RolesController {
   @ApiNotFoundResponse({ type: swagger.NotFoundResponseEntity })
   @Patch(':id/roles/:roleId/status')
   changeStatus(
-    @Param('id') id: string, 
+    @Param('id') id: string,
     @Param('roleId') roleId: string,
     @Body() roleStatusDto: RoleStatusDto
   ) {

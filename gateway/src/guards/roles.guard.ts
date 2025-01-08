@@ -10,10 +10,10 @@ export class RolesGuard implements CanActivate {
   private readonly errorLogger = new Logger()
   private readonly verifyUserAuthorizationUrl = process.env.VERIFY_USER_AUTHORIZATION_URL;
 
-  constructor (
-    private readonly reflector: Reflector, 
+  constructor(
+    private readonly reflector: Reflector,
     private readonly httpService: HttpService,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const roles = this.reflector.get<string[]>('roles', context.getHandler());
@@ -28,7 +28,7 @@ export class RolesGuard implements CanActivate {
     const token = prefix === 'Bearer' ? value : undefined;
 
     let response: any;
-    
+
     if (
       authorizationType === AuthorizationTypeConstants.WEB ||
       authorizationType === AuthorizationTypeConstants.ANY
@@ -48,19 +48,20 @@ export class RolesGuard implements CanActivate {
           })
         )
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao verificar autorização', error);
-  
-        throw new HttpException(
-          error.response.data.message,
-          error.response.data.statusCode,
-        );
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          console.log('error 1', error);
+          this.errorLogger.error('Falha ao verificar autorização', error);
+
+          throw new HttpException(
+            error.response.data.message,
+            error.response.data.statusCode,
+          );
+        });
       console.log('response', response);
 
     }
-    
+
     if (
       authorizationType === AuthorizationTypeConstants.MOBILE ||
       authorizationType === AuthorizationTypeConstants.ANY
@@ -79,15 +80,17 @@ export class RolesGuard implements CanActivate {
           })
         )
       )
-      .then((response) => response.data)
-      .catch((error) => {        
-        this.errorLogger.error('Falha ao verificar autorização', error);
-  
-        throw new HttpException(
-          error.response.data.message,
-          error.response.data.statusCode,
-        );
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          console.log('error 2', error);
+
+          this.errorLogger.error('Falha ao verificar autorização', error);
+
+          throw new HttpException(
+            error.response.data.message,
+            error.response.data.statusCode,
+          );
+        });
     }
 
     if (authorizationType === AuthorizationTypeConstants.MICROCONTROLLER) {

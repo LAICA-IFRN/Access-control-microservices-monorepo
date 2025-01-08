@@ -10,16 +10,18 @@ export interface AuditLog {
 }
 
 export class AuditLogService {
-  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}/logs`
+  private readonly createAuditLogUrl = `${process.env.AUDIT_SERVICE_URL}`
   private readonly errorLogger = new Logger()
   private readonly httpService: HttpService = new HttpService()
-  
-  constructor () {}
+
+  constructor() { }
 
   async create(log: AuditLog) {
     try {
       await lastValueFrom(this.httpService.post(this.createAuditLogUrl, log));
     } catch (error) {
+      console.log('error log', error);
+
       this.errorLogger.error('Falha ao enviar log', error);
     }
   }

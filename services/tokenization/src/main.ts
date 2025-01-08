@@ -39,7 +39,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Serviço de Tokenização')
-    .setDescription('Descrição do serviço de tokenização que faz parte do dominio de usuários do sistema de controle de acesso do Laica')
+    .setDescription('Descrição do serviço de tokenização do Laica Cerberus')
     .setVersion('0.1')
     .build();
 
@@ -52,6 +52,6 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(6007);
+  await app.listen(6002);
 }
 bootstrap();

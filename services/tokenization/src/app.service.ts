@@ -41,13 +41,13 @@ export class AppService {
 
   async tokenizeUser(tokenizeUserDto: TokenizeUserDto) {
     const data = await lastValueFrom(
-      this.httpService.get(
+      this.httpService.post(
         this.validateUserUrl,
-        {
-          data: tokenizeUserDto,
-        },
+        tokenizeUserDto,
       ).pipe(
         catchError((error) => { // TODO: criar funções de log para cada tipo de erro
+          console.log('error', error.response.data.message);
+
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
@@ -64,6 +64,25 @@ export class AppService {
               })
 
             throw new HttpException('Users service unavailable', HttpStatus.SERVICE_UNAVAILABLE)
+          }
+
+          if (error.response?.status === 400) {
+            lastValueFrom(
+              this.httpService.post(this.createAuditLogUrl, {
+                topic: 'Autenticação',
+                type: 'Error',
+                message: 'Falha ao validar usuário, dados inválidos',
+                meta: {
+                  document: tokenizeUserDto.document,
+                }
+              })
+            )
+              .then((response) => response.data)
+              .catch((error) => {
+                this.errorLogger.error('Falha ao enviar log', error)
+              })
+
+            throw new HttpException('Invalid data', HttpStatus.BAD_REQUEST)
           }
 
           if (error.response?.status === 404) {
@@ -123,6 +142,8 @@ export class AppService {
     )
       .then((response) => response.data)
       .catch((error) => {
+        console.log('error tokenizeUser', error);
+
         this.errorLogger.error('Falha ao validar usuário', error)
         throw new HttpException(error.response, error.status);
       })
@@ -154,19 +175,19 @@ export class AppService {
         }
       })
     ).catch((error) => {
+      console.log('error createLogWhenUserAuthenticates', error);
+
       this.errorLogger.error('Falha ao enviar log', error)
     })
   }
 
   async tokenizeMobile(tokenizeMobileDto: TokenizeMobileDto) {
     const data = await lastValueFrom(
-      this.httpService.get(
+      this.httpService.post(
         this.validateUserUrl,
         {
-          data: {
-            document: tokenizeMobileDto.document,
-            password: tokenizeMobileDto.password,
-          },
+          document: tokenizeMobileDto.document,
+          password: tokenizeMobileDto.password
         },
       ).pipe(
         catchError((error) => {
@@ -223,6 +244,8 @@ export class AppService {
 
             throw new HttpException('Invalid password', HttpStatus.UNAUTHORIZED)
           } else {
+            console.log('error', error);
+
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
                 topic: 'Autenticação',
@@ -325,7 +348,7 @@ export class AppService {
 
     const response = {
       accessToken: token,
-      mobileId: false
+      mobileId: ''
     }
 
     if (tokenizeMobileDto.mobileId) {
@@ -333,11 +356,33 @@ export class AppService {
 
       if (mobileData) {
         this.createLogWhenMobileAuthenticates(data.userId, tokenizeMobileDto.mobileId);
-        response.mobileId = true;
+        response.mobileId = tokenizeMobileDto.mobileId;
+      }
+    } else {
+      const userMobile = await this.createUserMobile(data.userId);
+
+      if (userMobile) {
+        this.createLogWhenMobileAuthenticates(data.userId, userMobile.id);
+        response.mobileId = userMobile.id;
       }
     }
-    
+
     return response;
+  }
+
+  private async createUserMobile(userId: string) {
+    const userMobile = await lastValueFrom(
+      this.httpService.post(`${this.devicesServiceUrl}/mobile?userId=${userId}`, {
+        userId: userId,
+      })
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar aparelho', error)
+        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      })
+
+    return userMobile;
   }
 
   private async findMobileById(mobileId: string) {
@@ -624,24 +669,25 @@ export class AppService {
 
   async authorizeUser(authorizationUserDto: AuthorizationUserDto) {
     let decodedToken;
-    
+
     try {
       decodedToken = jwt.verify(authorizationUserDto.token, this.jwtUserSecret)
     } catch (error) {
+      console.log('error', error);
+
       throw new HttpException(error.message, HttpStatus.UNAUTHORIZED)
     }
 
     const isAuthorized = await lastValueFrom(
-      this.httpService.get(
+      this.httpService.post(
         this.verifyAuthorizationUrl,
         {
-          data: {
-            userId: decodedToken.sub,
-            roles: authorizationUserDto.roles,
-          },
+          userId: decodedToken.sub,
+          roles: authorizationUserDto.roles,
         },
       ).pipe(
         catchError((error) => {
+          console.log('error', error.response.data.message);
           if (error.code === 'ECONNREFUSED') {
             lastValueFrom(
               this.httpService.post(this.createAuditLogUrl, {
@@ -700,7 +746,7 @@ export class AppService {
       )
     )
       .then((response) => response.data)
-    
+
     if (!isAuthorized) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
     }

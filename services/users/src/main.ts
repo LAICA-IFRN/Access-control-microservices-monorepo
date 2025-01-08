@@ -31,7 +31,7 @@ async function bootstrap() {
     }),
   });
 
-  // app.setGlobalPrefix('service/users')
+  app.setGlobalPrefix('service/users')
 
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
@@ -40,7 +40,7 @@ async function bootstrap() {
 
   const config = new DocumentBuilder()
     .setTitle('Serviço de Usuários')
-    .setDescription('Documentação do serviço de usuários do sistema de controle de acesso do Laica')
+    .setDescription('Documentação do serviço de usuários do Laica Cerberus')
     .setVersion('0.1')
     .build();
 

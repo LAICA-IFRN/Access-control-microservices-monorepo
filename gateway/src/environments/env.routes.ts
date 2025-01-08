@@ -4,7 +4,7 @@ import { Injectable } from "@nestjs/common";
 @Injectable()
 export class EnvRoutes {
   private readonly envServiceBaseUrl = process.env.ENVIRONMENTS_SERVICE_URL
-  private readonly envBaseUrl = this.envServiceBaseUrl + '/env'
+  private readonly envBaseUrl = this.envServiceBaseUrl + '/environments'
   private readonly envManagerBaseUrl = this.envServiceBaseUrl + '/env-manager'
   private readonly envAccessBaseUrl = this.envServiceBaseUrl + '/env-access'
 

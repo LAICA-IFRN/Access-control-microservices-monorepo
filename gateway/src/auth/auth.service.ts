@@ -22,6 +22,8 @@ export class AuthService {
     const response = await lastValueFrom(
       this.httpService.post(this.tokenizeUserUrl, loginWebDto).pipe(
         catchError((error) => {
+          console.log('error', error);
+
           if (error.code === 'ECONNREFUSED') {
             throw new HttpException('Serviço de autenticação indisponível', HttpStatus.SERVICE_UNAVAILABLE);
           }

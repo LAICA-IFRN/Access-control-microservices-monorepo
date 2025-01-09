@@ -252,10 +252,6 @@ export class DevicesService {
   }
 
   async findAllMobile(body: any) {
-    console.log(body);
-    console.log(this.deviceRoutes.findAllMobile());
-
-
     const { data } = await lastValueFrom(
       this.httpService.post(this.deviceRoutes.findAllMobile(), body).pipe(
         catchError((error) => {

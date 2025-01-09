@@ -8,27 +8,21 @@ import { LogsCerberusService } from 'src/logs/logs.service';
 import { LogsCerberusConstants } from 'src/logs/logs.contants';
 import { AccessByType, Roles } from './providers/constants';
 import { AccessByMobileDeviceDto } from './dto/access-by-mobile-device.dto';
+import { UtilsProvider } from './providers/utils.provider';
+import { microcontroller } from '@prisma/client';
 
 @Injectable()
 export class AccessService {
-  private readonly searchEsp32Url = process.env.SEARCH_ESP32_URL
-  private readonly searchRFIDUrl = process.env.SEARCH_RFID_URL
   private readonly searchUserUrl = process.env.SEARCH_USER_URL
-  private readonly searchMobileUrl = process.env.SEARCH_MOBILE_URL
-  private readonly searchFrequenterAccessUrl = process.env.SEARCH_FREQUENTER_ACCESS
-  private readonly searchManagerAccessUrl = process.env.SEARCH_MANAGER_ACCESS
-  private readonly searchEspInMobileAccessUrl = process.env.SEARCH_ESP_IN_MOBILE_ACCESS
-  private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
-  private readonly authorizeMobileAccessUrl = process.env.AUTHORIZE_MOBILE_ACCESS_URL
-  private readonly envServiceUrl = process.env.ENVIRONMENTS_SERVICE_URL
+  // private readonly facialRecognitionUrl = process.env.FACIAL_RECOGNITION_URL
   private readonly errorLogger = new Logger()
 
   private readonly tempGetRolesUrl = process.env.TEMP_GET_ROLES;
-  private readonly tempGetEsp = process.env.TEMP_GET_ESP;
 
   constructor(
     private readonly httpService: HttpService,
-    private readonly accessLogService: LogsCerberusService
+    private readonly accessLogService: LogsCerberusService,
+    private readonly utilsProvider: UtilsProvider
   ) { }
 
   // async accessByMicrocontrollerDevice(accessDto: AccessByMicrocontrollerDeviceDto) {
@@ -169,14 +163,7 @@ export class AccessService {
   }
 
   async accessByMobileDeviceTEMP(accessDto: AccessByMobileDeviceDto) {
-    const esp = await lastValueFrom(
-      this.httpService.get(`${this.tempGetEsp}/${accessDto.environmentId}`)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar esp', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+    const esp: any = await this.utilsProvider.findOneByEnvironmentId(accessDto.environmentId);
 
     const mobile = await this.getMobileData(accessDto.mobileId);
 
@@ -242,50 +229,37 @@ export class AccessService {
   }
 
   private async getMobileData(mobileId: string) {
-    const data: any = await lastValueFrom(
-      this.httpService.get(`${this.searchMobileUrl}/${mobileId}`)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar dispositivo móvel', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+    const data: any = await this.utilsProvider.findOneMobile(mobileId);
 
     return data;
   }
 
   private async sendRemoteAccessRequest(environmentId: string, esp8266Id: number, userId: string) {
-    const url = `${this.envServiceUrl}/env/remote-access?environmentId=${environmentId}&esp8266Id=${esp8266Id}&userId=${userId}&type=mobile`;
-    const data: any = await lastValueFrom(this.httpService.post(url))
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao solicitar acesso remoto', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+    const data: any = await this.utilsProvider.requestRemoteAccess(environmentId, esp8266Id, 'mobile', userId);
 
     return data;
   }
 
-  async searchEnvironmentByQRCode(qrCode: string) {
-    const id = qrCode.slice(-1);
+  // async searchEnvironmentByQRCode(qrCode: string) {
+  //   const id = qrCode.slice(-1);
 
-    const data: any = await lastValueFrom(
-      this.httpService.get(`${this.searchEspInMobileAccessUrl}/${id}`).pipe(
-        catchError((error) => {
-          this.errorLogger.error('Falha ao buscar ambiente por QR Code', error);
-          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
-        })
-      )
-    ).then((response) => response.data)
+  //   const data: any = await lastValueFrom(
+  //     this.httpService.get(`${this.searchEspInMobileAccessUrl}/${id}`).pipe(
+  //       catchError((error) => {
+  //         this.errorLogger.error('Falha ao buscar ambiente por QR Code', error);
+  //         throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+  //       })
+  //     )
+  //   ).then((response) => response.data)
 
-    const qrcodeWithoutId = qrCode.slice(0, -1);
+  //   const qrcodeWithoutId = qrCode.slice(0, -1);
 
-    return {
-      espId: id,
-      qrCodeMatch: qrcodeWithoutId === data.qrcode,
-      environmentId: data.environmentId
-    };
-  }
+  //   return {
+  //     espId: id,
+  //     qrCodeMatch: qrcodeWithoutId === data.qrcode,
+  //     environmentId: data.environmentId
+  //   };
+  // }
 
   // private async handleUserFacialRecognitionDevice(userData: any, userAccessData: any, accessDto: any) {
   //   const facialRecognition = await this.validateUserFacial(userData.userId, accessDto.encoded);
@@ -425,44 +399,28 @@ export class AccessService {
   }
 
   async getEsp32(mac: string) {
-    const esp32: any = await lastValueFrom(
-      this.httpService.get(this.searchEsp32Url, {
-        data: { mac }
-      }).pipe(
-        catchError((error) => {
-          this.errorLogger.error('Falha ao buscar esp32', error);
-          throw new HttpException(error.response.data.message, error.response.data.statusCode);
-        })
-      )
-    ).then((response) => response.data)
+    const esp32: any = await this.utilsProvider.findOneEsp32ByMac({ mac });
 
     return esp32;
   }
 
   async getUserIdByRFID(tag: string) {
-    const data: any = await lastValueFrom(
-      this.httpService.get(this.searchRFIDUrl + tag).pipe(
-        catchError((error) => {
-          this.errorLogger.error('Falha ao buscar RFID', error);
-          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
-        })
-      )
-    ).then((response) => response.data)
+    const data: any = await this.utilsProvider.findOneRFIDByTag(tag);
 
     return data.userId;
   }
 
-  async getUserIdByMobile(mac: string) {
-    const data: any = await lastValueFrom(
-      this.httpService.get(this.searchMobileUrl + mac).pipe(
-        catchError((error) => {
-          throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
-        })
-      )
-    ).then((response) => response.data)
+  // async getUserIdByMobile(mac: string) {
+  //   const data: any = await lastValueFrom(
+  //     this.httpService.get(this.searchMobileUrl + mac).pipe(
+  //       catchError((error) => {
+  //         throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
+  //       })
+  //     )
+  //   ).then((response) => response.data)
 
-    return data.userId;
-  }
+  //   return data.userId;
+  // }
 
   async getUserIdByDocumentAndPin(document: string, pin: string) {
     const data: any = await lastValueFrom(
@@ -480,37 +438,21 @@ export class AccessService {
   }
 
   async searchFrequenterAccess(userId: string, environmentId: string) {
-    const data: any = await lastValueFrom(
-      this.httpService.get(this.searchFrequenterAccessUrl, {
-        data: {
-          userId: userId,
-          environmentId
-        }
-      })
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar acesso de frequentador', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+    const data: any = await this.utilsProvider.findAccessByUserFrequenter(userId, environmentId);
+
+    if (!data) {
+      throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.UNAUTHORIZED);
+    }
 
     return data;
   }
 
   async searchEnvironmentManagerAccess(userId: string, environmentId: string) {
-    const data: any = await lastValueFrom(
-      this.httpService.get(this.searchManagerAccessUrl, {
-        data: {
-          userId: userId,
-          environmentId
-        }
-      })
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
-        throw new HttpException(error.response.data.message, error.response.data.statusCode);
-      })
+    const data: any = await this.utilsProvider.findAccessByUserManager(userId, environmentId);
+
+    if (!data) {
+      throw new HttpException('Usuário não possui acesso ao ambiente', HttpStatus.UNAUTHORIZED);
+    }
 
     return data;
   }
@@ -803,12 +745,6 @@ export class AccessService {
   }
 
   private async getEnvironmentDataToLog(environmentId: string) {
-    return await lastValueFrom(
-      this.httpService.get(`${process.env.ENVIRONMENTS_SERVICE_URL}/env/${environmentId}`)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao buscar ambiente', error);
-      });
+    return await this.utilsProvider.findOneEnvironment(environmentId);
   }
 }

@@ -3,6 +3,7 @@ import { MobileService } from './mobile.service';
 import { MobileController } from './mobile.controller';
 import { PrismaModule } from 'src/prisma/prisma.module';
 import { HttpModule } from '@nestjs/axios';
+import { EnvironmentService } from 'src/environment/environment.service';
 
 @Module({
   imports: [
@@ -10,6 +11,9 @@ import { HttpModule } from '@nestjs/axios';
     HttpModule,
   ],
   controllers: [MobileController],
-  providers: [MobileService],
+  providers: [
+    MobileService,
+    EnvironmentService,
+  ],
 })
 export class MobileModule { }

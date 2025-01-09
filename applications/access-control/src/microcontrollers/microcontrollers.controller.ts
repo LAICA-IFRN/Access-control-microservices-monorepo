@@ -43,6 +43,8 @@ export class MicrocontrollersController {
 
   @Get('remote-access/:id')
   searchRemoteAccess(@Param('id') id: number) {
+    console.log('remote-access');
+
     return this.microcontrollersService.searchRemoteAccess(+id);
   }
 

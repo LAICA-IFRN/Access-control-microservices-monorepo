@@ -10,7 +10,7 @@ import { FindAccessDto } from './dto/find-access.dto';
 @ApiTags('EnvManager')
 @Controller('env-manager')
 export class EnvManagerController {
-  constructor(private readonly envManagerService: EnvManagerService) {}
+  constructor(private readonly envManagerService: EnvManagerService) { }
 
   @ApiOperation({ description: 'Endpoint para criar um novo gestor de ambiente' })
   @ApiCreatedResponse({ type: EnvManagerEntity })
@@ -25,8 +25,6 @@ export class EnvManagerController {
 
   @Get('access')
   findAccessByUser(@Body() findAccessDto: FindAccessDto) {
-    console.log("access");
-    
     const { userId, environmentId } = findAccessDto;
     return this.envManagerService.findAccessByUser(userId, environmentId);
   }
@@ -45,13 +43,13 @@ export class EnvManagerController {
     return this.envManagerService.getEnvironmentUserData(userId, envId);
   }
 
-  @ApiOperation({ description: 'Endpoint para verificar se um usuário possui acesso a um ambiente'})
+  @ApiOperation({ description: 'Endpoint para verificar se um usuário possui acesso a um ambiente' })
   @ApiOkResponse({ type: swagger.VerifyManagerResponseEntity })
   @ApiBadRequestResponse({ type: swagger.InvalidIdBadRequestResponseEntity })
   @Get('user/:userId/env/:envId/verify')
   verifyManagerByUser(@Param('userId') userId: string, @Param('envId') envId: string) {
     console.log("verifyManagerByUser");
-    
+
     return this.envManagerService.verifyManagerByUser(userId, envId);
   }
 
@@ -68,13 +66,13 @@ export class EnvManagerController {
 
   @ApiOperation({ description: 'Endpoint para listar todos os gestores de ambiente de um usuário' })
   @ApiOkResponse({ type: EnvManagerEntity, isArray: true })
-  @ApiBadRequestResponse({ 
-    type: swagger.FindAllBadRequestResponseEntity 
+  @ApiBadRequestResponse({
+    type: swagger.FindAllBadRequestResponseEntity
   })
   @Get('user/:id')
   findAllByUserId(@Param('id') id: string) {
     console.log("findAllByUserId");
-    
+
     return this.envManagerService.findAllByUserId(id);
   }
 

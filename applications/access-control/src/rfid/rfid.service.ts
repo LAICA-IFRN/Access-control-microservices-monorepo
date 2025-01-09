@@ -10,7 +10,7 @@ import { FindAllDto } from 'src/utils/find-all.dto';
 @Injectable()
 export class RfidService {
   private readonly usersServiceUrl = `${process.env.USERS_SERVICE_URL}`
-  private readonly createAuditLogUrl = process.env.AUDIT_LOG_URL
+  private readonly createAuditLogUrl = process.env.LOGS_SERVICE_URL
   private readonly errorLogger = new Logger()
 
   constructor(
@@ -191,7 +191,7 @@ export class RfidService {
           orderBy: order,
           where: filter,
         }),
-        
+
         this.prismaService.tag_rfid.count({
           where: filter
         })
@@ -204,7 +204,7 @@ export class RfidService {
         total,
         data: rfids
       };
-    } catch (error) {}
+    } catch (error) { }
   }
 
   async findOne(id: number) {
@@ -459,11 +459,11 @@ export class RfidService {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
-      throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
-    });
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+        throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
+      });
 
     return user;
   }

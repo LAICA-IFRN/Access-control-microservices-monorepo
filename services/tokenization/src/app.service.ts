@@ -346,28 +346,28 @@ export class AppService {
       { expiresIn: this.jwtMobileExpirationTime }
     )
 
-    const response = {
-      accessToken: token,
-      mobileId: ''
-    }
+    let mobileId;
 
     if (tokenizeMobileDto.mobileId) {
       const mobileData = await this.findMobileById(tokenizeMobileDto.mobileId);
 
       if (mobileData) {
         this.createLogWhenMobileAuthenticates(data.userId, tokenizeMobileDto.mobileId);
-        response.mobileId = tokenizeMobileDto.mobileId;
+        mobileId = tokenizeMobileDto.mobileId;
       }
     } else {
       const userMobile = await this.createUserMobile(data.userId);
 
       if (userMobile) {
         this.createLogWhenMobileAuthenticates(data.userId, userMobile.id);
-        response.mobileId = userMobile.id;
+        mobileId = userMobile.id;
       }
     }
 
-    return response;
+    return {
+      accessToken: token,
+      mobileId: mobileId,
+    };
   }
 
   private async createUserMobile(userId: string) {

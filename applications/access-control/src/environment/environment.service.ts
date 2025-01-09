@@ -15,6 +15,7 @@ import { environment_temporary_access, environment_user_access_control } from '@
 import { LogsCerberusService } from 'src/logs/logs.service';
 import { LogsCerberusConstants } from 'src/logs/logs.contants';
 import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
+import { MicrocontrollersService } from 'src/microcontrollers/microcontrollers.service';
 // import { EnvironmentPhrase } from 'src/interfaces/environment-phrase';
 // import { EnvironmentMicrocontrollerConfigDto } from './dto/create-microcontroller-config.dto';
 
@@ -25,13 +26,14 @@ export class EnvironmentService {
   private readonly verifyRoleEndpoint = `${process.env.USERS_SERVICE_URL}/roles/verify`
   private readonly getUserEndpoint = `${process.env.USERS_SERVICE_URL}/`
   private readonly getEsp8266Endpoint = process.env.DEVICES_SERVICE_URL
+  private readonly logCerberusService: LogsCerberusService = new LogsCerberusService()
   private readonly errorLogger = new Logger()
   @Inject(CACHE_MANAGER) private cacheService: Cache
 
   constructor(
     private readonly httpService: HttpService,
     private readonly prisma: PrismaService,
-    private readonly logCerberusService: LogsCerberusService,
+    // private readonly microcontrollersService: MicrocontrollersService
   ) { }
 
   // @Cron(CronExpression.EVERY_30_SECONDS)
@@ -622,58 +624,7 @@ export class EnvironmentService {
       throw new HttpException('Environment not found', HttpStatus.NOT_FOUND);
     }
 
-    console.log('environment', environment);
-
-
-    const esp8266 = await lastValueFrom(
-      this.httpService.get(`${this.getEsp8266Endpoint}/microcontrollers/one/${esp8266Id}`).pipe(
-        catchError((error) => {
-          if (error.response.status === 'ECONNREFUSED') {
-            this.errorLogger.error('Falha ao se conectar com o serviço de dispositivos (500)', error);
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-          } else if (error.response.data.statusCode === 400) {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: "Ambiente",
-                type: "Error",
-                message: 'Falha ao solicitar acesso remoto, id de dispositivo inválido',
-                meta: {
-                  environmentId,
-                  userId,
-                  statusCode: 400
-                }
-              })
-            )
-              .catch((error) => {
-                this.errorLogger.error('Falha ao criar log', error);
-              });
-
-            throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
-          } else if (error.response.data.statusCode === 404) {
-            lastValueFrom(
-              this.httpService.post(this.createAuditLogUrl, {
-                topic: "Ambiente",
-                type: "Error",
-                message: 'Falha ao solicitar acesso remoto, dispositivo não encontrado',
-                meta: {
-                  environmentId,
-                  userId,
-                  statusCode: 404
-                }
-              })
-            )
-              .catch((error) => {
-                this.errorLogger.error('Falha ao criar log', error);
-              });
-
-            throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
-          } else {
-            this.errorLogger.error('Falha do sistema (500)', error);
-            throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
-          }
-        }),
-      ),
-    ).then((response) => response.data);
+    const esp8266 = await this.findOneMicrocontroller(esp8266Id);
 
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
@@ -710,11 +661,35 @@ export class EnvironmentService {
     return cache;
   }
 
+  private async findOneMicrocontroller(id: number) {
+    if (isNaN(id)) {
+      this.logCerberusService.create(LogsCerberusConstants.findOneMicrocontrollerBadRequest({ id }));
+      throw new HttpException('Invalid id', HttpStatus.BAD_REQUEST)
+    }
+
+    try {
+      return await this.prisma.microcontroller.findFirstOrThrow({
+        where: {
+          id,
+          active: true
+        }
+      })
+    } catch (error) {
+      if (error.code === 'P2025') {
+        this.logCerberusService.create(LogsCerberusConstants.findOneMicrotrollerNotFound({ id }));
+        throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND)
+      } else {
+        this.logCerberusService.create(LogsCerberusConstants.findOneMicrontorllerError({ id }));
+        this.errorLogger.error('Erro inesperado ao buscar microcontrolador', error);
+        throw new HttpException('Erro inesperado ao buscar microcontrolador', HttpStatus.INTERNAL_SERVER_ERROR);
+      }
+    }
+  }
+
   async findRemoteAccess(esp8266Id: number) {
     const key = esp8266Id.toString();
     const value = await this.cacheService.get(key);
     await this.cacheService.set(key, { value: false });
-
     return value === undefined ? { value: false } : value;
   }
 

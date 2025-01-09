@@ -12,6 +12,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { lastValueFrom } from 'rxjs';
 import { FindAllDto } from 'src/utils/find-all.dto';
 import { access } from 'fs';
+import { EnvironmentService } from 'src/environment/environment.service';
 
 @Injectable()
 export class MicrocontrollersService {
@@ -24,6 +25,7 @@ export class MicrocontrollersService {
     private readonly prismaService: PrismaService,
     private readonly logCerberusService: LogsCerberusService,
     private readonly httpService: HttpService,
+    private readonly environmentsService: EnvironmentService,
     @Inject(CACHE_MANAGER) private cacheService: Cache,
   ) { }
 
@@ -163,15 +165,7 @@ export class MicrocontrollersService {
       throw new HttpException('Microcontrolador não encontrado', HttpStatus.NOT_FOUND);
     }
 
-    const searchRemoteAccessUrl = `${this.environmentsServiceUrl}/env/remote-access?esp8266Id=${id}`;
-    const remoteAccess = await lastValueFrom(
-      this.httpService.get(searchRemoteAccessUrl)
-    )
-      .then(response => response.data)
-      .catch(error => {
-        this.errorLogger.error('Erro ao buscar acesso remoto', error);
-        throw new HttpException('Erro ao buscar acesso remoto', HttpStatus.INTERNAL_SERVER_ERROR);
-      })
+    const remoteAccess: any = await this.environmentsService.findRemoteAccess(id);
 
     if (remoteAccess.value) {
       this.sendAccessLogWhenFindOne(
@@ -624,14 +618,12 @@ export class MicrocontrollersService {
   }
 
   private async findEnvironmentForLog(environmentId: string) {
-    const environment = await lastValueFrom(
-      this.httpService.get(`${process.env.ENVIRONMENTS_SERVICE_URL}/env/${environmentId}`)
-    )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao se conectar com o serviço de ambientes (500)', error);
-        throw new HttpException('Internal server error when search environments', HttpStatus.INTERNAL_SERVER_ERROR);
-      });
+    const environment = await this.prismaService.environment.findFirst({
+      where: { id: environmentId },
+      select: {
+        name: true
+      }
+    });
 
     return environment;
   }

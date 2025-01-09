@@ -4,6 +4,7 @@ import { HttpService } from '@nestjs/axios';
 import { catchError, lastValueFrom } from 'rxjs';
 import { mobile } from '@prisma/client';
 import { FindAllDto } from 'src/utils/find-all.dto';
+import { EnvironmentService } from 'src/environment/environment.service';
 
 @Injectable()
 export class MobileService {
@@ -15,6 +16,7 @@ export class MobileService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly httpService: HttpService,
+    private readonly environmentsService: EnvironmentService,
   ) { }
 
   async create(userId: string) {
@@ -80,10 +82,10 @@ export class MobileService {
         }
       })
     )
-    .then(() => {})
-    .catch((error) => {
-      this.errorLogger.error("Falha ao criar log de auditoria", error);
-    });
+      .then(() => { })
+      .catch((error) => {
+        this.errorLogger.error("Falha ao criar log de auditoria", error);
+      });
   }
 
   async sendLogWhenMobileDeactivated(userId: string, mobile: mobile) {
@@ -100,10 +102,10 @@ export class MobileService {
         }
       })
     )
-    .then(() => {})
-    .catch((error) => {
-      this.errorLogger.error("Falha ao criar log de auditoria", error);
-    });
+      .then(() => { })
+      .catch((error) => {
+        this.errorLogger.error("Falha ao criar log de auditoria", error);
+      });
   }
 
   async getUserData(userId: string) {
@@ -121,7 +123,7 @@ export class MobileService {
                 error: error
               }
             })
-          ).then(() => {});
+          ).then(() => { });
         })
       )
     ).then((response: any) => response.data);
@@ -186,25 +188,16 @@ export class MobileService {
       roleKeys.push(3);
     }
 
-    const environments = await lastValueFrom(
-      this.httpService.get(this.environmentsServiceUrl + '/env/mobile', {
-        data: {
-          roleKeys,
-          userId
-        }
-      }).pipe(
-        catchError((error) => {
-          this.errorLogger.error(error);
-          throw new HttpException(error.response.data.message, error.response.data.statusCode);
-        })
-      )
-    ).then((response) => response.data);
+    const environments = await this.environmentsService.getEnvironmentForMobile({
+      roleKeys,
+      userId
+    })
 
     return {
       environments
     };
   }
-  
+
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;

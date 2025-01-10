@@ -13,14 +13,14 @@ import { MobileGetEnvironmentsDto } from './dto/mobile-get-environments.dto';
 @ApiTags('Env')
 @Controller('env')
 export class EnvironmentController {
-  constructor(private readonly environmentService: EnvironmentService) {}
+  constructor(private readonly environmentService: EnvironmentService) { }
 
   @ApiOperation({ description: 'Endpoint para cadastro de ambientes' })
   @ApiCreatedResponse({ type: EnvironmentEntity })
   @ApiForbiddenResponse({ type: CreateForbiddenResponseEntity })
   @ApiConflictResponse({ type: ConflictResponseEntity })
   @ApiNotFoundResponse({ type: CreateNotFoundResponseEntity })
-  @ApiBadRequestResponse({ type: CreateBadRequestResponseEntity})
+  @ApiBadRequestResponse({ type: CreateBadRequestResponseEntity })
   @Post()
   create(@Body() createEnvironmentDto: CreateEnvironmentDto) {
     return this.environmentService.create(createEnvironmentDto);
@@ -28,7 +28,7 @@ export class EnvironmentController {
 
   @Post('remote-access')
   requestRemoteAccess(
-    @Query('environmentId') environmentId: string, 
+    @Query('environmentId') environmentId: string,
     @Query('esp8266Id') esp8266Id: number,
     @Query('userId') userId: string,
     @Query('type') type: string,
@@ -85,7 +85,7 @@ export class EnvironmentController {
   update(@Param('id') id: string, @Body() updateEnvironmentDto: UpdateEnvironmentDto) {
     return this.environmentService.update(id, updateEnvironmentDto);
   }
-  
+
   @ApiOperation({ description: 'Endpoint para atualização de status de ambiente' })
   @ApiResponse({ type: UpdateStatusSuccessResponseEntity })
   @ApiForbiddenResponse({ type: UpdateStatusForbiddenResponseEntity })

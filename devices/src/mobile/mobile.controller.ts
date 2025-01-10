@@ -17,7 +17,7 @@ export class MobileController {
   findAll(@Body() findAllDto: FindAllDto) {
     return this.mobileService.findAll(findAllDto);
   }
-  
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.mobileService.findOne(id);

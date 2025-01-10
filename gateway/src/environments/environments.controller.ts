@@ -17,8 +17,8 @@ export class EnvironmentsController {
   @Post()
   create(@Body() createEnvironmentDto: any, @Req() request: Request) {
     const userId = request['userId'];
-    return this.environmentsService.create({ 
-      ...createEnvironmentDto, 
+    return this.environmentsService.create({
+      ...createEnvironmentDto,
       requestUserId: userId
     });
   }
@@ -30,7 +30,7 @@ export class EnvironmentsController {
   createTemporaryAccess(@Body() body: any, @Req() request: Request) {
     const userId = request['userId'];
     return this.environmentsService.createTemporaryAccess({
-      ...body, 
+      ...body,
       requestUserId: userId
     });
   }

@@ -19,27 +19,6 @@ export class MobileService {
 
   async create(userId: string) {
     let mobile: mobile;
-
-    mobile = await this.prismaService.mobile.findFirst({
-      where: {
-        user_id: userId,
-        active: true,
-      }
-    });
-
-    if (mobile) {
-      await this.prismaService.mobile.update({
-        where: {
-          id: mobile.id
-        },
-        data: {
-          active: false
-        }
-      });
-
-      this.sendLogWhenMobileDeactivated(userId, mobile);
-    }
-
     const user = await this.getUserData(userId);
 
     try {
@@ -80,10 +59,10 @@ export class MobileService {
         }
       })
     )
-    .then(() => {})
-    .catch((error) => {
-      this.errorLogger.error("Falha ao criar log de auditoria", error);
-    });
+      .then(() => { })
+      .catch((error) => {
+        this.errorLogger.error("Falha ao criar log de auditoria", error);
+      });
   }
 
   async sendLogWhenMobileDeactivated(userId: string, mobile: mobile) {
@@ -100,10 +79,10 @@ export class MobileService {
         }
       })
     )
-    .then(() => {})
-    .catch((error) => {
-      this.errorLogger.error("Falha ao criar log de auditoria", error);
-    });
+      .then(() => { })
+      .catch((error) => {
+        this.errorLogger.error("Falha ao criar log de auditoria", error);
+      });
   }
 
   async getUserData(userId: string) {
@@ -121,7 +100,7 @@ export class MobileService {
                 error: error
               }
             })
-          ).then(() => {});
+          ).then(() => { });
         })
       )
     ).then((response: any) => response.data);
@@ -204,7 +183,7 @@ export class MobileService {
       environments
     };
   }
-  
+
   async findAll(findAllDto: FindAllDto) {
     const previousLenght = findAllDto.previous * findAllDto.pageSize;
     const nextLenght = findAllDto.pageSize;
@@ -223,7 +202,7 @@ export class MobileService {
         this.prismaService.mobile.count({
           where: filter
         })
-      ])
+      ]);
 
       return {
         pageSize: findAllDto.pageSize,
@@ -232,6 +211,8 @@ export class MobileService {
         total,
         data: mobiles
       };
-    } catch (error) { }
+    } catch (error) {
+      console.log('error', error);
+    }
   }
 }

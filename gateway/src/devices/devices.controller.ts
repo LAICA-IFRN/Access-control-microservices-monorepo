@@ -25,7 +25,7 @@ export class DevicesController {
   @Post('rfid')
   createRfid(@Body() createRfidDto: any, @Req() request: Request) {
     const userId = request['userId'];
-    return this.devicesService.createRfid({ ...createRfidDto, requestUserId: userId });
+    return this.devicesService.createRfid({ ...createRfidDto, userId: userId });
   }
 
   @Roles(RolesConstants.ADMIN, RolesConstants.ENVIRONMENT_MANAGER)
@@ -78,7 +78,7 @@ export class DevicesController {
   @Post('microcontrollers/activate')
   activeMicrocontroller(
     @Query('id') id: number,
-    @Query('environmentId') environmentId: string, 
+    @Query('environmentId') environmentId: string,
     @Req() request: Request
   ) {
     const userId = request['userId'];
@@ -150,7 +150,7 @@ export class DevicesController {
   @Patch('microcontrollers/:id/status')
   updateMicrocontrollerStatus(
     @Param('id') id: number,
-    @Body() updateMicrocontrollerStatusDto: any, 
+    @Body() updateMicrocontrollerStatusDto: any,
     @Req() request: Request
   ) {
     const userId = request['userId'];

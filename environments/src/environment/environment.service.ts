@@ -547,7 +547,7 @@ export class EnvironmentService {
     }
 
     console.log('environment', environment);
-    
+
 
     const esp8266 = await lastValueFrom(
       this.httpService.get(`${this.getEsp8266Endpoint}/microcontrollers/one/${esp8266Id}`).pipe(
@@ -621,7 +621,7 @@ export class EnvironmentService {
         user.id
       );
     } else {
-      
+
       await this.sendAccessLogWhenMobileRemoteAccessSuccess(
         environment.name,
         environment.id,
@@ -744,6 +744,8 @@ export class EnvironmentService {
         data: environments
       };
     } catch (error) {
+      console.log('error', error);
+
       this.auditLogService.create(AuditConstants.findAllError({ target: 'users', statusCode: 500 }))
       throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
     }

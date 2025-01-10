@@ -20,7 +20,7 @@ export class EnvAccessService {
     private readonly prisma: PrismaService,
     private readonly httpService: HttpService,
     private readonly auditLogService: AuditLogService,
-  ) {}
+  ) { }
 
   async create(createEnvAccessDto: CreateEnvAccessDto) {
     const isFrequenter = await lastValueFrom(
@@ -38,15 +38,15 @@ export class EnvAccessService {
                 type: 'Error',
                 message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, id inválido',
                 meta: {
-                  target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
+                  target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { role: 'FREQUENTER' }],
                   statusCode: error.response.data.statusCode,
                 },
               })
             )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao criar log', error);
-            });
+              .then((response) => response.data)
+              .catch((error) => {
+                this.errorLogger.error('Falha ao criar log', error);
+              });
 
             throw new HttpException(error.response.data.message, HttpStatus.BAD_REQUEST);
           } else if (error.response.data.statusCode === 404) {
@@ -56,15 +56,15 @@ export class EnvAccessService {
                 type: 'Error',
                 message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, usuário não encontrado',
                 meta: {
-                  target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
+                  target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { role: 'FREQUENTER' }],
                   statusCode: error.response.data.statusCode,
                 },
               })
             )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao criar log', error);
-            });
+              .then((response) => response.data)
+              .catch((error) => {
+                this.errorLogger.error('Falha ao criar log', error);
+              });
 
             throw new HttpException(error.response.data.message, HttpStatus.NOT_FOUND);
           } else {
@@ -74,15 +74,15 @@ export class EnvAccessService {
                 type: 'Error',
                 message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, erro interno verificar logs de erro do serviço',
                 meta: {
-                  target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
+                  target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { role: 'FREQUENTER' }],
                   statusCode: error.response.data.statusCode,
                 },
               })
             )
-            .then((response) => response.data)
-            .catch((error) => {
-              this.errorLogger.error('Falha ao criar log', error);
-            });
+              .then((response) => response.data)
+              .catch((error) => {
+                this.errorLogger.error('Falha ao criar log', error);
+              });
 
             this.errorLogger.error('Falha do sistema na criação de acesso à ambiente', error);
             throw new HttpException(error.response.data.message, HttpStatus.INTERNAL_SERVER_ERROR);
@@ -98,22 +98,22 @@ export class EnvAccessService {
           type: 'Error',
           message: 'Falha ao verificar papel de usuário na criação de acesso à ambiente, usuário não é um frequentador',
           meta: {
-            target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {role: 'FREQUENTER'}],
+            target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { role: 'FREQUENTER' }],
             statusCode: 403,
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException('User is not a frequenter', HttpStatus.FORBIDDEN);
     }
 
     const { userId, environmentId } = createEnvAccessDto;
     const hasEnvManager = await this.hasEnvManagerOnEnv(userId, environmentId).then((response) => response);
-    
+
     if (hasEnvManager) {
       await lastValueFrom(
         this.httpService.post(this.createAuditLogUrl, {
@@ -126,13 +126,13 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
-        'User is an active manager in this environment', 
+        'User is an active manager in this environment',
         HttpStatus.FORBIDDEN
       );
     }
@@ -151,15 +151,15 @@ export class EnvAccessService {
           type: 'Error',
           message: 'Falha ao verificar período de acesso na criação de acesso à ambiente, período de início maior ou igual ao período de término',
           meta: {
-            target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startPeriod: createEnvAccessDto.startPeriod, endPeriod: createEnvAccessDto.endPeriod}],
+            target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { startPeriod: createEnvAccessDto.startPeriod, endPeriod: createEnvAccessDto.endPeriod }],
             statusCode: 400,
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         'startPeriod must be less than endPeriod',
@@ -192,10 +192,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         throw new HttpException(
           'Environment access already exists',
@@ -213,10 +213,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         throw new HttpException(
           'Environment not found',
@@ -234,10 +234,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         throw new HttpException(
           'Environment access already exists',
@@ -255,10 +255,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         this.errorLogger.error('Falha do sistema (500)', error);
 
@@ -281,22 +281,22 @@ export class EnvAccessService {
             type: 'Error',
             message: 'Falha ao criar acesso à ambiente, horário de início maior ou igual ao horário de término',
             meta: {
-              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: access.startTime, endTime: access.endTime}],
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { startTime: access.startTime, endTime: access.endTime }],
               statusCode: 400,
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
-        
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
+
         try {
           await this.prisma.environment_user.delete({
             where: {
               id: envAccess.id,
             },
-          });          
+          });
         } catch (error) {
           await lastValueFrom(
             this.httpService.post(this.createAuditLogUrl, {
@@ -309,10 +309,10 @@ export class EnvAccessService {
               },
             })
           )
-          .then((response) => response.data)
-          .catch((error) => {
-            this.errorLogger.error('Falha ao criar log', error);
-          });
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
 
           this.errorLogger.error('Falha do sistema (500)', error);
 
@@ -336,7 +336,7 @@ export class EnvAccessService {
                 day,
                 start_time: startTime,
                 end_time: endTime,
-                environment_user_id: envAccess.id, 
+                environment_user_id: envAccess.id,
               }
             })
           );
@@ -360,10 +360,10 @@ export class EnvAccessService {
               },
             })
           )
-          .then((response) => response.data)
-          .catch((error) => {
-            this.errorLogger.error('Falha ao criar log', error);
-          });
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
 
           throw new HttpException(
             'Environment access already exists',
@@ -381,10 +381,10 @@ export class EnvAccessService {
               },
             })
           )
-          .then((response) => response.data)
-          .catch((error) => {
-            this.errorLogger.error('Falha ao criar log', error);
-          });
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
 
           throw new HttpException(
             'Environment not found',
@@ -402,10 +402,10 @@ export class EnvAccessService {
               },
             })
           )
-          .then((response) => response.data)
-          .catch((error) => {
-            this.errorLogger.error('Falha ao criar log', error);
-          });
+            .then((response) => response.data)
+            .catch((error) => {
+              this.errorLogger.error('Falha ao criar log', error);
+            });
 
           throw new HttpException(
             'Environment access already exists',
@@ -423,9 +423,9 @@ export class EnvAccessService {
               },
             })
           )
-          .catch((error) => {
-            this.errorLogger.error('Falha ao enviar log', error);
-          });
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error);
+            });
         }
       }
     }
@@ -585,15 +585,15 @@ export class EnvAccessService {
           type: 'Error',
           message: 'Falha ao verificar período de acesso na criação de acesso à ambiente, período de início maior ou igual ao período de término',
           meta: {
-            target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startPeriod: createEnvAccessDto.startPeriod, endPeriod: createEnvAccessDto.endPeriod}],
+            target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { startPeriod: createEnvAccessDto.startPeriod, endPeriod: createEnvAccessDto.endPeriod }],
             statusCode: 400,
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         'startPeriod must be less than endPeriod',
@@ -618,15 +618,15 @@ export class EnvAccessService {
             type: 'Error',
             message: 'Falha ao buscar paridade de acesso à ambiente, horário de início maior ou igual ao horário de término',
             meta: {
-              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, {startTime: access.startTime, endTime: access.endTime}],
+              target: [createEnvAccessDto.userId, createEnvAccessDto.environmentId, { startTime: access.startTime, endTime: access.endTime }],
               statusCode: 400,
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         throw new HttpException(
           'startTime must be less than endTime',
@@ -814,10 +814,10 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         "Invalid id entry",
@@ -826,15 +826,15 @@ export class EnvAccessService {
     }
 
     const envManager = await this.prisma.environment_manager.findFirst({
-      where: { 
-        user_id: userId, 
+      where: {
+        user_id: userId,
         environment_id: environmentId,
         active: true,
       }
     });
 
     const hasEnvManager = envManager ? true : false;
-    
+
     return hasEnvManager
   }
 
@@ -851,10 +851,10 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         "Invalid id entry",
@@ -863,15 +863,15 @@ export class EnvAccessService {
     }
 
     const envManager = await this.prisma.environment_manager.findFirst({
-      where: { 
-        user_id: userId, 
+      where: {
+        user_id: userId,
         environment_id: environmentId
       }
     });
 
     const hasEnvManager = envManager ? true : false;
     const active = envManager?.active;
-    
+
     return {
       hasEnvManager,
       active
@@ -927,14 +927,14 @@ export class EnvAccessService {
         const startTime = accessControl.start_time.toLocaleTimeString();
         const endTime = accessControl.end_time.toLocaleTimeString();
         const currentTime = currentDate.toLocaleTimeString();
-        
+
         if (startTime <= currentTime && endTime >= currentTime) {
           response.access = true;
           break;
         }
       }
     }
-    
+
     return response;
   }
 
@@ -951,11 +951,11 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
-      
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
+
       throw new HttpException(
         "Invalid id entry",
         HttpStatus.BAD_REQUEST
@@ -982,10 +982,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         throw new HttpException(
           'Environment access not found',
@@ -1003,10 +1003,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         this.errorLogger.error('Falha ao buscar acesso à ambiente', error);
 
@@ -1031,10 +1031,10 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         "Invalid id entry",
@@ -1071,10 +1071,10 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         "Invalid id entry",
@@ -1102,10 +1102,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         throw new HttpException(
           'Environment not found',
@@ -1128,10 +1128,10 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         "Invalid id entry",
@@ -1157,10 +1157,10 @@ export class EnvAccessService {
           },
         })
       )
-      .then((response) => response.data)
-      .catch((error) => {
-        this.errorLogger.error('Falha ao criar log', error);
-      });
+        .then((response) => response.data)
+        .catch((error) => {
+          this.errorLogger.error('Falha ao criar log', error);
+        });
 
       throw new HttpException(
         "Environment access not found",
@@ -1202,10 +1202,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         throw new HttpException(
           'Environment not found',
@@ -1223,10 +1223,10 @@ export class EnvAccessService {
             },
           })
         )
-        .then((response) => response.data)
-        .catch((error) => {
-          this.errorLogger.error('Falha ao criar log', error);
-        });
+          .then((response) => response.data)
+          .catch((error) => {
+            this.errorLogger.error('Falha ao criar log', error);
+          });
 
         this.errorLogger.error('Falha do sistema (500)', error);
 
@@ -1277,9 +1277,9 @@ export class EnvAccessService {
           },
         })
       )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
 
       throw new HttpException(
         "Invalid id entry",
@@ -1305,9 +1305,9 @@ export class EnvAccessService {
           },
         })
       )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
 
       throw new HttpException(
         "Environment access not found",
@@ -1332,14 +1332,14 @@ export class EnvAccessService {
           type: 'Error',
           message: 'Falha ao atualizar acesso à ambiente, período de início maior ou igual ao período de término',
           meta: {
-            target: [id, {startPeriod: updateEnvAccessDto.startPeriod, endPeriod: updateEnvAccessDto.endPeriod}],
+            target: [id, { startPeriod: updateEnvAccessDto.startPeriod, endPeriod: updateEnvAccessDto.endPeriod }],
             statusCode: 400,
           },
         })
       )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
 
       throw new HttpException(
         'startPeriod must be less than endPeriod',
@@ -1370,9 +1370,9 @@ export class EnvAccessService {
             },
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        });
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error);
+          });
 
         throw new HttpException(
           'Environment not found',
@@ -1390,9 +1390,9 @@ export class EnvAccessService {
             },
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        });
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error);
+          });
 
         throw new HttpException(
           'Environment access already exists',
@@ -1410,9 +1410,9 @@ export class EnvAccessService {
             },
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        });
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error);
+          });
 
         this.errorLogger.error('Falha do sistema (500)', error);
 
@@ -1424,7 +1424,7 @@ export class EnvAccessService {
     }
 
     if (
-      updateEnvAccessDto.accessesToRemove && 
+      updateEnvAccessDto.accessesToRemove &&
       updateEnvAccessDto.accessesToRemove.length > 0
     ) {
       try {
@@ -1448,9 +1448,9 @@ export class EnvAccessService {
               },
             })
           )
-          .catch((error) => {
-            this.errorLogger.error('Falha ao enviar log', error);
-          });
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error);
+            });
 
           throw new HttpException(
             'Environment not found',
@@ -1468,9 +1468,9 @@ export class EnvAccessService {
               },
             })
           )
-          .catch((error) => {
-            this.errorLogger.error('Falha ao enviar log', error);
-          });
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error);
+            });
 
           this.errorLogger.error('Falha do sistema (500)', error);
 
@@ -1503,14 +1503,14 @@ export class EnvAccessService {
                 type: 'Info',
                 message: 'Falha ao atualizar acesso à ambiente, horário de início maior ou igual ao horário de término',
                 meta: {
-                  target: [id, {startTime: access.startTime, endTime: access.endTime}],
+                  target: [id, { startTime: access.startTime, endTime: access.endTime }],
                   statusCode: 400,
                 },
               })
             )
-            .catch((error) => {
-              this.errorLogger.error('Falha ao enviar log', error);
-            });
+              .catch((error) => {
+                this.errorLogger.error('Falha ao enviar log', error);
+              });
 
             throw new HttpException(
               'startTime must be less than endTime',
@@ -1525,7 +1525,7 @@ export class EnvAccessService {
                   day,
                   start_time: startTime,
                   end_time: endTime,
-                  environment_user_id: envAccess.id, 
+                  environment_user_id: envAccess.id,
                 }
               })
             );
@@ -1553,9 +1553,9 @@ export class EnvAccessService {
               },
             })
           )
-          .catch((error) => {
-            this.errorLogger.error('Falha ao enviar log', error);
-          });
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error);
+            });
 
           throw new HttpException(
             'Environment not found',
@@ -1573,9 +1573,9 @@ export class EnvAccessService {
               },
             })
           )
-          .catch((error) => {
-            this.errorLogger.error('Falha ao enviar log', error);
-          });
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error);
+            });
 
           throw new HttpException(
             'Environment access already exists',
@@ -1593,9 +1593,9 @@ export class EnvAccessService {
               },
             })
           )
-          .catch((error) => {
-            this.errorLogger.error('Falha ao enviar log', error);
-          });
+            .catch((error) => {
+              this.errorLogger.error('Falha ao enviar log', error);
+            });
 
           this.errorLogger.error('Falha do sistema (500)', error);
 
@@ -1646,9 +1646,9 @@ export class EnvAccessService {
           },
         })
       )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
 
       throw new HttpException(
         "Invalid id entry",
@@ -1674,9 +1674,9 @@ export class EnvAccessService {
           },
         })
       )
-      .catch((error) => {
-        this.errorLogger.error('Falha ao enviar log', error);
-      });
+        .catch((error) => {
+          this.errorLogger.error('Falha ao enviar log', error);
+        });
 
       throw new HttpException(
         "Environment access not found",
@@ -1715,9 +1715,9 @@ export class EnvAccessService {
             },
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        });
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error);
+          });
 
         throw new HttpException(
           'Environment not found',
@@ -1735,9 +1735,9 @@ export class EnvAccessService {
             },
           })
         )
-        .catch((error) => {
-          this.errorLogger.error('Falha ao enviar log', error);
-        });
+          .catch((error) => {
+            this.errorLogger.error('Falha ao enviar log', error);
+          });
 
         this.errorLogger.error('Falha do sistema (500)', error);
 
@@ -1778,11 +1778,11 @@ export class EnvAccessService {
     const user = await lastValueFrom(
       this.httpService.get(`${process.env.USERS_SERVICE_URL}/${userId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
-      throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
-    });
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao se conectar com o serviço de usuários (500)', error);
+        throw new HttpException('Internal server error when search user on remote access', HttpStatus.INTERNAL_SERVER_ERROR);
+      });
 
     return user;
   }

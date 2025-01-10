@@ -234,8 +234,6 @@ export class AppService {
     )
       .then((response) => response.data)
       .catch((error) => {
-        console.log(error);
-
         if (error.status === 503) {
           lastValueFrom(
             this.httpService.post(this.createAuditLogUrl, {
@@ -312,21 +310,43 @@ export class AppService {
       { expiresIn: this.jwtMobileExpirationTime }
     )
 
-    const response = {
-      accessToken: token,
-      mobileId: false
-    }
+    let mobileId;
 
     if (tokenizeMobileDto.mobileId) {
       const mobileData = await this.findMobileById(tokenizeMobileDto.mobileId);
 
       if (mobileData) {
         this.createLogWhenMobileAuthenticates(data.userId, tokenizeMobileDto.mobileId);
-        response.mobileId = true;
+        mobileId = tokenizeMobileDto.mobileId;
+      }
+    } else {
+      const userMobile = await this.createUserMobile(data.userId);
+
+      if (userMobile) {
+        this.createLogWhenMobileAuthenticates(data.userId, userMobile.id);
+        mobileId = userMobile.id;
       }
     }
-    
-    return response;
+
+    return {
+      accessToken: token,
+      mobileId: mobileId,
+    };
+  }
+
+  private async createUserMobile(userId: string) {
+    const userMobile = await lastValueFrom(
+      this.httpService.post(`${this.devicesServiceUrl}/mobile?userId=${userId}`, {
+        userId: userId,
+      })
+    )
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao criar aparelho', error)
+        throw new HttpException('Unknown error', HttpStatus.INTERNAL_SERVER_ERROR)
+      })
+
+    return userMobile;
   }
 
   private async findMobileById(mobileId: string) {
@@ -542,7 +562,7 @@ export class AppService {
 
   async authorizeUser(authorizationUserDto: AuthorizationUserDto) {
     let decodedToken;
-    
+
     try {
       decodedToken = jwt.verify(authorizationUserDto.token, this.jwtUserSecret)
     } catch (error) {
@@ -618,7 +638,7 @@ export class AppService {
       )
     )
       .then((response) => response.data)
-    
+
     if (!isAuthorized) {
       throw new HttpException('Unauthorized', HttpStatus.UNAUTHORIZED)
     }

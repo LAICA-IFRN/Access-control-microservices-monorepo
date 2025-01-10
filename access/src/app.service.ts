@@ -172,11 +172,11 @@ export class AppService {
     const esp = await lastValueFrom(
       this.httpService.get(`${this.tempGetEsp}/${accessDto.environmentId}`)
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar esp', error);
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar esp', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     const mobile = await this.getMobileData(accessDto.mobileId);
 
@@ -192,18 +192,18 @@ export class AppService {
 
       throw new HttpException('Dispositivo móvel inativo', HttpStatus.FORBIDDEN);
     }
-      
+
     const roles: string[] = await lastValueFrom(
       this.httpService.get(`${this.tempGetRolesUrl}/${accessDto.userId}/all`)
     )
-    .then((response) => response.data.roles)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar papéis do usuário', error);
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+      .then((response) => response.data.roles)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar papéis do usuário', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     let userData: any;
-    
+
     if (roles.includes('ADMIN')) {
       this.handleLogAdminFacialRecognitionMobile({ userId: accessDto.userId, accessType: AccessByType.app }, { result: true }, esp.environment_id, accessDto);
 
@@ -216,13 +216,13 @@ export class AppService {
       if (data) {
         userData = data;
       }
-      
+
       if (data?.access) {
         await this.sendRemoteAccessRequest(accessDto.environmentId, esp.id, accessDto.userId);
         return { access: true };
       }
     }
-    
+
     if (roles.includes('ENVIRONMENT_MANAGER')) {
       const data = await this.searchEnvironmentManagerAccess(accessDto.userId, accessDto.environmentId);
 
@@ -238,7 +238,7 @@ export class AppService {
 
     this.sendLogWhenFingerprintFails({ userId: accessDto.userId, accessType: AccessByType.app }, userData, accessDto);
     return { access: false };
-}
+  }
 
   private async getMobileData(mobileId: string) {
     const data: any = await lastValueFrom(
@@ -487,11 +487,11 @@ export class AppService {
         }
       })
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar acesso de frequentador', error);
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar acesso de frequentador', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     return data;
   }
@@ -505,11 +505,11 @@ export class AppService {
         }
       })
     )
-    .then((response) => response.data)
-    .catch((error) => {
-      this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
-      throw new HttpException(error.response.data.message, error.response.data.statusCode);
-    })
+      .then((response) => response.data)
+      .catch((error) => {
+        this.errorLogger.error('Falha ao buscar acesso de gerente de ambiente', error);
+        throw new HttpException(error.response.data.message, error.response.data.statusCode);
+      })
 
     return data;
   }

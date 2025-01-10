@@ -76,6 +76,6 @@ async function main() {
 }
 //main().catch((error) => { console.error(error); process.exit(1); })
 
-//createMicrocontrollerType().catch((error) => {console.error(error);process.exit(1);})
+// createMicrocontrollerType().catch((error) => { console.error(error); process.exit(1); })
 //createMicrocontrollers().catch((error) => {console.error(error);process.exit(1);})
 //rfid().catch((error) => {console.error(error);process.exit(1);})
